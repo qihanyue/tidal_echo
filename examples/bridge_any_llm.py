@@ -238,11 +238,21 @@ def handle_human_message(msg: dict) -> None:
     log("in", f"#{msg.get('id')}: {content[:60]}")
     convo.append({"role": "user", "content": content})
 
-    # 读取前端动态附带的 LLM 配置与双人设
+    # 读取前端动态附带的 LLM 配置、双人设与上下文轮数
     dyn_llm = msg.get("llm_config") or {}
     dyn_personas = msg.get("personas") or {}
     custom_ai = dyn_personas.get("ai") or ""
     custom_user = dyn_personas.get("user") or ""
+    history_n = int(dyn_llm.get("history_n") or HISTORY_N)
+
+    # 动态根据当前设定的上下文轮数准备近期对话
+    try:
+        fresh_ctx, _ = load_history(n=history_n)
+        if fresh_ctx:
+            convo.clear()
+            convo.extend(fresh_ctx)
+    except Exception:
+        pass
 
     active_routes = MODEL_ROUTES
     temp = TEMPERATURE

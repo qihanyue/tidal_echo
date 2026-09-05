@@ -733,6 +733,29 @@ async def fetch_models_proxy(request: Request):
         raise HTTPException(status_code=502, detail=str(exc))
 
 
+@app.post("/app/trigger_reply")
+async def app_trigger_reply(request: Request):
+    """Explicitly trigger AI response for the latest pending user message."""
+    check_auth(request)
+    body = await request.json()
+    latest = inbound_history(0, 1)
+    if not latest:
+        raise HTTPException(status_code=400, detail="no human message to reply to")
+    msg = latest[-1]
+    meta = msg.get("meta") or {}
+    if body.get("llm_config"):
+        meta["llm_config"] = body.get("llm_config")
+    if body.get("personas"):
+        meta["personas"] = body.get("personas")
+    msg["meta"] = meta
+
+    if brain_target() == "loop":
+        asyncio.create_task(forward_to_loop(msg))
+    else:
+        await broadcast(plugin_subs, plugin_payload(msg))
+    await broadcast(app_subs, {"type": "typing", "active": True})
+    return {"ok": True, "triggered_id": msg["id"]}
+
 @app.post("/app/send")
 async def app_send(request: Request):
     """Human types in the PWA. Persist, push to the AI (plugin), echo to other PWA tabs."""
@@ -751,16 +774,18 @@ async def app_send(request: Request):
     if body.get("personas"):
         meta["personas"] = body.get("personas")
     msg = save_message("in", "user", text, meta)
-    # Route to exactly one AI body. "desktop" keeps the Claude Code channel;
-    # "loop" calls the optional server-side API loop.
-    if brain_target() == "loop":
-        asyncio.create_task(forward_to_loop(msg))
-    else:
-        await broadcast(plugin_subs, plugin_payload(msg))
     # echo to the PWA so the sender's bubble + other tabs stay in sync
     await broadcast(app_subs, app_payload(msg))
-    # the AI starts processing — push a typing state to the PWA
-    await broadcast(app_subs, {"type": "typing", "active": True})
+    trigger = body.get("trigger", True)
+    if trigger:
+        # Route to exactly one AI body. "desktop" keeps the Claude Code channel;
+        # "loop" calls the optional server-side API loop.
+        if brain_target() == "loop":
+            asyncio.create_task(forward_to_loop(msg))
+        else:
+            await broadcast(plugin_subs, plugin_payload(msg))
+        # the AI starts processing -> push a typing state to the PWA
+        await broadcast(app_subs, {"type": "typing", "active": True})
     return {"id": msg["id"]}
 
 

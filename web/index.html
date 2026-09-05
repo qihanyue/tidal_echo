@@ -1935,6 +1935,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6.5 10.5L12 5l5.5 5.5"/></svg>
     </button>
   </footer>
+  <!-- 手动模式：接收回复悬浮按钮 -->
+  <button id="manualTriggerBtn" type="button" class="hidden" style="position:fixed; right:16px; bottom:82px; z-index:99; background:var(--accent, #3b82f6); color:#fff; border:0; border-radius:24px; padding:8px 16px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; box-shadow:0 4px 16px rgba(0,0,0,.2); cursor:pointer; transition:transform .18s, opacity .18s;">
+    <span>✨ 接收回复</span>
+  </button>
   <button class="newmsg-pill" id="newMsgBtn" type="button" aria-label="回到最新消息">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></svg>
     <span>新消息</span>
@@ -2073,20 +2077,49 @@
           </div>
           <input class="context-slider" id="llmTempSlider" type="range" min="0" max="20" value="7">
         </div>
+
+        <div class="llm-field">
+          <div class="llm-row">
+            <label class="settings-label" for="llmHistorySlider">上下文记忆轮数</label>
+            <span class="llm-temp-val" id="llmHistoryVal">12 轮</span>
+          </div>
+          <input class="context-slider" id="llmHistorySlider" type="range" min="2" max="50" value="12">
+          <div class="llm-hint">喂给大模型的最近聊天轮数。太长耗费 Token，太短容易遗忘前文。</div>
+        </div>
+
+        <div class="llm-field">
+          <label class="settings-label">回复模式</label>
+          <div class="segmented" id="triggerModeSeg" role="group" aria-label="回复模式">
+            <button type="button" data-val="auto" class="active">⚡ 自动回复 (回车即答)</button>
+            <button type="button" data-val="manual">🖐️ 手动接收 (连发多条)</button>
+          </div>
+          <div class="llm-hint">选“手动接收”时，发消息不会自动打断。连发多条后点击聊天框下方的「✨ 接收回复」按钮才会触发。</div>
+        </div>
       </section>
 
       <!-- 双人设配置（AI 伴侣 + 用户人设） -->
       <section class="settings-card" id="personaCard">
-        <div class="settings-label">人设与羁绊设定</div>
+        <div class="settings-label">人设与昵称设定</div>
 
         <div class="llm-field">
-          <label class="settings-label" for="personaAi">AI 伴侣设定 (System Persona)</label>
+          <label class="settings-label" for="cfgAiName">AI 伴侣昵称 (Display Name)</label>
+          <input class="llm-input" id="cfgAiName" type="text" placeholder="例如：Claude / 星期五 / Miku">
+          <div class="llm-hint">修改后聊天顶栏、开屏登录和名片将同步变成 TA 的名字。</div>
+        </div>
+
+        <div class="llm-field">
+          <label class="settings-label" for="cfgUserName">我的名字 (User Name)</label>
+          <input class="llm-input" id="cfgUserName" type="text" placeholder="你的名字或昵称">
+        </div>
+
+        <div class="llm-field">
+          <label class="settings-label" for="personaAi">AI 伴侣人设 (System Persona)</label>
           <textarea class="llm-textarea" id="personaAi" placeholder="描述 TA 的性格、说话语气、背景身份、与你的亲密程度..."></textarea>
         </div>
 
         <div class="llm-field">
-          <label class="settings-label" for="personaUser">用户设定 (User Profile)</label>
-          <textarea class="llm-textarea" id="personaUser" placeholder="描述你自己的名字、性格习惯、你希望 TA 如何称呼你和看待你..."></textarea>
+          <label class="settings-label" for="personaUser">用户人设 (User Profile)</label>
+          <textarea class="llm-textarea" id="personaUser" placeholder="描述你自己的性格习惯、你希望 TA 如何称呼你和看待你..."></textarea>
         </div>
       </section>
 <!-- swap（占位 · 假按键）-->
@@ -3670,12 +3703,15 @@ async function apiSend(text, attachments){
         base_url: _activePreset.baseUrl,
         api_key: _activePreset.apiKey,
         model: _activePreset.model,
-        temperature: _activePreset.temperature
+        temperature: _activePreset.temperature,
+        history_n: _activePreset.history_n || 12
       };
     }
     if (typeof personaState !== "undefined" && (personaState.ai || personaState.user)) {
       payload.personas = personaState;
     }
+    // 是否立刻触发回复（手动模式时不触发）
+    payload.trigger = (currentTriggerMode === "auto");
   } catch(e){}
   const sid = effectiveApiSession();
   if (sid) payload.api_session = sid;
@@ -5904,7 +5940,103 @@ function syncPresetUi(){
   if (personaUser) personaUser.value = personaState.user || "";
 }
 
+
+let currentTriggerMode = localStorage.getItem("companion_trigger_mode") || "auto";
+
+function updateManualTriggerBtnVisibility(){
+  const btn = document.getElementById("manualTriggerBtn");
+  if (!btn) return;
+  if (currentTriggerMode === "manual"){
+    btn.classList.remove("hidden");
+  } else {
+    btn.classList.add("hidden");
+  }
+}
+
+function applyCustomNames(){
+  try {
+    const savedAi = localStorage.getItem("companion_custom_ai_name");
+    const savedUser = localStorage.getItem("companion_custom_user_name");
+    const aiName = savedAi ? savedAi.trim() : (CONFIG.AI_NAME || "Claude");
+    const userName = savedUser ? savedUser.trim() : (CONFIG.HUMAN_NAME || "你");
+
+    if (peerNameEl) peerNameEl.textContent = aiName;
+    if (profileNameEl) profileNameEl.textContent = aiName;
+    const loginTitle = document.querySelector(".login h1");
+    if (loginTitle) loginTitle.textContent = aiName;
+    const loginSub = document.querySelector(".login .sub");
+    if (loginSub) loginSub.textContent = "密钥将连接至 " + aiName + " 的频道";
+  } catch(_){}
+}
+
 function initLlmSettings(){
+  applyCustomNames();
+  updateManualTriggerBtnVisibility();
+
+  // 手动回复按钮点击事件
+  const manualBtn = document.getElementById("manualTriggerBtn");
+  if (manualBtn){
+    manualBtn.addEventListener("click", async () => {
+      manualBtn.disabled = true;
+      const origText = manualBtn.innerHTML;
+      manualBtn.innerHTML = "<span>⏳ 正在思考...</span>";
+      try {
+        const _activePreset = getActivePreset ? getActivePreset() : null;
+        const bodyData = {
+          llm_config: _activePreset ? {
+            base_url: _activePreset.baseUrl,
+            api_key: _activePreset.apiKey,
+            model: _activePreset.model,
+            temperature: _activePreset.temperature,
+            history_n: _activePreset.history_n || 12
+          } : {},
+          personas: typeof personaState !== "undefined" ? personaState : {}
+        };
+        await fetch(`${API_BASE}/app/trigger_reply`, {
+          method: "POST",
+          headers: { ...authHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify(bodyData)
+        });
+      } catch(err){}
+      setTimeout(() => {
+        manualBtn.disabled = false;
+        manualBtn.innerHTML = origText;
+      }, 1500);
+    });
+  }
+
+  // 模式切换
+  const modeSeg = document.getElementById("triggerModeSeg");
+  if (modeSeg){
+    modeSeg.querySelectorAll("button").forEach(b => {
+      b.classList.toggle("active", b.dataset.val === currentTriggerMode);
+      b.addEventListener("click", () => {
+        currentTriggerMode = b.dataset.val;
+        modeSeg.querySelectorAll("button").forEach(btn => btn.classList.toggle("active", btn.dataset.val === currentTriggerMode));
+        localStorage.setItem("companion_trigger_mode", currentTriggerMode);
+        updateManualTriggerBtnVisibility();
+      });
+    });
+  }
+
+  // 历史轮数滑块
+  const historySlider = document.getElementById("llmHistorySlider");
+  const historyVal = document.getElementById("llmHistoryVal");
+  if (historySlider && historyVal){
+    const active = getActivePreset();
+    historySlider.value = active.history_n || 12;
+    historyVal.textContent = historySlider.value + " 轮";
+    historySlider.addEventListener("input", () => {
+      historyVal.textContent = historySlider.value + " 轮";
+    });
+  }
+
+  // 名字输入框初值
+  const cfgAiName = document.getElementById("cfgAiName");
+  const cfgUserName = document.getElementById("cfgUserName");
+  if (cfgAiName) cfgAiName.value = localStorage.getItem("companion_custom_ai_name") || CONFIG.AI_NAME || "";
+  if (cfgUserName) cfgUserName.value = localStorage.getItem("companion_custom_user_name") || CONFIG.HUMAN_NAME || "";
+
   loadLlmState();
   syncPresetUi();
 
@@ -5995,6 +6127,19 @@ function initLlmSettings(){
 
       if (personaAi) personaState.ai = personaAi.value.trim();
       if (personaUser) personaState.user = personaUser.value.trim();
+
+      const historySlider = document.getElementById("llmHistorySlider");
+      if (historySlider) active.history_n = parseInt(historySlider.value, 10);
+
+      const cfgAiName = document.getElementById("cfgAiName");
+      const cfgUserName = document.getElementById("cfgUserName");
+      if (cfgAiName) {
+        localStorage.setItem("companion_custom_ai_name", cfgAiName.value.trim());
+      }
+      if (cfgUserName) {
+        localStorage.setItem("companion_custom_user_name", cfgUserName.value.trim());
+      }
+      applyCustomNames();
 
       saveLlmState();
       syncPresetUi();
