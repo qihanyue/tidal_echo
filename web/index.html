@@ -2057,11 +2057,13 @@
         <div class="llm-field">
           <div class="llm-row">
             <label class="settings-label" for="llmModel">模型名称 (Model)</label>
-            <button class="llm-btn" id="llmFetchModelsBtn" type="button">拉取模型列表</button>
+            <div style="display:flex; gap:6px;">
+              <button class="llm-btn" id="llmChooseModelBtn" type="button" title="点击打开模型选择弹窗">📋 选模型</button>
+              <button class="llm-btn" id="llmFetchModelsBtn" type="button">拉取列表</button>
+            </div>
           </div>
-          <input class="llm-input" id="llmModel" type="text" placeholder="例如：gemini-2.5-pro / deepseek-chat" list="llmModelList">
-          <datalist id="llmModelList"></datalist>
-          <div class="llm-hint" id="llmModelHint">可直接填入模型名，或点右上方「拉取」自动获取。</div>
+          <input class="llm-input" id="llmModel" type="text" placeholder="例如：gemini-2.5-pro / deepseek-chat">
+          <div class="llm-hint" id="llmModelHint">点击上方「📋 选模型」直接弹窗选取，不用随缘点输入框。</div>
         </div>
 
         <div class="llm-field">
@@ -6066,7 +6068,93 @@ function initLlmSettings(){
 
 document.addEventListener("DOMContentLoaded", initLlmSettings);
 
+
+
+let cachedFetchedModels = [];
+
+function setupModelModal(){
+  const chooseBtn = document.getElementById("llmChooseModelBtn");
+  const modal = document.getElementById("modelSelectModal");
+  const closeBtn = document.getElementById("closeModelModalBtn");
+  const filterInput = document.getElementById("modelFilterInput");
+  const itemsContainer = document.getElementById("modelSelectItems");
+  const modelInp = document.getElementById("llmModel");
+
+  if (!chooseBtn || !modal) return;
+
+  function renderList(query = ""){
+    if (!itemsContainer) return;
+    itemsContainer.innerHTML = "";
+    const filtered = cachedFetchedModels.filter(m => m.toLowerCase().includes(query.toLowerCase()));
+    if (!filtered.length){
+      itemsContainer.innerHTML = `<div style="color:var(--text-faint); font-size:12px; text-align:center; padding:30px 0;">${cachedFetchedModels.length ? "无匹配模型" : "暂无已拉取的模型，请先点击「拉取列表」"}</div>`;
+      return;
+    }
+    filtered.forEach(m => {
+      const btn = document.createElement("button");
+      btn.className = "llm-btn";
+      btn.style.cssText = "width:100%; justify-content:flex-start; text-align:left; padding:10px 14px; font-size:13px; font-family:monospace; background:rgba(255,255,255,.35);";
+      btn.textContent = m;
+      btn.addEventListener("click", () => {
+        if (modelInp) modelInp.value = m;
+        modal.classList.add("hidden");
+      });
+      itemsContainer.appendChild(btn);
+    });
+  }
+
+  chooseBtn.addEventListener("click", () => {
+    modal.classList.remove("hidden");
+    if (filterInput) {
+      filterInput.value = "";
+      setTimeout(() => filterInput.focus(), 150);
+    }
+    renderList("");
+  });
+
+  if (closeBtn){
+    closeBtn.addEventListener("click", () => modal.classList.add("hidden"));
+  }
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.classList.add("hidden");
+  });
+
+  if (filterInput){
+    filterInput.addEventListener("input", () => renderList(filterInput.value.trim()));
+  }
+
+  // Hook into existing fetch button to cache results
+  const fetchBtn = document.getElementById("llmFetchModelsBtn");
+  if (fetchBtn){
+    fetchBtn.addEventListener("click", () => {
+      setTimeout(() => {
+        const listEl = document.getElementById("llmModelList");
+        if (listEl && listEl.children.length){
+          cachedFetchedModels = Array.from(listEl.children).map(c => c.value);
+        }
+      }, 1000);
+    });
+  }
+}
+setTimeout(setupModelModal, 500);
+
 </script>
+
+
+<!-- 模型快速选择弹窗 (移动端友好) -->
+<div class="menu-panel hidden" id="modelSelectModal" style="z-index:9999; display:flex; flex-direction:column; background:rgba(0,0,0,.45); backdrop-filter:blur(8px); padding:20px; box-sizing:border-box; justify-content:center; align-items:center;">
+  <div style="background:var(--card-bg, #fff); border:1px solid var(--card-line, #ddd); border-radius:16px; width:100%; max-width:400px; max-height:80vh; display:flex; flex-direction:column; padding:18px; box-sizing:border-box; box-shadow:0 12px 36px rgba(0,0,0,.25);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h4 style="margin:0; font-size:16px; color:var(--text);">选择模型</h4>
+      <button class="llm-btn danger" id="closeModelModalBtn" type="button">关闭</button>
+    </div>
+    <input class="llm-input" id="modelFilterInput" type="text" placeholder="🔍 快速搜索过滤模型..." style="margin-bottom:12px;">
+    <div id="modelSelectItems" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; min-height:160px;">
+      <div style="color:var(--text-faint); font-size:12px; text-align:center; padding:30px 0;">暂无已拉取的模型，请先点击「拉取列表」</div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>

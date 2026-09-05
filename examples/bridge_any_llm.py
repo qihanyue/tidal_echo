@@ -322,13 +322,14 @@ def stream_inbound(cursor: int) -> None:
     backoff = 1
     while True:
         try:
-            url = f"{RELAY_URL}/channel/in?since={cursor}"
+            # 优先拉取未处理的 backlog（断线补发与防卡死）
+            url = f"{RELAY_URL}/channel/in?since={cursor}&limit=100"
             req = urllib.request.Request(url, headers={**_auth(), "Accept": "text/event-stream"})
-            # timeout 比 relay 的 15s 心跳 ping 长即可:超时=真的断了,跳到重连。
-            with urllib.request.urlopen(req, timeout=90) as resp:
+            with urllib.request.urlopen(req, timeout=30) as resp:
                 log("in", f"stream connected (since={cursor})")
                 backoff = 1
                 data_lines: list = []
+                last_active = time.time()
                 while True:
                     raw = resp.readline()
                     if not raw:
@@ -336,7 +337,7 @@ def stream_inbound(cursor: int) -> None:
                     line = raw.decode("utf-8", "replace").rstrip("\r\n")
                     if line.startswith("data:"):
                         data_lines.append(line[5:].lstrip())
-                    elif line == "":                      # 空行 = 一帧结束
+                    elif line == "":
                         if not data_lines:
                             continue
                         payload, data_lines = "\n".join(data_lines), []
@@ -345,18 +346,20 @@ def stream_inbound(cursor: int) -> None:
                         except json.JSONDecodeError:
                             continue
                         if m.get("type") == "ping" or "id" not in m:
+                            last_active = time.time()
                             continue
                         mid = int(m.get("id") or 0)
-                        if mid <= cursor:                 # 重连补发里已处理过的,跳过
+                        if mid <= cursor:
                             continue
                         handle_human_message(m)
                         cursor = mid
-                        write_cursor(cursor)              # 只在处理后推进游标
-            log("in", "stream ended → reconnect")
+                        write_cursor(cursor)
+                        last_active = time.time()
+            log("in", "stream ended → reconnecting")
         except Exception as e:
             log("in", f"disconnected ({e}) → retry in {backoff}s")
             time.sleep(backoff)
-            backoff = min(backoff * 2, 15)
+            backoff = min(backoff * 2, 5)
 
 
 def main() -> None:
