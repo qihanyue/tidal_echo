@@ -1824,6 +1824,43 @@
     }
   }
 
+
+  /* --- LLM & Preset Settings Custom CSS --- */
+  .llm-field{ display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .llm-row{ display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .llm-input, .llm-select, .llm-textarea{
+    width: 100%; box-sizing: border-box;
+    padding: 9px 12px; font: inherit; font-size: 13px;
+    color: var(--text); background: rgba(255,255,255,.45);
+    border: 1px solid var(--card-line); border-radius: 9px;
+    outline: none; transition: border-color .18s, background .18s;
+  }
+  [data-theme="harbor"] .llm-input, [data-theme="harbor"] .llm-select, [data-theme="harbor"] .llm-textarea{
+    background: rgba(20,28,38,.5); color: var(--text);
+  }
+  .llm-input:focus, .llm-select:focus, .llm-textarea:focus{
+    border-color: var(--accent); background: rgba(255,255,255,.7);
+  }
+  [data-theme="harbor"] .llm-input:focus, [data-theme="harbor"] .llm-select:focus, [data-theme="harbor"] .llm-textarea:focus{
+    background: rgba(20,28,38,.75);
+  }
+  .llm-textarea{ min-height: 64px; resize: vertical; line-height: 1.45; }
+  .llm-btn{
+    padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 500;
+    cursor: pointer; border: 1px solid var(--card-line);
+    background: var(--card-bg); color: var(--text);
+    display: inline-flex; align-items: center; gap: 5px; transition: all .18s;
+    user-select: none;
+  }
+  .llm-btn:active{ transform: scale(.97); }
+  .llm-btn.primary{
+    background: var(--accent); color: #fff; border-color: var(--accent);
+  }
+  .llm-btn.danger{
+    background: rgba(235,87,87,.12); color: #eb5757; border-color: rgba(235,87,87,.25);
+  }
+  .llm-hint{ font-size: 11px; color: var(--text-faint); margin-top: 3px; line-height: 1.35; }
+  .llm-temp-val{ font-size: 12px; font-weight: 600; color: var(--accent); min-width: 28px; text-align: right; }
 </style>
 </head>
 <body>
@@ -1980,47 +2017,77 @@
         <div class="push-hint" id="brainHint"></div>
       </section>
 
-      <!-- 模型选择（占位 · 假按键，以后接真切换）-->
-      <section class="settings-card">
-        <div class="settings-label">模型选择</div>
-        <div class="segmented" id="modelSeg" role="group" aria-label="模型选择">
-          <button type="button" data-val="Opus 4.6">Opus 4.6</button>
-          <button type="button" data-val="Opus 4.7" class="active">Opus 4.7</button>
-          <button type="button" data-val="Opus 4.8">Opus 4.8</button>
-          <button type="button" data-val="Fable 5">Fable 5</button>
+            <!-- AI 大脑与模型配置 -->
+      <section class="settings-card" id="llmPresetCard">
+        <div class="llm-row">
+          <div class="settings-label">大模型配置与预设</div>
+          <button class="llm-btn primary" id="llmSaveBtn" type="button">保存生效</button>
+        </div>
+
+        <div class="llm-field">
+          <div class="llm-row">
+            <label class="settings-label" for="llmPresetSelect" style="font-size:12px;">当前预设</label>
+            <div style="display:flex; gap:6px;">
+              <button class="llm-btn" id="llmAddPresetBtn" type="button" title="新建预设">+ 新建</button>
+              <button class="llm-btn danger" id="llmDelPresetBtn" type="button" title="删除预设">删除</button>
+            </div>
+          </div>
+          <select class="llm-select" id="llmPresetSelect"></select>
+        </div>
+
+        <div class="llm-field">
+          <label class="settings-label" for="llmPresetName">预设名称</label>
+          <input class="llm-input" id="llmPresetName" type="text" placeholder="例如：谷歌官方 / A反代 / DeepSeek">
+        </div>
+
+        <div class="llm-field">
+          <label class="settings-label" for="llmBaseUrl">API Base URL</label>
+          <input class="llm-input" id="llmBaseUrl" type="text" placeholder="https://generativelanguage.googleapis.com/v1beta/openai">
+          <div class="llm-hint">支持 Gemini 官方、第三方中转及任何兼容 OpenAI /v1 的端点。</div>
+        </div>
+
+        <div class="llm-field">
+          <div class="llm-row">
+            <label class="settings-label" for="llmApiKey">API Key</label>
+            <button class="llm-btn" id="llmToggleKeyBtn" type="button" style="padding:3px 8px; font-size:11px;">显示</button>
+          </div>
+          <input class="llm-input" id="llmApiKey" type="password" placeholder="AIza... / sk-...">
+        </div>
+
+        <div class="llm-field">
+          <div class="llm-row">
+            <label class="settings-label" for="llmModel">模型名称 (Model)</label>
+            <button class="llm-btn" id="llmFetchModelsBtn" type="button">拉取模型列表</button>
+          </div>
+          <input class="llm-input" id="llmModel" type="text" placeholder="例如：gemini-2.5-pro / deepseek-chat" list="llmModelList">
+          <datalist id="llmModelList"></datalist>
+          <div class="llm-hint" id="llmModelHint">可直接填入模型名，或点右上方「拉取」自动获取。</div>
+        </div>
+
+        <div class="llm-field">
+          <div class="llm-row">
+            <label class="settings-label" for="llmTempSlider">温度 (Temperature)</label>
+            <span class="llm-temp-val" id="llmTempVal">0.7</span>
+          </div>
+          <input class="context-slider" id="llmTempSlider" type="range" min="0" max="20" value="7">
         </div>
       </section>
 
-      <!-- effort（占位 · 假按键）-->
-      <section class="settings-card">
-        <div class="settings-label">effort <i class="info-i" title="推理强度：越高越细，耗时越长">i</i></div>
-        <div class="segmented" id="effortSeg" role="group" aria-label="effort">
-          <button type="button" data-val="low">low</button>
-          <button type="button" data-val="medium">medium</button>
-          <button type="button" data-val="high">high</button>
-          <button type="button" data-val="xhigh" class="active">xhigh</button>
-          <button type="button" data-val="max">max</button>
+      <!-- 双人设配置（AI 伴侣 + 用户人设） -->
+      <section class="settings-card" id="personaCard">
+        <div class="settings-label">人设与羁绊设定</div>
+
+        <div class="llm-field">
+          <label class="settings-label" for="personaAi">AI 伴侣设定 (System Persona)</label>
+          <textarea class="llm-textarea" id="personaAi" placeholder="描述 TA 的性格、说话语气、背景身份、与你的亲密程度..."></textarea>
+        </div>
+
+        <div class="llm-field">
+          <label class="settings-label" for="personaUser">用户设定 (User Profile)</label>
+          <textarea class="llm-textarea" id="personaUser" placeholder="描述你自己的名字、性格习惯、你希望 TA 如何称呼你和看待你..."></textarea>
         </div>
       </section>
-
-      <!-- 上下文阈值（占位 · 假按键）-->
-      <section class="settings-card">
-        <div class="settings-label">上下文阈值 <i class="info-i" title="上下文阈值：保留多少 / 满多少触发">i</i></div>
-        <div class="context-slider-wrap">
-          <input class="context-slider" id="contextSlider" type="range" min="0" max="100" value="40" aria-label="上下文阈值">
-          <div class="context-scale"><span>保留60k</span><span>满200k触发</span></div>
-        </div>
-      </section>
-
-      <!-- reset（占位 · 假按键）-->
-      <button class="action-row" id="resetRow" type="button">
-        <span class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5"/></svg></span>
-        <span class="action-name">reset</span>
-        <span class="action-value">点击后开启新窗口</span>
-        <span class="action-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
-      </button>
-
-      <!-- swap（占位 · 假按键）-->
+<!-- swap（占位 · 假按键）-->
       <button class="action-row" id="swapRow" type="button">
         <span class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4 3 8l4 4"/><path d="M3 8h13a4 4 0 0 1 4 4"/><path d="m17 20 4-4-4-4"/><path d="M21 16H8a4 4 0 0 1-4-4"/></svg></span>
         <span class="action-name">swap</span>
@@ -3594,6 +3661,20 @@ async function apiNewerHistory(since, limit = 200){
 async function apiSend(text, attachments){
   if (USE_MOCK) return Mock.send(text);
   const payload = { text: text || "" };
+  try {
+    const _activePreset = getActivePreset ? getActivePreset() : null;
+    if (_activePreset && _activePreset.baseUrl) {
+      payload.llm_config = {
+        base_url: _activePreset.baseUrl,
+        api_key: _activePreset.apiKey,
+        model: _activePreset.model,
+        temperature: _activePreset.temperature
+      };
+    }
+    if (typeof personaState !== "undefined" && (personaState.ai || personaState.user)) {
+      payload.personas = personaState;
+    }
+  } catch(e){}
   const sid = effectiveApiSession();
   if (sid) payload.api_session = sid;
   if (attachments && attachments.length) payload.attachments = attachments;
@@ -5715,6 +5796,276 @@ if ("serviceWorker" in navigator){
 }
 
 init();
+
+
+/* --- LLM Settings & Presets System --- */
+const LLM_STORAGE_KEY = "tidal_echo_llm_presets";
+const PERSONA_STORAGE_KEY = "tidal_echo_personas";
+
+const DEFAULT_PRESETS = [
+  {
+    id: "gemini_official",
+    name: "Gemini 官方",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+    apiKey: "",
+    model: "gemini-2.5-pro",
+    temperature: 0.7
+  },
+  {
+    id: "custom_relay",
+    name: "自定义反代/中转",
+    baseUrl: "",
+    apiKey: "",
+    model: "",
+    temperature: 0.7
+  }
+];
+
+let llmPresetsState = {
+  activeId: "gemini_official",
+  presets: DEFAULT_PRESETS
+};
+
+let personaState = {
+  ai: "",
+  user: ""
+};
+
+function loadLlmState(){
+  try {
+    const raw = localStorage.getItem(LLM_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.presets) && parsed.presets.length > 0) {
+        llmPresetsState = parsed;
+      }
+    }
+  } catch(e){}
+
+  try {
+    const rawP = localStorage.getItem(PERSONA_STORAGE_KEY);
+    if (rawP) {
+      const parsedP = JSON.parse(rawP);
+      if (parsedP) personaState = { ai: parsedP.ai || "", user: parsedP.user || "" };
+    }
+  } catch(e){}
+}
+
+function saveLlmState(){
+  try {
+    localStorage.setItem(LLM_STORAGE_KEY, JSON.stringify(llmPresetsState));
+    localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(personaState));
+  } catch(e){}
+}
+
+function getActivePreset(){
+  let p = llmPresetsState.presets.find(x => x.id === llmPresetsState.activeId);
+  if (!p) {
+    p = llmPresetsState.presets[0] || DEFAULT_PRESETS[0];
+    llmPresetsState.activeId = p.id;
+  }
+  return p;
+}
+
+function syncPresetUi(){
+  const select = document.getElementById("llmPresetSelect");
+  if (!select) return;
+  select.innerHTML = "";
+  llmPresetsState.presets.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p.id;
+    opt.textContent = p.name;
+    opt.selected = (p.id === llmPresetsState.activeId);
+    select.appendChild(opt);
+  });
+
+  const active = getActivePreset();
+  const nameInp = document.getElementById("llmPresetName");
+  const baseInp = document.getElementById("llmBaseUrl");
+  const keyInp = document.getElementById("llmApiKey");
+  const modelInp = document.getElementById("llmModel");
+  const tempSlider = document.getElementById("llmTempSlider");
+  const tempVal = document.getElementById("llmTempVal");
+
+  if (nameInp) nameInp.value = active.name || "";
+  if (baseInp) baseInp.value = active.baseUrl || "";
+  if (keyInp) keyInp.value = active.apiKey || "";
+  if (modelInp) modelInp.value = active.model || "";
+  if (tempSlider && tempVal) {
+    tempSlider.value = Math.round((active.temperature ?? 0.7) * 10);
+    tempVal.textContent = (tempSlider.value / 10).toFixed(1);
+  }
+
+  const personaAi = document.getElementById("personaAi");
+  const personaUser = document.getElementById("personaUser");
+  if (personaAi) personaAi.value = personaState.ai || "";
+  if (personaUser) personaUser.value = personaState.user || "";
+}
+
+function initLlmSettings(){
+  loadLlmState();
+  syncPresetUi();
+
+  const select = document.getElementById("llmPresetSelect");
+  const nameInp = document.getElementById("llmPresetName");
+  const baseInp = document.getElementById("llmBaseUrl");
+  const keyInp = document.getElementById("llmApiKey");
+  const modelInp = document.getElementById("llmModel");
+  const tempSlider = document.getElementById("llmTempSlider");
+  const tempVal = document.getElementById("llmTempVal");
+  const saveBtn = document.getElementById("llmSaveBtn");
+  const addBtn = document.getElementById("llmAddPresetBtn");
+  const delBtn = document.getElementById("llmDelPresetBtn");
+  const toggleKeyBtn = document.getElementById("llmToggleKeyBtn");
+  const fetchBtn = document.getElementById("llmFetchModelsBtn");
+  const modelList = document.getElementById("llmModelList");
+  const modelHint = document.getElementById("llmModelHint");
+  const personaAi = document.getElementById("personaAi");
+  const personaUser = document.getElementById("personaUser");
+
+  if (select) {
+    select.addEventListener("change", () => {
+      llmPresetsState.activeId = select.value;
+      syncPresetUi();
+    });
+  }
+
+  if (tempSlider && tempVal) {
+    tempSlider.addEventListener("input", () => {
+      tempVal.textContent = (tempSlider.value / 10).toFixed(1);
+    });
+  }
+
+  if (toggleKeyBtn && keyInp) {
+    toggleKeyBtn.addEventListener("click", () => {
+      if (keyInp.type === "password") {
+        keyInp.type = "text";
+        toggleKeyBtn.textContent = "隐藏";
+      } else {
+        keyInp.type = "password";
+        toggleKeyBtn.textContent = "显示";
+      }
+    });
+  }
+
+  if (addBtn) {
+    addBtn.addEventListener("click", () => {
+      const newName = prompt("请输入新预设名称:", "新预设");
+      if (!newName || !newName.trim()) return;
+      const newId = "preset_" + Date.now();
+      const current = getActivePreset();
+      llmPresetsState.presets.push({
+        id: newId,
+        name: newName.trim(),
+        baseUrl: current.baseUrl,
+        apiKey: current.apiKey,
+        model: current.model,
+        temperature: current.temperature
+      });
+      llmPresetsState.activeId = newId;
+      saveLlmState();
+      syncPresetUi();
+    });
+  }
+
+  if (delBtn) {
+    delBtn.addEventListener("click", () => {
+      if (llmPresetsState.presets.length <= 1) {
+        alert("至少保留一个预设");
+        return;
+      }
+      if (!confirm(`确定删除预设「${getActivePreset().name}」吗？`)) return;
+      llmPresetsState.presets = llmPresetsState.presets.filter(p => p.id !== llmPresetsState.activeId);
+      llmPresetsState.activeId = llmPresetsState.presets[0].id;
+      saveLlmState();
+      syncPresetUi();
+    });
+  }
+
+  if (saveBtn) {
+    saveBtn.addEventListener("click", async () => {
+      const active = getActivePreset();
+      if (nameInp) active.name = nameInp.value.trim() || "未命名预设";
+      if (baseInp) active.baseUrl = baseInp.value.trim();
+      if (keyInp) active.apiKey = keyInp.value.trim();
+      if (modelInp) active.model = modelInp.value.trim();
+      if (tempSlider) active.temperature = parseFloat((tempSlider.value / 10).toFixed(1));
+
+      if (personaAi) personaState.ai = personaAi.value.trim();
+      if (personaUser) personaState.user = personaUser.value.trim();
+
+      saveLlmState();
+      syncPresetUi();
+
+      // 同步给中转后端 (如果后端支持)
+      try {
+        await fetch(`${API_BASE}/app/config`, {
+          method: "POST",
+          headers: { ...authHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({
+            llm: active,
+            personas: personaState
+          })
+        });
+      } catch(err){}
+
+      const origText = saveBtn.textContent;
+      saveBtn.textContent = "已保存 ✓";
+      saveBtn.style.background = "#27ae60";
+      setTimeout(() => {
+        saveBtn.textContent = origText;
+        saveBtn.style.background = "";
+      }, 1800);
+    });
+  }
+
+  if (fetchBtn) {
+    fetchBtn.addEventListener("click", async () => {
+      const baseUrl = (baseInp ? baseInp.value.trim() : "").replace(/\/+$/, "");
+      const apiKey = keyInp ? keyInp.value.trim() : "";
+      if (!baseUrl) {
+        alert("请先填写 API Base URL");
+        return;
+      }
+      fetchBtn.disabled = true;
+      fetchBtn.textContent = "拉取中...";
+      if (modelHint) modelHint.textContent = "正在向端点查询可用模型...";
+
+      try {
+        // 兼容 /v1/models 或 /models
+        let targetUrl = baseUrl.endsWith("/models") ? baseUrl : `${baseUrl}/models`;
+        const resp = await fetch(targetUrl, {
+          headers: apiKey ? { "Authorization": `Bearer ${apiKey}` } : {}
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        const list = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : (data.models || []));
+        if (modelList) {
+          modelList.innerHTML = "";
+          let count = 0;
+          list.forEach(item => {
+            const mId = typeof item === "string" ? item : (item.id || item.name);
+            if (mId) {
+              const opt = document.createElement("option");
+              opt.value = mId;
+              modelList.appendChild(opt);
+              count++;
+            }
+          });
+          if (modelHint) modelHint.textContent = `成功获取 ${count} 个模型，可在输入框下拉选择！`;
+        }
+      } catch(e) {
+        if (modelHint) modelHint.textContent = `拉取失败: ${e.message}。可直接手填模型名称。`;
+      } finally {
+        fetchBtn.disabled = false;
+        fetchBtn.textContent = "拉取模型列表";
+      }
+    });
+  }
+}
+
+document.addEventListener("DOMContentLoaded", initLlmSettings);
+
 </script>
 
 </body>

@@ -178,8 +178,11 @@ def load_history() -> tuple:
     return msgs[-convo.maxlen:], max_id
 
 
-def build_messages() -> list:
-    return [{"role": "system", "content": PERSONA}] + list(convo)
+def build_messages(custom_persona: str = "", user_persona: str = "") -> list:
+    sys_prompt = custom_persona or PERSONA
+    if user_persona:
+        sys_prompt += f"\n\n[关于与你对话的人类用户的设定]:\n{user_persona}"
+    return [{"role": "system", "content": sys_prompt}] + list(convo)
 
 
 # ---------------------------------------------------------------------------
@@ -228,17 +231,36 @@ def handle_human_message(msg: dict) -> None:
     content = (msg.get("content") or "").strip()
     atts = msg.get("attachments") or []
     if atts:
-        # 图片/附件:如需让多模态模型看图,在这里 GET {RELAY}/uploads/{name}?token={SECRET}
-        # 下载,再按你模型的格式(base64 / image_url)塞进最后一条 user message。
-        # 这个参考实现先降级成一行文字提示,保持简单。
         names = ", ".join(a.get("name") or "file" for a in atts)
         content = (content + "\n" if content else "") + f"(对方发来 {len(atts)} 个附件: {names})"
     if not content:
         return
     log("in", f"#{msg.get('id')}: {content[:60]}")
     convo.append({"role": "user", "content": content})
+
+    # 读取前端动态附带的 LLM 配置与双人设
+    dyn_llm = msg.get("llm_config") or {}
+    dyn_personas = msg.get("personas") or {}
+    custom_ai = dyn_personas.get("ai") or ""
+    custom_user = dyn_personas.get("user") or ""
+
+    active_routes = MODEL_ROUTES
+    temp = TEMPERATURE
+    if dyn_llm.get("base_url") and dyn_llm.get("model"):
+        active_routes = [{
+            "base": dyn_llm["base_url"].rstrip("/"),
+            "key": dyn_llm.get("api_key") or "",
+            "model": dyn_llm["model"]
+        }] + MODEL_ROUTES
+        if "temperature" in dyn_llm:
+            try:
+                temp = float(dyn_llm["temperature"])
+            except (ValueError, TypeError):
+                pass
+
     try:
-        reply = call_llm(build_messages())
+        msgs = build_messages(custom_persona=custom_ai, user_persona=custom_user)
+        reply = call_llm_dynamic(msgs, active_routes, temp)
     except Exception as e:
         log("err", f"生成失败: {e}")
         return
@@ -246,6 +268,36 @@ def handle_human_message(msg: dict) -> None:
         convo.append({"role": "assistant", "content": reply})
         send_reply(reply)
 
+def call_llm_dynamic(messages: list, routes: list, temperature: float) -> str:
+    last_err = None
+    for route in routes:
+        try:
+            body = json.dumps({
+                "model": route["model"],
+                "messages": messages,
+                "temperature": temperature,
+            }, ensure_ascii=False).encode("utf-8")
+            headers = {"Content-Type": "application/json"}
+            if route.get("key"):
+                headers["Authorization"] = f"Bearer {route['key']}"
+            req = urllib.request.Request(
+                route["base"] + "/chat/completions", data=body, method="POST",
+                headers=headers,
+            )
+            with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as r:
+                data = json.loads(r.read().decode("utf-8"))
+            return (data["choices"][0]["message"]["content"] or "").strip()
+        except urllib.error.HTTPError as e:
+            last_err = e
+            if e.code in FALLBACK_CODES:
+                log("llm", f"{route['model']} HTTP {e.code} → 切下一个")
+                continue
+            raise
+        except (urllib.error.URLError, TimeoutError) as e:
+            last_err = e
+            log("llm", f"{route['model']} 连接失败({e}) → 切下一个")
+            continue
+    raise RuntimeError(f"所有模型都失败,最后错误: {last_err}")
 
 # ---------------------------------------------------------------------------
 # SSE 入站流:GET /channel/in(断线自动重连)
