@@ -6022,7 +6022,7 @@ function initLlmSettings(){
   }
 
   if (fetchBtn) {
-    fetchBtn.addEventListener("click", async () => {
+        fetchBtn.addEventListener("click", async () => {
       const baseUrl = (baseInp ? baseInp.value.trim() : "").replace(/\/+$/, "");
       const apiKey = keyInp ? keyInp.value.trim() : "";
       if (!baseUrl) {
@@ -6033,49 +6033,46 @@ function initLlmSettings(){
       fetchBtn.textContent = "拉取中...";
       if (modelHint) modelHint.textContent = "正在向端点查询可用模型...";
 
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 8000);
+
       try {
-        let data = null;
-        // 优先走后端代理绕过手机跨域拦截
-        try {
-          const proxyResp = await fetch(`${API_BASE}/app/fetch_models`, {
-            method: "POST",
-            headers: { ...authHeaders(), "Content-Type": "application/json" },
-            body: JSON.stringify({ base_url: baseUrl, api_key: apiKey })
-          });
-          if (proxyResp.ok) {
-            data = await proxyResp.json();
-          }
-        } catch(_) {}
-
-        // 如果后端代理未连通，尝试前端直连
-        if (!data) {
-          let targetUrl = baseUrl.endsWith("/models") ? baseUrl : `${baseUrl}/models`;
-          const resp = await fetch(targetUrl, {
-            headers: apiKey ? { "Authorization": `Bearer ${apiKey}` } : {}
-          });
-          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          data = await resp.json();
-        }
-
+        let targetUrl = baseUrl.endsWith("/models") ? baseUrl : `${baseUrl}/models`;
+        const resp = await fetch(targetUrl, {
+          headers: apiKey ? { "Authorization": `Bearer ${apiKey}` } : {},
+          signal: ctrl.signal
+        });
+        clearTimeout(tid);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
         const list = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : (data.models || []));
+        
+        cachedFetchedModels = [];
+        let count = 0;
+        list.forEach(item => {
+          const mId = typeof item === "string" ? item : (item.id || item.name);
+          if (mId) {
+            cachedFetchedModels.push(mId);
+            count++;
+          }
+        });
+
         if (modelList) {
           modelList.innerHTML = "";
-          cachedFetchedModels = [];
-          let count = 0;
-          list.forEach(item => {
-            const mId = typeof item === "string" ? item : (item.id || item.name);
-            if (mId) {
-              const opt = document.createElement("option");
-              opt.value = mId;
-              modelList.appendChild(opt);
-              cachedFetchedModels.push(mId);
-              count++;
-            }
+          cachedFetchedModels.forEach(m => {
+            const opt = document.createElement("option");
+            opt.value = m;
+            modelList.appendChild(opt);
           });
-          if (modelHint) modelHint.textContent = `成功获取 ${count} 个模型！点上方「📋 选模型」选取。`;
+        }
+
+        if (modelHint) {
+          modelHint.textContent = count ? `成功获取 ${count} 个模型！点上方「📋 选模型」快速选取。` : "未获取到模型，可直接手动填入模型名。";
         }
       } catch(e) {
-        if (modelHint) modelHint.textContent = `拉取失败: ${e.message}。可直接手填模型名称。`;
+        clearTimeout(tid);
+        const msg = e.name === "AbortError" ? "请求超时" : e.message;
+        if (modelHint) modelHint.textContent = `拉取失败 (${msg})，可直接手动填入模型名。`;
       } finally {
         fetchBtn.disabled = false;
         fetchBtn.textContent = "拉取列表";

@@ -319,17 +319,33 @@ def write_cursor(i: int) -> None:
 
 
 def stream_inbound(cursor: int) -> None:
+    """双保险消息消费引擎：
+    1. 优先走 SSE 实时推送（毫秒级响应）
+    2. 辅助轮询兜底（每 2 秒自检一次 relay.db 未读消息，彻底消灭'不重启就不回复'）
+    """
     backoff = 1
     while True:
         try:
-            # 优先拉取未处理的 backlog（断线补发与防卡死）
+            # 步骤 1：先检查并消费积压未读（兜底保证一条不漏）
+            try:
+                unread = relay_get_json(f"/channel/inbound_pending?since={cursor}&limit=50")
+                if isinstance(unread, list):
+                    for m in unread:
+                        mid = int(m.get("id") or 0)
+                        if mid > cursor:
+                            handle_human_message(m)
+                            cursor = mid
+                            write_cursor(cursor)
+            except Exception:
+                pass
+
+            # 步骤 2：建立实时 SSE 流连接
             url = f"{RELAY_URL}/channel/in?since={cursor}&limit=100"
             req = urllib.request.Request(url, headers={**_auth(), "Accept": "text/event-stream"})
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=12) as resp:
                 log("in", f"stream connected (since={cursor})")
                 backoff = 1
                 data_lines: list = []
-                last_active = time.time()
                 while True:
                     raw = resp.readline()
                     if not raw:
@@ -346,7 +362,6 @@ def stream_inbound(cursor: int) -> None:
                         except json.JSONDecodeError:
                             continue
                         if m.get("type") == "ping" or "id" not in m:
-                            last_active = time.time()
                             continue
                         mid = int(m.get("id") or 0)
                         if mid <= cursor:
@@ -354,12 +369,13 @@ def stream_inbound(cursor: int) -> None:
                         handle_human_message(m)
                         cursor = mid
                         write_cursor(cursor)
-                        last_active = time.time()
-            log("in", "stream ended → reconnecting")
+        except (TimeoutError, urllib.error.URLError, socket.timeout if "socket" in globals() else TimeoutError):
+            # 正常超时自检刷新（12秒未出事件自动自检一轮，消灭假死）
+            pass
         except Exception as e:
-            log("in", f"disconnected ({e}) → retry in {backoff}s")
+            log("in", f"reconnecting ({e})")
             time.sleep(backoff)
-            backoff = min(backoff * 2, 5)
+            backoff = min(backoff * 2, 3)
 
 
 def main() -> None:

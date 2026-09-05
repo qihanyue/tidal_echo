@@ -653,6 +653,11 @@ async def healthz():
 
 # ---- AI side ---------------------------------------------------------------
 
+@app.get("/channel/inbound_pending")
+async def channel_inbound_pending(request: Request, since: int = 0, limit: int = 50):
+    check_auth(request)
+    return [plugin_payload(m) for m in inbound_history(since, min(limit, 100))]
+
 @app.get("/channel/in")
 async def channel_in(request: Request, since: int = 0, limit: int = 100):
     """SSE stream the plugin holds open. The human's messages get pushed down here."""
