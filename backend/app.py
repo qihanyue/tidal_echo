@@ -340,13 +340,18 @@ def app_payload(msg: dict) -> dict:
 
 def plugin_payload(msg: dict) -> dict:
     meta = msg.get("meta") or {}
-    return {
+    p = {
         "id": msg["id"],
         "content": msg["text"],
         "user": meta.get("user") or "human",
         "ts": msg["ts"],
         "attachments": meta.get("attachments") or [],
     }
+    if meta.get("llm_config"):
+        p["llm_config"] = meta.get("llm_config")
+    if meta.get("personas"):
+        p["personas"] = meta.get("personas")
+    return p
 
 
 def brain_target() -> str:
@@ -711,6 +716,10 @@ async def app_send(request: Request):
     meta = {"user": "human", "attachments": attachments}
     if api_session:
         meta["api_session"] = api_session
+    if body.get("llm_config"):
+        meta["llm_config"] = body.get("llm_config")
+    if body.get("personas"):
+        meta["personas"] = body.get("personas")
     msg = save_message("in", "user", text, meta)
     # Route to exactly one AI body. "desktop" keeps the Claude Code channel;
     # "loop" calls the optional server-side API loop.
