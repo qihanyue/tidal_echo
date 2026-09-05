@@ -329,7 +329,10 @@ def stream_inbound(cursor: int) -> None:
                 log("in", f"stream connected (since={cursor})")
                 backoff = 1
                 data_lines: list = []
-                for raw in resp:
+                while True:
+                    raw = resp.readline()
+                    if not raw:
+                        break
                     line = raw.decode("utf-8", "replace").rstrip("\r\n")
                     if line.startswith("data:"):
                         data_lines.append(line[5:].lstrip())
