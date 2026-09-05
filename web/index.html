@@ -6034,16 +6034,33 @@ function initLlmSettings(){
       if (modelHint) modelHint.textContent = "正在向端点查询可用模型...";
 
       try {
-        // 兼容 /v1/models 或 /models
-        let targetUrl = baseUrl.endsWith("/models") ? baseUrl : `${baseUrl}/models`;
-        const resp = await fetch(targetUrl, {
-          headers: apiKey ? { "Authorization": `Bearer ${apiKey}` } : {}
-        });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json();
+        let data = null;
+        // 优先走后端代理绕过手机跨域拦截
+        try {
+          const proxyResp = await fetch(`${API_BASE}/app/fetch_models`, {
+            method: "POST",
+            headers: { ...authHeaders(), "Content-Type": "application/json" },
+            body: JSON.stringify({ base_url: baseUrl, api_key: apiKey })
+          });
+          if (proxyResp.ok) {
+            data = await proxyResp.json();
+          }
+        } catch(_) {}
+
+        // 如果后端代理未连通，尝试前端直连
+        if (!data) {
+          let targetUrl = baseUrl.endsWith("/models") ? baseUrl : `${baseUrl}/models`;
+          const resp = await fetch(targetUrl, {
+            headers: apiKey ? { "Authorization": `Bearer ${apiKey}` } : {}
+          });
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          data = await resp.json();
+        }
+
         const list = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : (data.models || []));
         if (modelList) {
           modelList.innerHTML = "";
+          cachedFetchedModels = [];
           let count = 0;
           list.forEach(item => {
             const mId = typeof item === "string" ? item : (item.id || item.name);
@@ -6051,16 +6068,17 @@ function initLlmSettings(){
               const opt = document.createElement("option");
               opt.value = mId;
               modelList.appendChild(opt);
+              cachedFetchedModels.push(mId);
               count++;
             }
           });
-          if (modelHint) modelHint.textContent = `成功获取 ${count} 个模型，可在输入框下拉选择！`;
+          if (modelHint) modelHint.textContent = `成功获取 ${count} 个模型！点上方「📋 选模型」选取。`;
         }
       } catch(e) {
         if (modelHint) modelHint.textContent = `拉取失败: ${e.message}。可直接手填模型名称。`;
       } finally {
         fetchBtn.disabled = false;
-        fetchBtn.textContent = "拉取模型列表";
+        fetchBtn.textContent = "拉取列表";
       }
     });
   }

@@ -703,6 +703,31 @@ async def channel_out(request: Request):
 
 # ---- human side ------------------------------------------------------------
 
+
+@app.post("/app/fetch_models")
+async def fetch_models_proxy(request: Request):
+    """Proxy /models request from frontend to bypass browser CORS."""
+    check_auth(request)
+    body = await request.json()
+    base_url = (body.get("base_url") or "").rstrip("/")
+    api_key = body.get("api_key") or ""
+    if not base_url:
+        raise HTTPException(status_code=400, detail="base_url required")
+    target_url = base_url if base_url.endswith("/models") else f"{base_url}/models"
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    req = urllib.request.Request(target_url, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return data
+    except urllib.error.HTTPError as exc:
+        raise HTTPException(status_code=exc.code, detail=f"HTTP {exc.code}")
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+
 @app.post("/app/send")
 async def app_send(request: Request):
     """Human types in the PWA. Persist, push to the AI (plugin), echo to other PWA tabs."""
