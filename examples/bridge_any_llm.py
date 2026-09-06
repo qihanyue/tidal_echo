@@ -214,7 +214,13 @@ def call_llm(messages: list) -> str:
         try:
             return _one_call(route, messages)
         except urllib.error.HTTPError as e:
-            last_err = e
+            err_body = ""
+            try:
+                err_body = e.read().decode("utf-8")
+            except Exception:
+                pass
+            log("err", f"{route['model']} HTTP {e.code}: {err_body[:200]}")
+            last_err = f"{e} - {err_body[:200]}"
             if e.code in FALLBACK_CODES:
                 log("llm", f"{route['model']} HTTP {e.code} → 切下一个")
                 continue
@@ -307,8 +313,7 @@ def handle_human_message(msg: dict) -> None:
                 other_names.append(name)
 
     if other_names:
-        text_content = (text_content + "
-" if text_content else "") + f"(对方发来附件: {', '.join(other_names)})"
+        text_content = (text_content + "\n" if text_content else "") + f"(对方发来附件: {', '.join(other_names)})"
 
     if not text_content and not image_parts:
         return
@@ -377,7 +382,13 @@ def call_llm_dynamic(messages: list, routes: list, temperature: float) -> str:
                 data = json.loads(r.read().decode("utf-8"))
             return (data["choices"][0]["message"]["content"] or "").strip()
         except urllib.error.HTTPError as e:
-            last_err = e
+            err_body = ""
+            try:
+                err_body = e.read().decode("utf-8")
+            except Exception:
+                pass
+            log("err", f"{route['model']} HTTP {e.code}: {err_body[:200]}")
+            last_err = f"{e} - {err_body[:200]}"
             if e.code in FALLBACK_CODES:
                 log("llm", f"{route['model']} HTTP {e.code} → 切下一个")
                 continue
