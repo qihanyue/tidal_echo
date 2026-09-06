@@ -821,6 +821,7 @@ async def app_upload(request: Request, name: str = "file"):
     return save_upload_bytes(data, name, mime, "att")
 
 
+@app.get("/relay/uploads/{name}")
 @app.get("/uploads/{name}")
 async def uploads(request: Request, name: str):
     check_auth(request)

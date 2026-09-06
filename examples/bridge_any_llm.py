@@ -178,11 +178,14 @@ def load_history() -> tuple:
     return msgs[-convo.maxlen:], max_id
 
 
-def build_messages(custom_persona: str = "", user_persona: str = "") -> list:
+def build_messages(custom_persona: str = "", user_persona: str = "", limit: int = 0) -> list:
     sys_prompt = custom_persona or PERSONA
     if user_persona:
         sys_prompt += f"\n\n[关于与你对话的人类用户的设定]:\n{user_persona}"
-    return [{"role": "system", "content": sys_prompt}] + list(convo)
+    history = list(convo)
+    if limit > 0 and len(history) > limit:
+        history = history[-limit:]
+    return [{"role": "system", "content": sys_prompt}] + history
 
 
 # ---------------------------------------------------------------------------
@@ -229,22 +232,58 @@ def call_llm(messages: list) -> str:
 
 import base64
 
+def _guess_mime(filename: str, default: str = "image/jpeg") -> str:
+    fn = filename.lower()
+    if fn.endswith(".png"): return "image/png"
+    if fn.endswith(".webp"): return "image/webp"
+    if fn.endswith(".gif"): return "image/gif"
+    if fn.endswith(".svg"): return "image/svg+xml"
+    if fn.endswith(".jpg") or fn.endswith(".jpeg"): return "image/jpeg"
+    return default
+
 def _download_attachment_as_data_url(att: dict) -> str | None:
     url = att.get("url") or ""
     if not url:
         return None
-    # 构造完整下载地址
-    full_url = f"{RELAY_URL}{url}" if url.startswith("/") else url
+
+    # 1. 优先尝试直接从本地文件读取（bridge 与 relay 在同一台服务器）
+    filename = url.split("/uploads/")[-1].split("?")[0] if "/uploads/" in url else ""
+    if filename:
+        for possible_dir in [
+            Path("/root/companion-relay/uploads"),
+            Path("/tmp/tidal_echo/uploads"),
+            Path(__file__).resolve().parent.parent / "backend" / "uploads",
+            Path.cwd() / "uploads",
+            Path.cwd().parent / "companion-relay" / "uploads",
+        ]:
+            local_path = possible_dir / filename
+            if local_path.exists() and local_path.is_file():
+                try:
+                    data = local_path.read_bytes()
+                    mime = att.get("mime") or _guess_mime(filename)
+                    b64 = base64.b64encode(data).decode("ascii")
+                    log("att", f"直接从本地读取图片: {filename} ({len(data)} 字节)")
+                    return f"data:{mime};base64,{b64}"
+                except Exception as e:
+                    log("err", f"读取本地图片文件失败: {e}")
+
+    # 2. 接口下载：去除可能多余的 /relay 前缀，直连 127.0.0.1:3011
+    clean_path = url
+    if clean_path.startswith("/relay/"):
+        clean_path = clean_path[len("/relay"):] # 转换为 /uploads/xxx
+    full_url = f"{RELAY_URL}{clean_path}" if clean_path.startswith("/") else clean_path
     token_url = f"{full_url}?token={SECRET}" if "?" not in full_url else f"{full_url}&token={SECRET}"
+
     try:
         req = urllib.request.Request(token_url, headers=_auth())
         with urllib.request.urlopen(req, timeout=15) as r:
             data = r.read()
-            mime = att.get("mime") or "image/jpeg"
+            mime = att.get("mime") or r.headers.get_content_type() or _guess_mime(clean_path)
             b64 = base64.b64encode(data).decode("ascii")
+            log("att", f"HTTP下载图片成功: {clean_path} ({len(data)} 字节)")
             return f"data:{mime};base64,{b64}"
     except Exception as e:
-        log("err", f"下载附件失败 ({att.get('name')}): {e}")
+        log("err", f"下载附件失败 ({att.get('name')} | {token_url}): {e}")
         return None
 
 def handle_human_message(msg: dict) -> None:
@@ -257,7 +296,8 @@ def handle_human_message(msg: dict) -> None:
         for a in atts:
             mime = (a.get("mime") or "").lower()
             name = a.get("name") or "file"
-            if mime.startswith("image/"):
+            is_img = mime.startswith("image/") or any(name.lower().endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"])
+            if is_img:
                 data_url = _download_attachment_as_data_url(a)
                 if data_url:
                     image_parts.append({"type": "image_url", "image_url": {"url": data_url}})
@@ -267,22 +307,11 @@ def handle_human_message(msg: dict) -> None:
                 other_names.append(name)
 
     if other_names:
-        text_content = (text_content + "\n" if text_content else "") + f"(对方发来附件: {', '.join(other_names)})"
+        text_content = (text_content + "
+" if text_content else "") + f"(对方发来附件: {', '.join(other_names)})"
 
     if not text_content and not image_parts:
         return
-
-    log("in", f"#{msg.get('id')}: {text_content[:60] if text_content else '[图片]'}")
-
-    # 支持 OpenAI 视觉格式：纯文本时存 str，含图片时存 list
-    if image_parts:
-        parts = []
-        if text_content:
-            parts.append({"type": "text", "text": text_content})
-        parts.extend(image_parts)
-        convo.append({"role": "user", "content": parts})
-    else:
-        convo.append({"role": "user", "content": text_content})
 
     # 读取前端动态附带的 LLM 配置、双人设与上下文轮数
     dyn_llm = msg.get("llm_config") or {}
@@ -291,14 +320,17 @@ def handle_human_message(msg: dict) -> None:
     custom_user = dyn_personas.get("user") or ""
     history_n = int(dyn_llm.get("history_n") or HISTORY_N)
 
-    # 动态根据当前设定的上下文轮数准备近期对话
-    try:
-        fresh_ctx, _ = load_history(n=history_n)
-        if fresh_ctx:
-            convo.clear()
-            convo.extend(fresh_ctx)
-    except Exception:
-        pass
+    # 规范追加到上下文：含图片则传入 OpenAI 视觉格式
+    if image_parts:
+        parts = []
+        prompt_text = text_content if text_content else "（这是一张我发送给你的图片，请查看图片内容并结合上下文回复我）"
+        parts.append({"type": "text", "text": prompt_text})
+        parts.extend(image_parts)
+        convo.append({"role": "user", "content": parts})
+        log("in", f"#{msg.get('id')}: [包含 {len(image_parts)} 张图片] {text_content[:40]}")
+    else:
+        convo.append({"role": "user", "content": text_content})
+        log("in", f"#{msg.get('id')}: {text_content[:60]}")
 
     active_routes = MODEL_ROUTES
     temp = TEMPERATURE
@@ -315,7 +347,8 @@ def handle_human_message(msg: dict) -> None:
                 pass
 
     try:
-        msgs = build_messages(custom_persona=custom_ai, user_persona=custom_user)
+        limit = max(history_n * 2, 8)
+        msgs = build_messages(custom_persona=custom_ai, user_persona=custom_user, limit=limit)
         reply = call_llm_dynamic(msgs, active_routes, temp)
     except Exception as e:
         log("err", f"生成失败: {e}")
