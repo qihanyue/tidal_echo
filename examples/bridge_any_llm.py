@@ -227,16 +227,62 @@ def call_llm(messages: list) -> str:
 # 一条消息的处理
 # ---------------------------------------------------------------------------
 
+import base64
+
+def _download_attachment_as_data_url(att: dict) -> str | None:
+    url = att.get("url") or ""
+    if not url:
+        return None
+    # 构造完整下载地址
+    full_url = f"{RELAY_URL}{url}" if url.startswith("/") else url
+    token_url = f"{full_url}?token={SECRET}" if "?" not in full_url else f"{full_url}&token={SECRET}"
+    try:
+        req = urllib.request.Request(token_url, headers=_auth())
+        with urllib.request.urlopen(req, timeout=15) as r:
+            data = r.read()
+            mime = att.get("mime") or "image/jpeg"
+            b64 = base64.b64encode(data).decode("ascii")
+            return f"data:{mime};base64,{b64}"
+    except Exception as e:
+        log("err", f"下载附件失败 ({att.get('name')}): {e}")
+        return None
+
 def handle_human_message(msg: dict) -> None:
-    content = (msg.get("content") or "").strip()
+    text_content = (msg.get("content") or "").strip()
     atts = msg.get("attachments") or []
+    image_parts = []
+    other_names = []
+
     if atts:
-        names = ", ".join(a.get("name") or "file" for a in atts)
-        content = (content + "\n" if content else "") + f"(对方发来 {len(atts)} 个附件: {names})"
-    if not content:
+        for a in atts:
+            mime = (a.get("mime") or "").lower()
+            name = a.get("name") or "file"
+            if mime.startswith("image/"):
+                data_url = _download_attachment_as_data_url(a)
+                if data_url:
+                    image_parts.append({"type": "image_url", "image_url": {"url": data_url}})
+                else:
+                    other_names.append(name)
+            else:
+                other_names.append(name)
+
+    if other_names:
+        text_content = (text_content + "\n" if text_content else "") + f"(对方发来附件: {', '.join(other_names)})"
+
+    if not text_content and not image_parts:
         return
-    log("in", f"#{msg.get('id')}: {content[:60]}")
-    convo.append({"role": "user", "content": content})
+
+    log("in", f"#{msg.get('id')}: {text_content[:60] if text_content else '[图片]'}")
+
+    # 支持 OpenAI 视觉格式：纯文本时存 str，含图片时存 list
+    if image_parts:
+        parts = []
+        if text_content:
+            parts.append({"type": "text", "text": text_content})
+        parts.extend(image_parts)
+        convo.append({"role": "user", "content": parts})
+    else:
+        convo.append({"role": "user", "content": text_content})
 
     # 读取前端动态附带的 LLM 配置、双人设与上下文轮数
     dyn_llm = msg.get("llm_config") or {}
@@ -370,6 +416,12 @@ def stream_inbound(cursor: int) -> None:
                         try:
                             m = json.loads(payload)
                         except json.JSONDecodeError:
+                            continue
+                        if m.get("type") == "clear_history":
+                            convo.clear()
+                            cursor = 0
+                            write_cursor(0)
+                            log("in", "收到清空历史指令，已重置记忆")
                             continue
                         if m.get("type") == "ping" or "id" not in m:
                             continue

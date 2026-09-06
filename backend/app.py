@@ -756,6 +756,28 @@ async def app_trigger_reply(request: Request):
     await broadcast(app_subs, {"type": "typing", "active": True})
     return {"ok": True, "triggered_id": msg["id"]}
 
+@app.delete("/app/messages/{msg_id}")
+async def delete_single_message(request: Request, msg_id: int):
+    """Delete a single message from server database."""
+    check_auth(request)
+    with db() as conn:
+        conn.execute("DELETE FROM messages WHERE id = ?", (msg_id,))
+        conn.commit()
+    return {"ok": True, "deleted_id": msg_id}
+
+
+@app.post("/app/clear_history")
+async def clear_all_history(request: Request):
+    """Clear all messages from server database and reset cursor."""
+    check_auth(request)
+    with db() as conn:
+        conn.execute("DELETE FROM messages")
+        conn.commit()
+    # Also notify connected plugin and app tabs
+    await broadcast(app_subs, {"type": "clear_history"})
+    await broadcast(plugin_subs, {"type": "clear_history"})
+    return {"ok": True, "cleared": True}
+
 @app.post("/app/send")
 async def app_send(request: Request):
     """Human types in the PWA. Persist, push to the AI (plugin), echo to other PWA tabs."""
