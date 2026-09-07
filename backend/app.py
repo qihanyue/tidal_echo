@@ -207,7 +207,10 @@ def history_for_session(session_id: str, since: int, limit: int) -> list:
 def inbound_history(since: int, limit: int) -> list:
     with db() as conn:
         rows = conn.execute(
-            "SELECT * FROM messages WHERE id > ? AND direction = 'in' ORDER BY id ASC LIMIT ?",
+            "SELECT * FROM messages "
+            "WHERE id > ? AND direction = 'in' "
+            "AND (json_extract(meta, '$.triggered') IS NULL OR json_extract(meta, '$.triggered') != 0) "
+            "ORDER BY id ASC LIMIT ?",
             (since, limit),
         ).fetchall()
     return rows_to_messages(rows)
@@ -735,26 +738,67 @@ async def fetch_models_proxy(request: Request):
 
 @app.post("/app/trigger_reply")
 async def app_trigger_reply(request: Request):
-    """Explicitly trigger AI response for the latest pending user message."""
+    """Explicitly trigger AI response for pending user message(s)."""
     check_auth(request)
     body = await request.json()
-    latest = inbound_history(0, 1)
-    if not latest:
+
+    # 1. 查找上一次 AI 回复之后的所有未回复人类消息
+    with db() as conn:
+        last_ai_row = conn.execute(
+            "SELECT MAX(id) as max_id FROM messages WHERE direction = 'out'"
+        ).fetchone()
+        last_ai_id = last_ai_row["max_id"] if (last_ai_row and last_ai_row["max_id"]) else 0
+        rows = conn.execute(
+            "SELECT * FROM messages WHERE id > ? AND direction = 'in' ORDER BY id ASC",
+            (last_ai_id,)
+        ).fetchall()
+
+    pending_msgs = rows_to_messages(rows)
+
+    # 兜底：如果没找到（比如刚清空历史，或者只有人类消息），则取最新一条人类消息
+    if not pending_msgs:
+        with db() as conn:
+            row = conn.execute(
+                "SELECT * FROM messages WHERE direction = 'in' ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+            if row:
+                pending_msgs = rows_to_messages([row])
+
+    if not pending_msgs:
         raise HTTPException(status_code=400, detail="no human message to reply to")
-    msg = latest[-1]
-    meta = msg.get("meta") or {}
+
+    # 2. 将这些待回复的消息标记为 triggered = True，防止重复或状态混乱
+    msg_ids = [m["id"] for m in pending_msgs]
+    with db() as conn:
+        for mid in msg_ids:
+            row = conn.execute("SELECT meta FROM messages WHERE id = ?", (mid,)).fetchone()
+            if row:
+                m_meta = json.loads(row["meta"] or "{}")
+                m_meta["triggered"] = True
+                conn.execute(
+                    "UPDATE messages SET meta = ? WHERE id = ?",
+                    (json.dumps(m_meta, ensure_ascii=False), mid)
+                )
+        conn.commit()
+
+    # 3. 组装 bundle 打包负载广播给 bridge (AI 侧)
+    bundle = {
+        "type": "bundle",
+        "id": pending_msgs[-1]["id"],
+        "content": "\n".join(m["text"] for m in pending_msgs if m.get("text")),
+        "items": [plugin_payload(m) for m in pending_msgs],
+    }
     if body.get("llm_config"):
-        meta["llm_config"] = body.get("llm_config")
+        bundle["llm_config"] = body.get("llm_config")
     if body.get("personas"):
-        meta["personas"] = body.get("personas")
-    msg["meta"] = meta
+        bundle["personas"] = body.get("personas")
 
     if brain_target() == "loop":
-        asyncio.create_task(forward_to_loop(msg))
+        asyncio.create_task(forward_to_loop(pending_msgs[-1]))
     else:
-        await broadcast(plugin_subs, plugin_payload(msg))
+        await broadcast(plugin_subs, bundle)
     await broadcast(app_subs, {"type": "typing", "active": True})
-    return {"ok": True, "triggered_id": msg["id"]}
+    return {"ok": True, "triggered_ids": msg_ids}
 
 @app.delete("/app/messages/{msg_id}")
 async def delete_single_message(request: Request, msg_id: int):
@@ -788,7 +832,8 @@ async def app_send(request: Request):
     api_session = str(body.get("api_session") or body.get("session_id") or "").strip()
     if not text and not attachments:
         raise HTTPException(status_code=400, detail="empty text")
-    meta = {"user": "human", "attachments": attachments}
+    trigger = body.get("trigger", True)
+    meta = {"user": "human", "attachments": attachments, "triggered": trigger}
     if api_session:
         meta["api_session"] = api_session
     if body.get("llm_config"):
@@ -798,7 +843,6 @@ async def app_send(request: Request):
     msg = save_message("in", "user", text, meta)
     # echo to the PWA so the sender's bubble + other tabs stay in sync
     await broadcast(app_subs, app_payload(msg))
-    trigger = body.get("trigger", True)
     if trigger:
         # Route to exactly one AI body. "desktop" keeps the Claude Code channel;
         # "loop" calls the optional server-side API loop.

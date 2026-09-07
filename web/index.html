@@ -8070,7 +8070,7 @@ function initLlmSettings() {
         manualBtn.addEventListener("click", async () => {
           manualBtn.disabled = true;
           const origText = manualBtn.innerHTML;
-          manualBtn.innerHTML = "<span>⏳ 正在思考...</span>";
+          manualBtn.innerHTML = "<span>接收中...</span>";
           try {
             const _activePreset = getActivePreset ? getActivePreset() : null;
             const bodyData = {

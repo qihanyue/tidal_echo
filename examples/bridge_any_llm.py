@@ -29,9 +29,11 @@ vLLM …)当「AI 大脑」。前端 PWA 和 relay 后端原样不动。
 
 from __future__ import annotations  # 让类型注解不在运行时求值,兼容 Python 3.7+
 
+import base64
 import collections
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -151,12 +153,21 @@ def send_reply(text: str) -> None:
 
 def _row_to_msg(m: dict):
     """把一条 relay 历史/消息转成 OpenAI message;不该进上下文的返回 None。"""
+    meta = m.get("meta") or {}
     text = (m.get("text") or "").strip()
-    if not text or m.get("kind") == "call":         # 跳过通话开始/结束这类系统事件
+    atts = meta.get("attachments") or []
+    if m.get("kind") == "call":         # 跳过通话开始/结束这类系统事件
         return None
     if m.get("from") == "human":
-        return {"role": "user", "content": text}     # 含语音转写(🎤 …)
+        if not text and not atts:
+            return None
+        prompt_text = text
+        if atts and not text:
+            prompt_text = f"（发送了附件: {', '.join(a.get('name', '图片') for a in atts)}）"
+        return {"role": "user", "content": prompt_text}     # 含语音转写(🎤 …)
     if m.get("from") == "ai" and m.get("kind") == "reply":
+        if not text:
+            return None
         return {"role": "assistant", "content": text}  # 跳过 thinking/act 等中间态
     return None
 
@@ -178,14 +189,45 @@ def load_history() -> tuple:
     return msgs[-convo.maxlen:], max_id
 
 
+def _merge_consecutive_roles(msgs: list) -> list:
+    """合并连续同角色消息，防止严格 API (如 Claude/Gemini 代理) 报 400 错误。"""
+    if not msgs:
+        return []
+    merged = []
+    for m in msgs:
+        role = m["role"]
+        content = m["content"]
+        if role == "system":
+            merged.append(dict(m))
+            continue
+        if merged and merged[-1]["role"] == role:
+            prev = merged[-1]
+            if isinstance(prev["content"], str) and isinstance(content, str):
+                prev["content"] += f"\n{content}"
+            else:
+                prev_parts = prev["content"] if isinstance(prev["content"], list) else [{"type": "text", "text": str(prev["content"])}]
+                curr_parts = content if isinstance(content, list) else [{"type": "text", "text": str(content)}]
+                prev["content"] = prev_parts + curr_parts
+        else:
+            merged.append({"role": role, "content": content})
+    return merged
+
+
 def build_messages(custom_persona: str = "", user_persona: str = "", limit: int = 0) -> list:
     sys_prompt = custom_persona or PERSONA
     if user_persona:
         sys_prompt += f"\n\n[关于与你对话的人类用户的设定]:\n{user_persona}"
+    sys_prompt += (
+        "\n\n[聊天格式规则]:\n"
+        "你可以像真人使用即时通讯软件（如微信）一样连续发送多条短消息。"
+        "如果想分多条气泡发送，请在每条短消息之间加上 [分段] 标记（例如：好呀！[分段]这是你在哪拍的照片呀？）。"
+        "不要总是把所有话堆在一个长段落里。"
+    )
     history = list(convo)
     if limit > 0 and len(history) > limit:
         history = history[-limit:]
-    return [{"role": "system", "content": sys_prompt}] + history
+    raw_msgs = [{"role": "system", "content": sys_prompt}] + history
+    return _merge_consecutive_roles(raw_msgs)
 
 
 # ---------------------------------------------------------------------------
@@ -292,50 +334,62 @@ def _download_attachment_as_data_url(att: dict) -> str | None:
         log("err", f"下载附件失败 ({att.get('name')} | {token_url}): {e}")
         return None
 
-def handle_human_message(msg: dict) -> None:
-    text_content = (msg.get("content") or "").strip()
-    atts = msg.get("attachments") or []
+def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> None:
+    """处理一批到达的人类消息（无论是单条还是多条打包），聚合为一个上下文轮次，并支持 [分段] 拆分成独立气泡。"""
+    if not items:
+        return
+
+    text_pieces = []
     image_parts = []
     other_names = []
 
-    if atts:
-        for a in atts:
-            mime = (a.get("mime") or "").lower()
-            name = a.get("name") or "file"
-            is_img = mime.startswith("image/") or any(name.lower().endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"])
-            if is_img:
-                data_url = _download_attachment_as_data_url(a)
-                if data_url:
-                    image_parts.append({"type": "image_url", "image_url": {"url": data_url}})
+    for msg in items:
+        text = (msg.get("content") or msg.get("text") or "").strip()
+        atts = msg.get("attachments") or []
+        if atts:
+            for a in atts:
+                mime = (a.get("mime") or "").lower()
+                name = a.get("name") or "file"
+                is_img = mime.startswith("image/") or any(name.lower().endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"])
+                if is_img:
+                    data_url = _download_attachment_as_data_url(a)
+                    if data_url:
+                        image_parts.append({"type": "image_url", "image_url": {"url": data_url}})
+                    else:
+                        other_names.append(name)
                 else:
                     other_names.append(name)
-            else:
-                other_names.append(name)
+
+        if text:
+            text_pieces.append(text)
 
     if other_names:
-        text_content = (text_content + "\n" if text_content else "") + f"(对方发来附件: {', '.join(other_names)})"
+        text_pieces.append(f"(对方发来附件: {', '.join(other_names)})")
 
-    if not text_content and not image_parts:
+    if not text_pieces and not image_parts:
         return
 
-    # 读取前端动态附带的 LLM 配置、双人设与上下文轮数
-    dyn_llm = msg.get("llm_config") or {}
-    dyn_personas = msg.get("personas") or {}
-    custom_ai = dyn_personas.get("ai") or ""
-    custom_user = dyn_personas.get("user") or ""
-    history_n = int(dyn_llm.get("history_n") or HISTORY_N)
+    combined_text = "\n".join(text_pieces)
 
     # 规范追加到上下文：含图片则传入 OpenAI 视觉格式
     if image_parts:
         parts = []
-        prompt_text = text_content if text_content else "（这是一张我发送给你的图片，请查看图片内容并结合上下文回复我）"
+        prompt_text = combined_text if combined_text else "（这是一张我发送给你的图片，请查看图片内容并结合上下文回复我）"
         parts.append({"type": "text", "text": prompt_text})
         parts.extend(image_parts)
         convo.append({"role": "user", "content": parts})
-        log("in", f"#{msg.get('id')}: [包含 {len(image_parts)} 张图片] {text_content[:40]}")
+        log("in", f"收到打包消息 ({len(items)} 条, 含 {len(image_parts)} 张图片): {combined_text[:40]}")
     else:
-        convo.append({"role": "user", "content": text_content})
-        log("in", f"#{msg.get('id')}: {text_content[:60]}")
+        convo.append({"role": "user", "content": combined_text})
+        log("in", f"收到打包消息 ({len(items)} 条): {combined_text[:60]}")
+
+    # 读取前端动态附带的 LLM 配置、双人设与上下文轮数
+    latest_item = items[-1]
+    dyn_llm = (bundle_meta or {}).get("llm_config") or latest_item.get("llm_config") or {}
+    dyn_personas = (bundle_meta or {}).get("personas") or latest_item.get("personas") or {}
+    custom_ai = dyn_personas.get("ai") or ""
+    custom_user = dyn_personas.get("user") or ""
+    history_n = int(dyn_llm.get("history_n") or HISTORY_N)
 
     active_routes = MODEL_ROUTES
     temp = TEMPERATURE
@@ -358,9 +412,20 @@ def handle_human_message(msg: dict) -> None:
     except Exception as e:
         log("err", f"生成失败: {e}")
         return
+
     if reply:
-        convo.append({"role": "assistant", "content": reply})
-        send_reply(reply)
+        # 按 [分段] 或 [split] 拆分成多个气泡
+        pattern = r'\s*(?:\[分段\]|\[split\])\s*'
+        bubbles = [b.strip() for b in re.split(pattern, reply) if b.strip()]
+        if not bubbles:
+            bubbles = [reply.strip()]
+
+        for i, bubble in enumerate(bubbles):
+            convo.append({"role": "assistant", "content": bubble})
+            send_reply(bubble)
+            if i < len(bubbles) - 1:
+                time.sleep(0.6)  # 气泡之间停顿 0.6 秒，模拟真人发送节奏
+
 
 def call_llm_dynamic(messages: list, routes: list, temperature: float) -> str:
     last_err = None
@@ -421,7 +486,7 @@ def write_cursor(i: int) -> None:
 def stream_inbound(cursor: int) -> None:
     """双保险消息消费引擎：
     1. 优先走 SSE 实时推送（毫秒级响应）
-    2. 辅助轮询兜底（每 2 秒自检一次 relay.db 未读消息，彻底消灭'不重启就不回复'）
+    2. 辅助轮询兜底（每 12 秒自检一次 relay.db 未读消息，兜底防丢）
     """
     backoff = 1
     while True:
@@ -429,13 +494,12 @@ def stream_inbound(cursor: int) -> None:
             # 步骤 1：先检查并消费积压未读（兜底保证一条不漏）
             try:
                 unread = relay_get_json(f"/channel/inbound_pending?since={cursor}&limit=50")
-                if isinstance(unread, list):
-                    for m in unread:
-                        mid = int(m.get("id") or 0)
-                        if mid > cursor:
-                            handle_human_message(m)
-                            cursor = mid
-                            write_cursor(cursor)
+                if isinstance(unread, list) and unread:
+                    valid_items = [m for m in unread if int(m.get("id") or 0) > cursor]
+                    if valid_items:
+                        handle_incoming_messages(valid_items)
+                        cursor = max(int(m.get("id") or 0) for m in valid_items)
+                        write_cursor(cursor)
             except Exception:
                 pass
 
@@ -467,12 +531,23 @@ def stream_inbound(cursor: int) -> None:
                             write_cursor(0)
                             log("in", "收到清空历史指令，已重置记忆")
                             continue
-                        if m.get("type") == "ping" or "id" not in m:
+                        if m.get("type") == "ping":
                             continue
+
+                        # 区分 bundle 打包消息与单条普通消息
+                        if m.get("type") == "bundle":
+                            items = m.get("items") or []
+                            valid_items = [it for it in items if int(it.get("id") or 0) > cursor]
+                            if valid_items:
+                                handle_incoming_messages(valid_items, bundle_meta=m)
+                                cursor = max(cursor, max(int(it.get("id") or 0) for it in valid_items))
+                                write_cursor(cursor)
+                            continue
+
                         mid = int(m.get("id") or 0)
                         if mid <= cursor:
                             continue
-                        handle_human_message(m)
+                        handle_incoming_messages([m])
                         cursor = mid
                         write_cursor(cursor)
         except (TimeoutError, urllib.error.URLError, socket.timeout if "socket" in globals() else TimeoutError):
