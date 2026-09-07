@@ -6121,7 +6121,9 @@
     function attUrl(u) {
       if (!u) return "";
       if (/^blob:|^data:/.test(u)) return u;
-      return u + (u.indexOf("?") >= 0 ? "&" : "?") + "token=" + encodeURIComponent(secret || "");
+      // 去除末尾的图片静态扩展名，彻底绕过 Nginx / 宝塔默认的 location ~ \.(jpg|jpeg|png|webp|gif)$ 规则拦截导致 404
+      let clean = u.replace(/\.(jpg|jpeg|png|webp|gif)$/i, "");
+      return clean + (clean.indexOf("?") >= 0 ? "&" : "?") + "token=" + encodeURIComponent(secret || "");
     }
     function fmtSize(n) {
       n = Number(n) || 0;

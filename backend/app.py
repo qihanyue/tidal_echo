@@ -828,7 +828,12 @@ async def uploads(request: Request, name: str):
     safe = clean_filename(name)
     path = UPLOAD_DIR / safe
     if not path.exists() or not path.is_file():
-        raise HTTPException(status_code=404, detail="not found")
+        # 兼容去掉静态扩展名的请求（彻底绕过 Nginx/宝塔 location ~ \.(jpg|png)$ 静态资源规则劫持）
+        matches = list(UPLOAD_DIR.glob(f"{safe}.*"))
+        if matches and matches[0].is_file():
+            path = matches[0]
+        else:
+            raise HTTPException(status_code=404, detail="not found")
     return FileResponse(path)
 
 

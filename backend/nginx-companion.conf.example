@@ -16,7 +16,8 @@
 # ───────────────────────────────────────────────────────────────────────────
 
 # API — reverse proxy to the relay. SSE-friendly: no buffering, long timeouts.
-location /relay/ {
+# 使用 ^~ 保证优先匹配，防止宝塔/默认的 location ~ .*\.(jpg|png)$ 静态规则拦截图片反代
+location ^~ /relay/ {
     client_max_body_size 10m;                 # must be >= RELAY_MAX_UPLOAD_BYTES
     proxy_pass http://127.0.0.1:3011/;        # trailing slash strips the /relay/ prefix
     proxy_http_version 1.1;
