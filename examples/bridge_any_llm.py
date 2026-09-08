@@ -515,10 +515,10 @@ def stream_inbound(cursor: int) -> None:
                 if isinstance(unread, list) and unread:
                     valid_items = [m for m in unread if int(m.get("id") or 0) > cursor]
                     if valid_items:
-                        ok = handle_incoming_messages(valid_items)
-                        if ok:
-                            cursor = max(int(m.get("id") or 0) for m in valid_items)
-                            write_cursor(cursor)
+                        # 先推进游标，无论成功失败都杜绝死循环重复重试狂弹
+                        cursor = max(int(m.get("id") or 0) for m in valid_items)
+                        write_cursor(cursor)
+                        handle_incoming_messages(valid_items)
             except Exception:
                 pass
 
@@ -556,21 +556,19 @@ def stream_inbound(cursor: int) -> None:
                         # 区分 bundle 打包消息与单条普通消息
                         if m.get("type") == "bundle":
                             items = m.get("items") or []
-                            valid_items = [it for it in items if int(it.get("id") or 0) > cursor]
-                            if valid_items:
-                                ok = handle_incoming_messages(valid_items, bundle_meta=m)
-                                if ok:
-                                    cursor = max(cursor, max(int(it.get("id") or 0) for it in valid_items))
-                                    write_cursor(cursor)
+                            if items:
+                                # 用户点击【接收回复】显式触发的 bundle，允许重新作答（不被 cursor 拦截）
+                                cursor = max(cursor, max(int(it.get("id") or 0) for it in items))
+                                write_cursor(cursor)
+                                handle_incoming_messages(items, bundle_meta=m)
                             continue
 
                         mid = int(m.get("id") or 0)
                         if mid <= cursor:
                             continue
-                        ok = handle_incoming_messages([m])
-                        if ok:
-                            cursor = mid
-                            write_cursor(cursor)
+                        cursor = mid
+                        write_cursor(cursor)
+                        handle_incoming_messages([m])
         except (TimeoutError, urllib.error.URLError, socket.timeout if "socket" in globals() else TimeoutError):
             # 正常超时自检刷新（12秒未出事件自动自检一轮，消灭假死）
             pass
