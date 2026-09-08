@@ -912,6 +912,12 @@
       border-bottom-right-radius: 2px;
     }
 
+    .row .bubble.error-bubble {
+      background: rgba(239, 68, 68, 0.08);
+      color: #dc2626;
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+
     .bubble .txt {
       white-space: normal;
     }
@@ -3976,12 +3982,9 @@
           </div>
 
           <div class="llm-field">
-            <div class="llm-row">
-              <label class="settings-label" for="llmHistorySlider">上下文记忆轮数</label>
-              <span class="llm-temp-val" id="llmHistoryVal">12 轮</span>
-            </div>
-            <input class="context-slider" id="llmHistorySlider" type="range" min="2" max="50" value="12">
-            <div class="llm-hint">喂给大模型的最近聊天轮数。太长耗费 Token，太短容易遗忘前文。</div>
+            <label class="settings-label" for="llmHistoryInput">上下文记忆轮数</label>
+            <input class="llm-input" id="llmHistoryInput" type="number" min="1" max="5000" value="12" placeholder="输入轮数，例如 50、100">
+            <div class="llm-hint">喂给大模型的最近聊天轮数。支持手动输入任意数值。</div>
           </div>
 
           <div class="llm-field">
@@ -6730,8 +6733,9 @@
     }
     function makeMessage(rowData) {
       const m = rowData.message;
+      const isErr = m.kind === "error";
       const row = document.createElement("div");
-      row.className = `row ${m.from === "human" ? "human" : "ai"}${rowData.grouped ? " grouped" : ""}${rowData.tail ? " tail" : ""}`;
+      row.className = `row ${m.from === "human" ? "human" : "ai"}${rowData.grouped ? " grouped" : ""}${rowData.tail ? " tail" : ""}${isErr ? " error-msg" : ""}`;
       row.dataset.id = m.id; row.dataset.from = m.from; row.dataset.ts = tsMs(m); row.dataset.messageKey = m._key;
       if (freshKeys.has(m._key)) {                       // 只对刚发/刚收到的那条播一次入场动画
         const cls = m.from === "human" ? "enter-human" : "enter-ai";
@@ -6741,7 +6745,7 @@
       }
 
       const bubble = document.createElement("div");
-      bubble.className = "bubble";
+      bubble.className = "bubble" + (isErr ? " error-bubble" : "");
       const atts = (m.meta && Array.isArray(m.meta.attachments)) ? m.meta.attachments : [];
       let _inner = "";
       if (atts.length) _inner += renderAttachments(atts);
@@ -7168,6 +7172,20 @@
 
     function onMessage(m) {
       if (m.type === "ping") return;
+      if (m.type === "clear_history") {
+        resetChatState();
+        try {
+          if (window.indexedDB) {
+            openMessageDb().then(db => {
+              const tx = db.transaction(CACHE_STORE, "readwrite");
+              tx.objectStore(CACHE_STORE).clear();
+            }).catch(() => {});
+          }
+        } catch (_) {}
+        renderVirtualList({ stickToBottom: true });
+        hideTyping();
+        return;
+      }
       if (m.type === "thinking_delta" || m.type === "reply_delta") {
         queueStreamDelta(m);
         return;
@@ -8000,6 +8018,9 @@
         tempVal.textContent = (tempSlider.value / 10).toFixed(1);
       }
 
+      const historyInp = document.getElementById("llmHistoryInput");
+      if (historyInp) historyInp.value = active.history_n || 12;
+
       const personaAi = document.getElementById("personaAi");
       const personaUser = document.getElementById("personaUser");
       if (personaAi) personaAi.value = personaState.ai || "";
@@ -8046,16 +8067,16 @@
           headers: authHeaders()
         });
       } catch (e) {}
+      resetChatState();
       try {
         if (window.indexedDB) {
           const db = await openMessageDb();
-          const tx = db.transaction("messages", "readwrite");
-          tx.objectStore("messages").clear();
+          const tx = db.transaction(CACHE_STORE, "readwrite");
+          tx.objectStore(CACHE_STORE).clear();
         }
       } catch (e) {}
-      messages.clear();
-      seen.clear();
-      renderAllMessages();
+      renderVirtualList({ stickToBottom: true });
+      hideTyping();
       showToast("聊天记录已彻底清空");
     });
   }
@@ -8110,16 +8131,11 @@ function initLlmSettings() {
         });
       }
 
-      // 历史轮数滑块
-      const historySlider = document.getElementById("llmHistorySlider");
-      const historyVal = document.getElementById("llmHistoryVal");
-      if (historySlider && historyVal) {
+      // 历史轮数输入框
+      const historyInp = document.getElementById("llmHistoryInput");
+      if (historyInp) {
         const active = getActivePreset();
-        historySlider.value = active.history_n || 12;
-        historyVal.textContent = historySlider.value + " 轮";
-        historySlider.addEventListener("input", () => {
-          historyVal.textContent = historySlider.value + " 轮";
-        });
+        historyInp.value = active.history_n || 12;
       }
 
       // 名字输入框初值
@@ -8219,8 +8235,8 @@ function initLlmSettings() {
           if (personaAi) personaState.ai = personaAi.value.trim();
           if (personaUser) personaState.user = personaUser.value.trim();
 
-          const historySlider = document.getElementById("llmHistorySlider");
-          if (historySlider) active.history_n = parseInt(historySlider.value, 10);
+          const historyInp = document.getElementById("llmHistoryInput");
+          if (historyInp) active.history_n = Math.max(1, parseInt(historyInp.value, 10) || 12);
 
           const cfgAiName = document.getElementById("cfgAiName");
           const cfgUserName = document.getElementById("cfgUserName");

@@ -147,6 +147,18 @@ def send_reply(text: str) -> None:
     log("out", f"replied (id={out.get('id')})")
 
 
+def send_error(text: str) -> None:
+    """AI 调用失败报错 → 落库为 error 消息并扇出到 PWA，解除 typing 状态。"""
+    try:
+        out = relay_post_json("/channel/out", {
+            "type": "error", "chat_id": CHAT_ID, "text": text,
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        })
+        log("err", f"sent error bubble to PWA (id={out.get('id')}): {text[:50]}")
+    except Exception as exc:
+        log("err", f"发送报错气泡失败: {exc}")
+
+
 # ---------------------------------------------------------------------------
 # 历史 → 内存上下文
 # ---------------------------------------------------------------------------
@@ -411,7 +423,11 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
         reply = call_llm_dynamic(msgs, active_routes, temp)
     except Exception as e:
         log("err", f"生成失败: {e}")
-        return
+        if convo:
+            convo.pop()  # 撤回刚才塞入的未成功轮次，保持上下文纯净
+        err_msg = f"⚠️ [API 调用失败] {e}"
+        send_error(err_msg)
+        return False
 
     if reply:
         # 按 [分段] 或 [split] 拆分成多个气泡
@@ -425,6 +441,8 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
             send_reply(bubble)
             if i < len(bubbles) - 1:
                 time.sleep(0.6)  # 气泡之间停顿 0.6 秒，模拟真人发送节奏
+        return True
+    return False
 
 
 def call_llm_dynamic(messages: list, routes: list, temperature: float) -> str:
@@ -497,9 +515,10 @@ def stream_inbound(cursor: int) -> None:
                 if isinstance(unread, list) and unread:
                     valid_items = [m for m in unread if int(m.get("id") or 0) > cursor]
                     if valid_items:
-                        handle_incoming_messages(valid_items)
-                        cursor = max(int(m.get("id") or 0) for m in valid_items)
-                        write_cursor(cursor)
+                        ok = handle_incoming_messages(valid_items)
+                        if ok:
+                            cursor = max(int(m.get("id") or 0) for m in valid_items)
+                            write_cursor(cursor)
             except Exception:
                 pass
 
@@ -539,17 +558,19 @@ def stream_inbound(cursor: int) -> None:
                             items = m.get("items") or []
                             valid_items = [it for it in items if int(it.get("id") or 0) > cursor]
                             if valid_items:
-                                handle_incoming_messages(valid_items, bundle_meta=m)
-                                cursor = max(cursor, max(int(it.get("id") or 0) for it in valid_items))
-                                write_cursor(cursor)
+                                ok = handle_incoming_messages(valid_items, bundle_meta=m)
+                                if ok:
+                                    cursor = max(cursor, max(int(it.get("id") or 0) for it in valid_items))
+                                    write_cursor(cursor)
                             continue
 
                         mid = int(m.get("id") or 0)
                         if mid <= cursor:
                             continue
-                        handle_incoming_messages([m])
-                        cursor = mid
-                        write_cursor(cursor)
+                        ok = handle_incoming_messages([m])
+                        if ok:
+                            cursor = mid
+                            write_cursor(cursor)
         except (TimeoutError, urllib.error.URLError, socket.timeout if "socket" in globals() else TimeoutError):
             # 正常超时自检刷新（12秒未出事件自动自检一轮，消灭假死）
             pass

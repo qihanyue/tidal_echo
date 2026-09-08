@@ -742,10 +742,10 @@ async def app_trigger_reply(request: Request):
     check_auth(request)
     body = await request.json()
 
-    # 1. 查找上一次 AI 回复之后的所有未回复人类消息
+    # 1. 查找上一次 AI 回复之后的所有未回复人类消息 (仅认成功的 reply，报错不阻断重试)
     with db() as conn:
         last_ai_row = conn.execute(
-            "SELECT MAX(id) as max_id FROM messages WHERE direction = 'out'"
+            "SELECT MAX(id) as max_id FROM messages WHERE direction = 'out' AND kind = 'reply'"
         ).fetchone()
         last_ai_id = last_ai_row["max_id"] if (last_ai_row and last_ai_row["max_id"]) else 0
         rows = conn.execute(
