@@ -225,7 +225,78 @@ def _merge_consecutive_roles(msgs: list) -> list:
     return merged
 
 
-def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", memory_context: str = "", tether_front: str = "", tether_middle: str = "", tether_back: str = "", limit: int = 0) -> list:
+# ---------------------------------------------------------------------------
+# 网页内容解析器 (Web Reader / 读链接超能力)
+# ---------------------------------------------------------------------------
+def fetch_web_content(url: str, max_chars: int = 3500) -> str:
+    """抓取并清洗网页纯文本正文，优先直连，受阻时自动走 Jina Reader 引擎。"""
+    url = url.strip()
+    lower = url.lower().split("?")[0]
+    if lower.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico", ".mp4", ".mp3", ".pdf", ".zip")):
+        return ""
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+    }
+
+    raw_html = ""
+    # 1. 先尝试直接抓取
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            content_type = resp.headers.get("Content-Type", "")
+            if "text/html" in content_type or "text/plain" in content_type:
+                raw_bytes = resp.read(200000)
+                encoding = "utf-8"
+                if "charset=" in content_type.lower():
+                    try:
+                        encoding = content_type.lower().split("charset=")[-1].split(";")[0].strip()
+                    except Exception:
+                        pass
+                try:
+                    raw_html = raw_bytes.decode(encoding, errors="replace")
+                except Exception:
+                    raw_html = raw_bytes.decode("utf-8", errors="replace")
+    except Exception as e:
+        log("web", f"直接请求 {url[:40]} 异常 ({e})，切换 Jina Reader 引擎...")
+
+    # 简易清洗正文
+    clean_text = ""
+    title = ""
+    if raw_html:
+        m_title = re.search(r"<title[^>]*>(.*?)</title>", raw_html, re.IGNORECASE | re.DOTALL)
+        if m_title:
+            title = re.sub(r"\s+", " ", m_title.group(1)).strip()
+        stripped = re.sub(r"<(script|style|nav|footer|header|noscript|svg)[^>]*>.*?</\1>", " ", raw_html, flags=re.IGNORECASE | re.DOTALL)
+        stripped = re.sub(r"<[^>]+>", " ", stripped)
+        clean_text = re.sub(r"[ \t]+", " ", stripped)
+        clean_text = re.sub(r"\n\s*\n", "\n\n", clean_text).strip()
+
+    # 2. 如果直接抓取正文过少 (小于 200 字，可能是 SPA/反爬/JS 渲染)，改走通用 Jina Reader
+    if len(clean_text) < 200:
+        try:
+            jina_url = f"https://r.jina.ai/{url}"
+            jina_req = urllib.request.Request(jina_url, headers={"User-Agent": headers["User-Agent"]})
+            with urllib.request.urlopen(jina_req, timeout=8) as jina_resp:
+                jina_raw = jina_resp.read(150000).decode("utf-8", errors="replace")
+                if jina_raw.strip():
+                    clean_text = jina_raw.strip()
+        except Exception as e:
+            log("web", f"Jina Reader 解析 {url[:40]} 失败: {e}")
+
+    if not clean_text:
+        return f"【网页链接: {url}】\n(注: 该网页需要登录或设置了反爬限制，未能提取到完整正文)"
+
+    if len(clean_text) > max_chars:
+        clean_text = clean_text[:max_chars] + "\n...(篇幅较长，已为你截取前段核心内容)"
+
+    header_info = f"网页标题: {title}\n" if title else ""
+    return f"【网页链接: {url}】\n{header_info}正文提取内容:\n{clean_text}"
+
+
+def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", memory_context: str = "", tether_front: str = "", tether_middle: str = "", tether_back: str = "", web_context: str = "", limit: int = 0) -> list:
     base_persona = custom_persona or PERSONA
     parts = []
     # 1. 提示词最前面 (Front)
@@ -244,7 +315,14 @@ def build_messages(custom_persona: str = "", user_persona: str = "", time_contex
         parts.append(memory_context.strip())
     if time_context and time_context.strip():
         parts.append(time_context.strip())
-    # 5. 提示词最后面 (Back - 最高执行准则)
+    # 5. 网页实时阅读插件注入
+    if web_context and web_context.strip():
+        parts.append(
+            "[网页实时阅读插件 · 后台已为你打开并阅读用户提及的网页]:\n"
+            f"{web_context.strip()}\n\n"
+            "(提示: 上述内容是用户发送给你的链接的真实完整正文。请像个认真阅读过该内容的人一样，与用户自然讨论、分析或调侃该内容，切勿生硬复述或透露机器插件细节。)"
+        )
+    # 6. 提示词最后面 (Back - 最高执行准则)
     if tether_back and tether_back.strip():
         parts.append(f"[最高执行准则与核心协定 (Back)]\n{tether_back.strip()}")
 
@@ -434,6 +512,38 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
     elif isinstance(t_ctx, str) and t_ctx.strip() and not t_back:
         t_back = t_ctx.strip()
 
+    # ── 网页链接检测与智能阅读 (Web Reader) ──
+    web_ctx = ""
+    web_reader_enabled = (bundle_meta or {}).get("web_reader_enabled")
+    if web_reader_enabled is None:
+        web_reader_enabled = latest_item.get("web_reader_enabled")
+    if web_reader_enabled is None:
+        web_reader_enabled = True
+
+    if web_reader_enabled and combined_text:
+        found_urls = re.findall(r'https?://[^\s<>"]+', combined_text)
+        valid_urls = []
+        for u in found_urls:
+            clean_u = u.rstrip(".,;!?'\")>")
+            lower = clean_u.lower().split("?")[0]
+            if not lower.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico", ".mp4", ".mp3", ".pdf", ".zip")):
+                if clean_u not in valid_urls:
+                    valid_urls.append(clean_u)
+
+        if valid_urls:
+            log("web", f"检测到人类消息包含 {len(valid_urls)} 个链接，正在提取网页正文: {valid_urls}")
+            web_snippets = []
+            for u in valid_urls[:2]:
+                try:
+                    txt = fetch_web_content(u, max_chars=3500)
+                    if txt:
+                        web_snippets.append(txt)
+                except Exception as ex:
+                    log("web", f"抓取 {u} 失败: {ex}")
+            if web_snippets:
+                web_ctx = "\n\n".join(web_snippets)
+                log("web", f"网页阅读完成，提取了 {len(web_ctx)} 字符")
+
     if not time_ctx:
         # 兜底生成当前时间
         try:
@@ -473,6 +583,7 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
             tether_front=t_front,
             tether_middle=t_middle,
             tether_back=t_back,
+            web_context=web_ctx,
             limit=limit
         )
         reply = call_llm_dynamic(msgs, active_routes, temp)

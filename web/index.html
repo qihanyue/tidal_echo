@@ -4602,6 +4602,85 @@
     </div>
   </div>
 
+  <!-- ── Tides (full-screen 工具坞/超能力观测站) ── -->
+  <div class="profile-panel hidden" id="tidesPanel" role="dialog" aria-modal="true" aria-labelledby="tidesTitle">
+    <div class="profile-page">
+      <div class="profile-topbar" style="display:flex; justify-content:space-between; align-items:center;">
+        <button class="profile-back" id="tidesClose" type="button" aria-label="返回">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </button>
+        <div style="text-align:center;">
+          <h2 id="tidesTitle" style="font-size:16px; font-weight:600; margin:0; color:var(--text);">Tides · 观测坞</h2>
+          <span style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic;">Tools & Radar · 超能力系统</span>
+        </div>
+        <div style="width:36px;"></div>
+      </div>
+
+      <div class="profile-scroll" style="padding-bottom:60px;">
+        <!-- 工具武装总览 -->
+        <section class="settings-card" style="margin-bottom:14px;">
+          <div class="settings-label">当前已装备能力</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+            <div style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
+              <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">网页透视眼</div>
+              <div style="font-size:11px; color:var(--text-soft);" id="tidesWebReaderStatusBadge">已开启 · 自动解析</div>
+            </div>
+            <div style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
+              <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">现实时钟</div>
+              <div style="font-size:11px; color:var(--text-soft);">已开启 · 昼夜与时差</div>
+            </div>
+            <div style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
+              <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">Memory 回溯</div>
+              <div style="font-size:11px; color:var(--text-soft);">长期回忆录注入</div>
+            </div>
+            <div style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
+              <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">Tether 协定</div>
+              <div style="font-size:11px; color:var(--text-soft);">场域前中后世界设定</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 链接阅读器配置 -->
+        <section class="settings-card" style="margin-bottom:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div>
+              <div class="settings-label" style="margin-bottom:2px;">网页链接智能阅读 (Web Reader)</div>
+              <div style="font-size:12px; color:var(--text-faint);">聊天发送链接时，AI 自动打开网页阅读正文后回复</div>
+            </div>
+            <input type="checkbox" id="webReaderGlobalToggle" checked style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+          </div>
+          <div class="llm-hint" style="margin-top:6px; line-height:1.6;">
+            支持微信公众号、知乎、新闻资讯、技术博客与常见推文链接。后台会自动过滤广告与样式，只将最纯净的核心正文交给 AI，完全不受模型是否开启联网搜索限制。
+          </div>
+        </section>
+
+        <!-- 预留扩展能力 -->
+        <section class="settings-card">
+          <div class="settings-label">更多观测雷达 (即将接入)</div>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.15));">
+              <div>
+                <div style="font-size:13px; font-weight:600; color:var(--text);">城市天气雷达</div>
+                <div style="font-size:11px; color:var(--text-faint);">AI 实时感知你所在城市的晴雨、气温与温差</div>
+              </div>
+              <span class="tether-badge">准备就绪</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.15));">
+              <div>
+                <div style="font-size:13px; font-weight:600; color:var(--text);">全网热点实时搜索</div>
+                <div style="font-size:11px; color:var(--text-faint);">主动探索当下新鲜事、热点词与冷知识</div>
+              </div>
+              <span class="tether-badge">设计中</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Menu (hub / 主菜单页 · 聊天页左箭头进入) ── -->
   <div class="menu-panel hidden" id="menuPanel" role="dialog" aria-modal="true" aria-label="主菜单">
     <div class="menu-page">
@@ -4683,13 +4762,13 @@
           <button class="menu-item" type="button" data-menu="tides">
             <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 8.5c1.8-2.2 3.6-2.2 5.4 0s3.6 2.2 5.4 0 3.6-2.2 5.4 0" />
-                <path d="M3 13c1.8-2.2 3.6-2.2 5.4 0s3.6 2.2 5.4 0 3.6-2.2 5.4 0" />
-                <path d="M3 17.5c1.8-2.2 3.6-2.2 5.4 0s3.6 2.2 5.4 0 3.6-2.2 5.4 0" />
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 3a9 9 0 0 1 9 9" stroke-dasharray="2 2" />
+                <circle cx="12" cy="12" r="4" />
+                <circle cx="12" cy="12" r="1.5" fill="currentColor" />
               </svg></span>
             <span class="menu-dot"></span>
-            <span class="menu-copy"><span class="menu-name">Tides</span><span class="menu-sub">Where we
-                return.</span></span>
+            <span class="menu-copy"><span class="menu-name">Tides</span><span class="menu-sub">Tools & Radar · 超能力坞</span></span>
             <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 6l6 6-6 6" />
@@ -5098,6 +5177,7 @@
         else if (item.dataset.menu === "album") location.assign("album.html");  // album shell (wire your own backend)
         else if (item.dataset.menu === "memory") openMemory();
         else if (item.dataset.menu === "tether") openTether();
+        else if (item.dataset.menu === "tides") openTides();
         else showToast("即将开放");                           // placeholder items
       });
     }
@@ -5140,10 +5220,48 @@
     }
     if (tetherClose) tetherClose.addEventListener("click", closeTether);
 
+    const tidesPanel = document.getElementById("tidesPanel");
+    const tidesClose = document.getElementById("tidesClose");
+    let tidesCloseTimer = null;
+    function openTides() {
+      if (!tidesPanel) return;
+      closeMenu();
+      clearTimeout(tidesCloseTimer);
+      tidesPanel.classList.remove("hidden");
+      requestAnimationFrame(() => requestAnimationFrame(() => tidesPanel.classList.add("open")));
+      syncTidesUi();
+    }
+    function closeTides() {
+      if (!tidesPanel) return;
+      tidesPanel.classList.remove("open");
+      clearTimeout(tidesCloseTimer);
+      tidesCloseTimer = setTimeout(() => tidesPanel.classList.add("hidden"), 360);
+    }
+    if (tidesClose) tidesClose.addEventListener("click", closeTides);
+
+    const webReaderGlobalToggle = document.getElementById("webReaderGlobalToggle");
+    const tidesWebReaderStatusBadge = document.getElementById("tidesWebReaderStatusBadge");
+    function syncTidesUi() {
+      const isEn = localStorage.getItem("companion_web_reader_enabled") !== "false";
+      if (webReaderGlobalToggle) webReaderGlobalToggle.checked = isEn;
+      if (tidesWebReaderStatusBadge) {
+        tidesWebReaderStatusBadge.textContent = isEn ? "已开启 · 自动解析" : "已暂停 · 未启用";
+        tidesWebReaderStatusBadge.style.color = isEn ? "var(--tint)" : "var(--text-faint)";
+      }
+    }
+    if (webReaderGlobalToggle) {
+      webReaderGlobalToggle.addEventListener("change", () => {
+        localStorage.setItem("companion_web_reader_enabled", webReaderGlobalToggle.checked ? "true" : "false");
+        syncTidesUi();
+        showToast(webReaderGlobalToggle.checked ? "已开启网页链接自动阅读" : "已关闭网页链接自动阅读");
+      });
+    }
+
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         if (memoryPanel && !memoryPanel.classList.contains("hidden")) closeMemory();
         if (tetherPanel && !tetherPanel.classList.contains("hidden")) closeTether();
+        if (tidesPanel && !tidesPanel.classList.contains("hidden")) closeTides();
         if (menuPanel && !menuPanel.classList.contains("hidden")) closeMenu();
       }
     });
@@ -6437,6 +6555,8 @@
         if (_tetherCtx.front) payload.tether_front = _tetherCtx.front;
         if (_tetherCtx.middle) payload.tether_middle = _tetherCtx.middle;
         if (_tetherCtx.back) payload.tether_back = _tetherCtx.back;
+        // 网页透视眼开关（默认开启）
+        payload.web_reader_enabled = (localStorage.getItem("companion_web_reader_enabled") !== "false");
         // 是否立刻触发回复（手动模式时不触发）
         payload.trigger = (currentTriggerMode === "auto");
       } catch (e) { }
@@ -8776,7 +8896,8 @@
               memory_context: getLongTermMemoryContext(),
               tether_front: getTetherContext().front,
               tether_middle: getTetherContext().middle,
-              tether_back: getTetherContext().back
+              tether_back: getTetherContext().back,
+              web_reader_enabled: (localStorage.getItem("companion_web_reader_enabled") !== "false")
             };
             await fetch(`${API_BASE}/app/trigger_reply`, {
               method: "POST",
