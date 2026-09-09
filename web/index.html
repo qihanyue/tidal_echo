@@ -9,7 +9,7 @@
   <!-- PWA / iOS -->
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preload" href="chat-light.webp" as="image" fetchpriority="high">
-  <link rel="preload" href="avatar-sea.png" as="image">
+  <link rel="preload" href="avatar-sea.png?v=2" as="image">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link href="https://cdn.jsdelivr.net/npm/@fontsource/cormorant-garamond@5/400.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@fontsource/cormorant-garamond@5/500.min.css" rel="stylesheet">
@@ -66,7 +66,7 @@
       --menu-wall-light: url("menu-light.webp");
       --menu-wall-harbor: url("menu-harbor.webp");
       --menu-wall-default: var(--menu-wall-light);
-      --avatar-default: url("avatar-sea.png");
+      --avatar-default: url("avatar-sea.png?v=2");
       /* ── PEARL TIDE · 珍珠潮汐(default) ── */
       --bg: #F7FAFC;
       --header-bg: #F7FAFC;
@@ -4043,7 +4043,10 @@
       <div class="profile-scroll">
         <!-- identity -->
         <div class="profile-identity">
-          <button class="profile-avatar" id="profileAvatarBtn" type="button" aria-label="更改头像"></button>
+          <div style="display:flex; flex-direction:column; align-items:center;">
+            <button class="profile-avatar" id="profileAvatarBtn" type="button" aria-label="更改头像"></button>
+            <button id="resetAvatarBtn" type="button" style="background:none; border:none; color:var(--text-faint); font-size:11px; margin-top:6px; cursor:pointer; text-decoration:underline;">恢复默认底图</button>
+          </div>
           <div class="profile-id-copy">
             <div class="profile-name-row">
               <h3 id="profileName">Gemini</h3>
@@ -5100,7 +5103,7 @@
     }
     function applyAvatar(url) {
       // 写 CSS 变量 → 顶栏头像、聊天每条消息旁的头像、空状态/登录 orb、profile 大头像一起换
-      const val = url ? `url("${url}")` : 'url("avatar-sea.png")';
+      const val = url ? `url("${url}")` : 'url("avatar-sea.png?v=2")';
       document.documentElement.style.setProperty("--avatar-default", val);
     }
     function applyRemark(value) {
@@ -6272,6 +6275,15 @@
       r.readAsDataURL(f);
       avatarInput.value = "";
     });
+
+    const resetAvatarBtn = document.getElementById("resetAvatarBtn");
+    if (resetAvatarBtn) {
+      resetAvatarBtn.addEventListener("click", () => {
+        try { localStorage.removeItem(AVATAR_KEY); } catch (e) { }
+        applyAvatar("");
+        showToast("已恢复系统默认底图头像");
+      });
+    }
 
     /* ════════ Profile 设置控件 ════════ */
     let toastEl = null, toastTimer = null;
