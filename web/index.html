@@ -4184,15 +4184,15 @@
           <h2 id="memoryTitle" style="font-size:16px; font-weight:600; margin:0; color:var(--text);">Memory · 记忆殿堂</h2>
           <span style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic;">The echoes we keep</span>
         </div>
-        <button class="llm-btn primary" id="addMemoryBtn" type="button" style="padding:4px 10px; font-size:12px;">+ 新增</button>
+        <button class="llm-btn primary" id="addMemoryBtn" type="button" style="padding:4px 10px; font-size:12px;">新增记忆</button>
       </div>
 
       <div class="profile-scroll" style="padding-bottom:60px;">
         <!-- 顶部标签切换 -->
         <div class="segmented" id="memoryTabSeg" role="group" aria-label="记忆功能分类" style="margin-bottom:16px;">
           <button type="button" data-tab="cards" class="active">回忆录 (<span id="memoryCountBadge">0</span>)</button>
-          <button type="button" data-tab="summary">✨ 古法总结</button>
-          <button type="button" data-tab="github">☁️ GitHub 同步</button>
+          <button type="button" data-tab="summary">古法总结</button>
+          <button type="button" data-tab="github">GitHub 同步</button>
         </div>
 
         <!-- ══ TAB 1: 记忆卡片列表 ══ -->
@@ -4213,7 +4213,7 @@
         <!-- ══ TAB 2: 古法总结工作台 ══ -->
         <div class="memory-tab-pane hidden" id="memPaneSummary">
           <section class="settings-card" style="margin-bottom:14px;">
-            <div class="settings-label">✨ 古法总结工作台</div>
+            <div class="settings-label">古法总结工作台</div>
             <div class="llm-hint" style="margin-top:-6px; margin-bottom:14px;">
               挑选一段历史聊天，调用大模型客观提炼出你们之间的重要事件、约定承诺与情感变化，存为永久记忆。
             </div>
@@ -4249,14 +4249,14 @@
             </div>
 
             <button class="llm-btn primary" id="doGenerateSummaryBtn" type="button" style="width:100%; padding:11px; font-size:14px; font-weight:600; margin-top:8px;">
-              ✨ 开始生成记忆总结
+              开始生成记忆总结
             </button>
           </section>
 
           <!-- 总结结果草稿区 (生成后展示) -->
           <section class="settings-card hidden" id="summaryResultBox">
-            <div class="settings-label" style="color:var(--tint);">🎉 记忆总结提炼结果</div>
-            <div class="llm-hint" style="margin-top:-6px; margin-bottom:12px;">已为你生成总结草稿，你可以直接在下方修改润色，确认无误后点击存入记忆殿堂。</div>
+            <div class="settings-label" style="color:var(--tint);">记忆总结提炼结果</div>
+            <div class="llm-hint" style="margin-top:-6px; margin-bottom:12px;">已为你生成总结草稿，你可以直接在下方修改润色，确认无误后点击存入回忆录。</div>
 
             <div class="llm-field">
               <label class="settings-label" for="summaryResultTitle">记忆段落标题</label>
@@ -4269,7 +4269,7 @@
             </div>
 
             <div style="display:flex; gap:10px; margin-top:10px;">
-              <button class="llm-btn primary" id="saveSummaryToMemoriesBtn" type="button" style="flex:1; padding:10px;">💾 存入记忆殿堂</button>
+              <button class="llm-btn primary" id="saveSummaryToMemoriesBtn" type="button" style="flex:1; padding:10px;">存入回忆录</button>
               <button class="llm-btn" id="discardSummaryBtn" type="button" style="padding:10px 14px;">放弃</button>
             </div>
           </section>
@@ -4278,7 +4278,7 @@
         <!-- ══ TAB 3: GitHub 记忆同步 ══ -->
         <div class="memory-tab-pane hidden" id="memPaneGithub">
           <section class="settings-card" style="margin-bottom:14px;">
-            <div class="settings-label">☁️ GitHub 云端同步配置</div>
+            <div class="settings-label">GitHub 云端同步配置</div>
             <div class="llm-hint" style="margin-top:-6px; margin-bottom:14px;">
               支持从你的 GitHub 私有仓库双向拉取和备份。完全兼容 Mooncache 的大备份 JSON（自动提取其中的所有 summary 总结），也支持专属记忆 JSON。
             </div>
@@ -4314,10 +4314,10 @@
             <div class="settings-label">云端数据操作</div>
             <div style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
               <button class="llm-btn primary" id="ghPullBtn" type="button" style="padding:12px; font-size:14px; font-weight:600;">
-                📥 从 GitHub 拉取记忆 (自动提取 Moon 总结)
+                从 GitHub 拉取记忆 (自动提取 Moon 总结)
               </button>
               <button class="llm-btn" id="ghPushBtn" type="button" style="padding:12px; font-size:14px;">
-                🚀 备份上传记忆到 GitHub
+                备份上传记忆到 GitHub
               </button>
             </div>
             <div class="llm-hint" id="ghSyncStatus" style="margin-top:12px; font-size:12px; text-align:center;"></div>
@@ -8872,9 +8872,8 @@
         if (!list.length) {
           memCardList.innerHTML = `
             <div class="mem-empty">
-              <div style="font-size:28px; margin-bottom:8px;">📜</div>
               <div style="font-weight:600; font-size:15px; margin-bottom:4px; color:var(--text);">记忆殿堂尚且空空如也</div>
-              <div>你可以点击上方「✨ 古法总结」从你们的历史对话中提炼新回忆，<br>或者在「☁️ GitHub 同步」直接拉取 Mooncache 的历史存档。</div>
+              <div>你可以点击上方「古法总结」从你们的历史对话中提炼新回忆，<br>或者在「GitHub 同步」直接拉取 Mooncache 的历史存档。</div>
             </div>
           `;
           return;
@@ -9086,7 +9085,7 @@
 
           doGenSummaryBtn.disabled = true;
           const origBtnText = doGenSummaryBtn.textContent;
-          doGenSummaryBtn.textContent = "⏳ 正在分析对话并提炼记忆中...";
+          doGenSummaryBtn.textContent = "正在分析对话并提炼记忆...";
 
           try {
             const reqBody = {
@@ -9130,7 +9129,7 @@
               summaryResultBox.classList.remove("hidden");
               summaryResultBox.scrollIntoView({ behavior: "smooth" });
             }
-            showToast("✨ 记忆提炼完成！请检查润色");
+            showToast("记忆提炼完成，请检查润色");
           } catch (err) {
             alert(`生成总结失败: ${err.message}`);
           } finally {
@@ -9219,7 +9218,7 @@
 
           ghPullBtn.disabled = true;
           const origText = ghPullBtn.textContent;
-          ghPullBtn.textContent = "⏳ 正在从 GitHub 下载并解密...";
+          ghPullBtn.textContent = "正在从 GitHub 下载并解析...";
           if (ghStatus) ghStatus.textContent = "正在连接 GitHub API...";
 
           try {
@@ -9237,14 +9236,32 @@
             }
 
             const fileData = await resp.json();
-            if (!fileData.content) {
-              throw new Error("GitHub 返回内容为空或超出限制");
-            }
-
             lastRemoteSha = fileData.sha || "";
             localStorage.setItem("companion_gh_last_sha", lastRemoteSha);
 
-            const decodedText = decodeBase64Utf8(fileData.content);
+            let decodedText = "";
+            if (fileData.content) {
+              // 1MB 以内小文件，直接解码 Base64
+              decodedText = decodeBase64Utf8(fileData.content);
+            } else if (fileData.sha) {
+              // 超过 1MB 的大文件（如 4MB Moon 备份），通过 Git Blobs 接口流式拉取纯文本
+              if (ghStatus) ghStatus.textContent = "检测到较大文件，正在流式下载完整内容...";
+              const blobUrl = `https://api.github.com/repos/${encodeURIComponent(user)}/${encodeURIComponent(repo)}/git/blobs/${fileData.sha}`;
+              const blobResp = await fetch(blobUrl, {
+                headers: {
+                  "Authorization": `token ${token}`,
+                  "Accept": "application/vnd.github.raw"
+                }
+              });
+              if (!blobResp.ok) {
+                throw new Error(`下载大文件失败: HTTP ${blobResp.status}`);
+              }
+              decodedText = await blobResp.text();
+            } else {
+              throw new Error("未能获取到 GitHub 远端文件内容或 SHA 标识");
+            }
+
+            if (ghStatus) ghStatus.textContent = "下载完成，正在解析记忆数据...";
             let importedSummaries = [];
 
             try {
@@ -9297,7 +9314,7 @@
             }
 
             if (!importedSummaries.length) {
-              alert("已成功连接文件，但未在其中检测到类型为 summary 的总结或记忆数据！");
+              alert("已成功连接并读取文件，但未在其中找到类型为 summary 的总结或记忆段落。");
               return;
             }
 
@@ -9319,8 +9336,8 @@
 
             saveMemories(currentList);
             const timeStr = new Date().toLocaleString("zh-CN");
-            if (ghStatus) ghStatus.textContent = `✓ 同步成功 (${timeStr}): 新增导入 ${addedCount} 条记忆，共 ${currentList.length} 条`;
-            showToast(`🎉 成功从 GitHub 同步 ${addedCount} 条记忆！`);
+            if (ghStatus) ghStatus.textContent = `同步成功 (${timeStr}): 新增导入 ${addedCount} 条记忆，共 ${currentList.length} 条`;
+            showToast(`成功从 GitHub 同步 ${addedCount} 条记忆`);
 
             if (memTabSeg) {
               const cardsBtn = memTabSeg.querySelector("button[data-tab='cards']");
@@ -9328,7 +9345,7 @@
             }
           } catch (err) {
             alert(`拉取失败: ${err.message}`);
-            if (ghStatus) ghStatus.textContent = `❌ 同步出错: ${err.message}`;
+            if (ghStatus) ghStatus.textContent = `同步出错: ${err.message}`;
           } finally {
             ghPullBtn.disabled = false;
             ghPullBtn.textContent = origText;
@@ -9365,7 +9382,7 @@
 
           ghPushBtn.disabled = true;
           const origText = ghPushBtn.textContent;
-          ghPushBtn.textContent = "⏳ 正在检查远端文件与加密上传...";
+          ghPushBtn.textContent = "正在检查远端文件并上传...";
           if (ghStatus) ghStatus.textContent = "正在查询远端最新版本 (SHA)...";
 
           try {
@@ -9378,9 +9395,18 @@
               if (getResp.ok) {
                 const curFileData = await getResp.json();
                 lastRemoteSha = curFileData.sha || "";
+                let rawText = "";
                 if (curFileData.content) {
+                  rawText = decodeBase64Utf8(curFileData.content);
+                } else if (curFileData.sha) {
+                  const blobResp = await fetch(`https://api.github.com/repos/${encodeURIComponent(user)}/${encodeURIComponent(repo)}/git/blobs/${curFileData.sha}`, {
+                    headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.raw" }
+                  });
+                  if (blobResp.ok) rawText = await blobResp.text();
+                }
+                if (rawText) {
                   try {
-                    existingFileJson = JSON.parse(decodeBase64Utf8(curFileData.content));
+                    existingFileJson = JSON.parse(rawText);
                   } catch (_) {}
                 }
               }
@@ -9440,11 +9466,11 @@
             }
 
             const timeStr = new Date().toLocaleString("zh-CN");
-            if (ghStatus) ghStatus.textContent = `✓ 备份成功 (${timeStr}): 已推送 ${memories.length} 条记忆到 GitHub！`;
-            showToast("🚀 记忆已成功备份上传至 GitHub！");
+            if (ghStatus) ghStatus.textContent = `备份成功 (${timeStr}): 已推送 ${memories.length} 条记忆到 GitHub`;
+            showToast("记忆已成功备份上传至 GitHub");
           } catch (err) {
             alert(`上传失败: ${err.message}`);
-            if (ghStatus) ghStatus.textContent = `❌ 上传出错: ${err.message}`;
+            if (ghStatus) ghStatus.textContent = `上传出错: ${err.message}`;
           } finally {
             ghPushBtn.disabled = false;
             ghPushBtn.textContent = origText;
