@@ -354,6 +354,8 @@ def plugin_payload(msg: dict) -> dict:
         p["llm_config"] = meta.get("llm_config")
     if meta.get("personas"):
         p["personas"] = meta.get("personas")
+    if meta.get("time_context"):
+        p["time_context"] = meta.get("time_context")
     return p
 
 
@@ -792,6 +794,8 @@ async def app_trigger_reply(request: Request):
         bundle["llm_config"] = body.get("llm_config")
     if body.get("personas"):
         bundle["personas"] = body.get("personas")
+    if body.get("time_context"):
+        bundle["time_context"] = body.get("time_context")
 
     if brain_target() == "loop":
         asyncio.create_task(forward_to_loop(pending_msgs[-1]))
@@ -840,6 +844,8 @@ async def app_send(request: Request):
         meta["llm_config"] = body.get("llm_config")
     if body.get("personas"):
         meta["personas"] = body.get("personas")
+    if body.get("time_context"):
+        meta["time_context"] = body.get("time_context")
     msg = save_message("in", "user", text, meta)
     # echo to the PWA so the sender's bubble + other tabs stay in sync
     await broadcast(app_subs, app_payload(msg))

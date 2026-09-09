@@ -225,10 +225,12 @@ def _merge_consecutive_roles(msgs: list) -> list:
     return merged
 
 
-def build_messages(custom_persona: str = "", user_persona: str = "", limit: int = 0) -> list:
+def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", limit: int = 0) -> list:
     sys_prompt = custom_persona or PERSONA
     if user_persona:
         sys_prompt += f"\n\n[关于与你对话的人类用户的设定]:\n{user_persona}"
+    if time_context:
+        sys_prompt += f"\n\n{time_context}"
     sys_prompt += (
         "\n\n[聊天格式规则]:\n"
         "你可以像真人使用即时通讯软件（如微信）一样连续发送多条短消息。"
@@ -395,10 +397,22 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
         convo.append({"role": "user", "content": combined_text})
         log("in", f"收到打包消息 ({len(items)} 条): {combined_text[:60]}")
 
-    # 读取前端动态附带的 LLM 配置、双人设与上下文轮数
+    # 读取前端动态附带的 LLM 配置、双人设、上下文轮数与时间感知
     latest_item = items[-1]
     dyn_llm = (bundle_meta or {}).get("llm_config") or latest_item.get("llm_config") or {}
     dyn_personas = (bundle_meta or {}).get("personas") or latest_item.get("personas") or {}
+    time_ctx = (bundle_meta or {}).get("time_context") or latest_item.get("time_context") or (latest_item.get("meta") or {}).get("time_context") or ""
+    if not time_ctx:
+        # 兜底生成当前时间
+        try:
+            now = time.localtime()
+            weekday_map = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
+            w_str = weekday_map[now.tm_wday]
+            t_str = time.strftime(f"%Y年%m月%d日 {w_str} %H:%M", now)
+            time_ctx = f"[当前现实环境与时间感知]\n- 当前时间: {t_str}"
+        except Exception:
+            pass
+
     custom_ai = dyn_personas.get("ai") or ""
     custom_user = dyn_personas.get("user") or ""
     history_n = int(dyn_llm.get("history_n") or HISTORY_N)
@@ -419,7 +433,7 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
 
     try:
         limit = max(history_n * 2, 8)
-        msgs = build_messages(custom_persona=custom_ai, user_persona=custom_user, limit=limit)
+        msgs = build_messages(custom_persona=custom_ai, user_persona=custom_user, time_context=time_ctx, limit=limit)
         reply = call_llm_dynamic(msgs, active_routes, temp)
     except Exception as e:
         log("err", f"生成失败: {e}")

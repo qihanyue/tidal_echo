@@ -24,21 +24,21 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
 
   <script>
-  // 立即在脚本最顶部执行名称修正，消灭开屏 Claude 闪烁
-  (function(){
-    try {
-      const savedAi = localStorage.getItem("companion_custom_ai_name");
-      if (savedAi && savedAi.trim()){
-        const n = savedAi.trim();
-        const p1 = document.getElementById("peerName");
-        const p2 = document.getElementById("profileName");
-        if (p1) p1.textContent = n;
-        if (p2) p2.textContent = n;
-        const h1 = document.querySelector(".login h1");
-        if (h1) h1.textContent = n;
-      }
-    } catch(_){}
-  })();
+    // 立即在脚本最顶部执行名称修正，消灭开屏 Claude 闪烁
+    (function () {
+      try {
+        const savedAi = localStorage.getItem("companion_custom_ai_name");
+        if (savedAi && savedAi.trim()) {
+          const n = savedAi.trim();
+          const p1 = document.getElementById("peerName");
+          const p2 = document.getElementById("profileName");
+          if (p1) p1.textContent = n;
+          if (p2) p2.textContent = n;
+          const h1 = document.querySelector(".login h1");
+          if (h1) h1.textContent = n;
+        }
+      } catch (_) { }
+    })();
 
     /* Theme: two presets (light=Pearl / harbor). Persisted in localStorage companion_theme. Set data-theme early to avoid a first-paint flash. */
     (function () {
@@ -3983,7 +3983,8 @@
 
           <div class="llm-field">
             <label class="settings-label" for="llmHistoryInput">上下文记忆轮数</label>
-            <input class="llm-input" id="llmHistoryInput" type="number" min="1" max="5000" value="12" placeholder="输入轮数，例如 50、100">
+            <input class="llm-input" id="llmHistoryInput" type="number" min="1" max="5000" value="12"
+              placeholder="输入轮数，例如 50、100">
             <div class="llm-hint">喂给大模型的最近聊天轮数。支持手动输入任意数值。</div>
           </div>
 
@@ -3994,6 +3995,14 @@
               <button type="button" data-val="manual">手动接收 (连发多条)</button>
             </div>
             <div class="llm-hint">选“手动接收”时，发消息不会自动打断。连发多条后点击聊天框下方的「接收回复」按钮才会触发。</div>
+          </div>
+
+          <div class="llm-field">
+            <div class="llm-row" style="display:flex; justify-content:space-between; align-items:center;">
+              <label class="settings-label" for="timePerceptionToggle" style="margin-bottom:0;">时间感知 (现实时间与时差)</label>
+              <input type="checkbox" id="timePerceptionToggle" checked style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+            </div>
+            <div class="llm-hint">开启后，AI 会实时感知当前现实时间（年月日、星期几、几点几分）以及距离上次聊天的时差。</div>
           </div>
         </section>
 
@@ -4055,7 +4064,7 @@
             </svg></span>
         </button>
 
-                <!-- status -->
+        <!-- status -->
         <div class="action-row status">
           <span class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
               stroke-linecap="round" stroke-linejoin="round">
@@ -4078,15 +4087,17 @@
 
         <!-- 清空全部历史记录 -->
         <button class="action-row" id="clearAllHistoryRow" type="button" style="color:var(--danger, #e05252);">
-          <span class="action-icon" style="color:var(--danger, #e05252);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-          </svg></span>
+          <span class="action-icon" style="color:var(--danger, #e05252);"><svg viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg></span>
           <span class="action-name" style="color:var(--danger, #e05252); font-weight:600;">清空聊天记录</span>
           <span class="action-value">清空本地与云端记忆</span>
-          <span class="action-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 6l6 6-6 6" />
-          </svg></span>
+          <span class="action-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 6l6 6-6 6" />
+            </svg></span>
         </button>
       </div>
       <input type="file" id="avatarInput" accept="image/*" class="hidden">
@@ -5751,6 +5762,52 @@
       return sessionFiltered(rows);
     }
 
+    function getTimePerceptionContext() {
+      try {
+        if (localStorage.getItem("companion_time_perception") === "false") {
+          return "";
+        }
+        const now = new Date();
+        const currentTime = now.toLocaleString("zh-CN", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          weekday: "long",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false
+        });
+
+        let statusText = "这是你们的第一次对话。";
+        if (typeof chatMessages !== "undefined" && Array.isArray(chatMessages)) {
+          const lastAi = chatMessages.slice().reverse().find(m => m && m.from === "ai" && m.kind === "reply" && m.ts);
+          if (lastAi && lastAi.ts) {
+            const lastTime = new Date(lastAi.ts);
+            const diffMs = now.getTime() - lastTime.getTime();
+            if (!isNaN(diffMs) && diffMs >= 0) {
+              const diffMinutes = Math.floor(diffMs / (1000 * 60));
+              if (diffMinutes < 5) {
+                statusText = "你们的对话刚刚还在继续。";
+              } else if (diffMinutes < 60) {
+                statusText = `你们在 ${diffMinutes} 分钟前聊过。`;
+              } else {
+                const diffHours = Math.floor(diffMinutes / 60);
+                if (diffHours < 24) {
+                  statusText = `你们在 ${diffHours} 小时前聊过。`;
+                } else {
+                  const diffDays = Math.floor(diffHours / 24);
+                  statusText = `你们已经有 ${diffDays} 天没有聊天了。`;
+                }
+              }
+            }
+          }
+        }
+        return `[当前现实环境与时间感知]\n- 当前时间: ${currentTime}\n- 对话状态: ${statusText}`;
+      } catch (_) {
+        return "";
+      }
+    }
+
     async function apiSend(text, attachments) {
       if (USE_MOCK) return Mock.send(text);
       const payload = { text: text || "" };
@@ -5768,6 +5825,7 @@
         if (typeof personaState !== "undefined" && (personaState.ai || personaState.user)) {
           payload.personas = personaState;
         }
+        payload.time_context = getTimePerceptionContext();
         // 是否立刻触发回复（手动模式时不触发）
         payload.trigger = (currentTriggerMode === "auto");
       } catch (e) { }
@@ -7179,9 +7237,9 @@
             openMessageDb().then(db => {
               const tx = db.transaction(CACHE_STORE, "readwrite");
               tx.objectStore(CACHE_STORE).clear();
-            }).catch(() => {});
+            }).catch(() => { });
           }
-        } catch (_) {}
+        } catch (_) { }
         renderVirtualList({ stickToBottom: true });
         hideTyping();
         return;
@@ -7361,13 +7419,13 @@
         persistDeletedKeys();
         removeMessage(key);
         // 同步删除后端数据库记录
-        if (typeof key === "number" || (/^\d+$/.test(String(key)))){
+        if (typeof key === "number" || (/^\d+$/.test(String(key)))) {
           try {
             fetch(`${API_BASE}/app/messages/${key}`, {
               method: "DELETE",
               headers: authHeaders()
-            }).catch(() => {});
-          } catch(_){}
+            }).catch(() => { });
+          } catch (_) { }
         }
         showToast("已删除");
       }
@@ -8056,32 +8114,32 @@
       } catch (_) { }
     }
 
-    
-  const clearAllRow = document.getElementById("clearAllHistoryRow");
-  if (clearAllRow) {
-    clearAllRow.addEventListener("click", async () => {
-      if (!confirm("确定要清空全部聊天记录吗？此操作将同时清空手机和服务器数据库的所有对话。")) return;
-      try {
-        await fetch(`${API_BASE}/app/clear_history`, {
-          method: "POST",
-          headers: authHeaders()
-        });
-      } catch (e) {}
-      resetChatState();
-      try {
-        if (window.indexedDB) {
-          const db = await openMessageDb();
-          const tx = db.transaction(CACHE_STORE, "readwrite");
-          tx.objectStore(CACHE_STORE).clear();
-        }
-      } catch (e) {}
-      renderVirtualList({ stickToBottom: true });
-      hideTyping();
-      showToast("聊天记录已彻底清空");
-    });
-  }
 
-function initLlmSettings() {
+    const clearAllRow = document.getElementById("clearAllHistoryRow");
+    if (clearAllRow) {
+      clearAllRow.addEventListener("click", async () => {
+        if (!confirm("确定要清空全部聊天记录吗？此操作将同时清空手机和服务器数据库的所有对话。")) return;
+        try {
+          await fetch(`${API_BASE}/app/clear_history`, {
+            method: "POST",
+            headers: authHeaders()
+          });
+        } catch (e) { }
+        resetChatState();
+        try {
+          if (window.indexedDB) {
+            const db = await openMessageDb();
+            const tx = db.transaction(CACHE_STORE, "readwrite");
+            tx.objectStore(CACHE_STORE).clear();
+          }
+        } catch (e) { }
+        renderVirtualList({ stickToBottom: true });
+        hideTyping();
+        showToast("聊天记录已彻底清空");
+      });
+    }
+
+    function initLlmSettings() {
       applyCustomNames();
       updateManualTriggerBtnVisibility();
 
@@ -8102,7 +8160,8 @@ function initLlmSettings() {
                 temperature: _activePreset.temperature,
                 history_n: _activePreset.history_n || 12
               } : {},
-              personas: typeof personaState !== "undefined" ? personaState : {}
+              personas: typeof personaState !== "undefined" ? personaState : {},
+              time_context: getTimePerceptionContext()
             };
             await fetch(`${API_BASE}/app/trigger_reply`, {
               method: "POST",
@@ -8143,6 +8202,15 @@ function initLlmSettings() {
       const cfgUserName = document.getElementById("cfgUserName");
       if (cfgAiName) cfgAiName.value = localStorage.getItem("companion_custom_ai_name") || CONFIG.AI_NAME || "";
       if (cfgUserName) cfgUserName.value = localStorage.getItem("companion_custom_user_name") || CONFIG.HUMAN_NAME || "";
+
+      // 时间感知开关初值
+      const timeToggle = document.getElementById("timePerceptionToggle");
+      if (timeToggle) {
+        timeToggle.checked = (localStorage.getItem("companion_time_perception") !== "false");
+        timeToggle.addEventListener("change", () => {
+          localStorage.setItem("companion_time_perception", timeToggle.checked ? "true" : "false");
+        });
+      }
 
       loadLlmState();
       syncPresetUi();
@@ -8245,6 +8313,10 @@ function initLlmSettings() {
           }
           if (cfgUserName) {
             localStorage.setItem("companion_custom_user_name", cfgUserName.value.trim());
+          }
+          const timeToggle = document.getElementById("timePerceptionToggle");
+          if (timeToggle) {
+            localStorage.setItem("companion_time_perception", timeToggle.checked ? "true" : "false");
           }
           applyCustomNames();
 
