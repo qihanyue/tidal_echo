@@ -1825,6 +1825,89 @@
       line-height: 1.6;
     }
 
+    /* ── Tether (Field Protocol · 锚缰设定) ── */
+    .tether-card {
+      background: var(--card-bg, #fff);
+      border: 1px solid var(--card-line, rgba(150,168,182,.3));
+      border-radius: 18px;
+      padding: 15px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 18px rgba(0,0,0,.04);
+      transition: all .2s ease;
+      position: relative;
+    }
+    .tether-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .tether-card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tether-card-badges {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tether-badge {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: rgba(120,150,180,.15);
+      color: var(--tint);
+      font-weight: 500;
+    }
+    .tether-badge.front { background: rgba(90, 160, 240, .18); color: #3b82f6; }
+    .tether-badge.middle { background: rgba(160, 120, 240, .18); color: #8b5cf6; }
+    .tether-badge.back { background: rgba(30, 180, 150, .18); color: #10b981; }
+    .tether-card-summary {
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--text-soft, #555);
+      margin-top: 4px;
+      max-height: 40px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .tether-card-entries-preview {
+      display: none;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--card-line, rgba(150,168,182,.2));
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: var(--text-soft);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+    .tether-card.expanded .tether-card-entries-preview {
+      display: block;
+    }
+    .tether-card-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px solid var(--card-line, rgba(150,168,182,.15));
+    }
+    .tether-entry-box {
+      background: var(--card-sub-bg, rgba(255,255,255,.05));
+      border: 1px solid var(--card-line, rgba(150,168,182,.25));
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
     .profile-topbar {
       position: relative;
       z-index: 1;
@@ -4342,6 +4425,124 @@
     </div>
   </div>
 
+  <!-- ── Tether (full-screen 锚缰/引力场协定) ── -->
+  <div class="profile-panel hidden" id="tetherPanel" role="dialog" aria-modal="true" aria-labelledby="tetherTitle">
+    <div class="profile-page">
+      <div class="profile-topbar" style="display:flex; justify-content:space-between; align-items:center;">
+        <button class="profile-back" id="tetherClose" type="button" aria-label="返回">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </button>
+        <div style="text-align:center;">
+          <h2 id="tetherTitle" style="font-size:16px; font-weight:600; margin:0; color:var(--text);">Tether · 锚缰</h2>
+          <span style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic;">Field Protocol · 世界设定</span>
+        </div>
+        <button class="llm-btn primary" id="addTetherBtn" type="button" style="padding:4px 10px; font-size:12px;">新增书卷</button>
+      </div>
+
+      <div class="profile-scroll" style="padding-bottom:60px;">
+        <!-- 顶部标签切换 -->
+        <div class="segmented" id="tetherTabSeg" role="group" aria-label="Tether 功能分类" style="margin-bottom:16px;">
+          <button type="button" data-tab="books" class="active">协定书卷 (<span id="tetherCountBadge">0</span>)</button>
+          <button type="button" data-tab="github">GitHub 同步</button>
+        </div>
+
+        <!-- ══ TAB 1: 书卷列表 ══ -->
+        <div class="tether-tab-pane" id="tetherPaneBooks">
+          <div class="settings-card" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:14px; font-weight:600; color:var(--text); margin-bottom:2px;">Tether 协定全局注入</div>
+              <div style="font-size:12px; color:var(--text-faint);" id="tetherStatsText">已激活 0 部书卷，共 0 个条目</div>
+            </div>
+            <input type="checkbox" id="tetherGlobalToggle" checked style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+          </div>
+
+          <div id="tetherBookList">
+            <!-- 动态渲染书卷卡片 -->
+          </div>
+        </div>
+
+        <!-- ══ TAB 2: GitHub 同步 ══ -->
+        <div class="tether-tab-pane hidden" id="tetherPaneGithub">
+          <section class="settings-card" style="margin-bottom:14px;">
+            <div class="settings-label">GitHub 世界书同步</div>
+            <div class="llm-hint" style="margin-top:-6px; margin-bottom:14px;">
+              一键读取你的 GitHub 备份（自动兼容 Mooncache 4MB 大文件中的 worldBooks 格式，以及专属 Tether 备份），快速还原所有设定书卷与条目。
+            </div>
+
+            <div class="llm-field">
+              <label class="settings-label" for="tetherGhPath">备份文件相对路径</label>
+              <input class="llm-input" id="tetherGhPath" type="text" placeholder="例如：ephone_backup.json 或 tether.json" value="ephone_backup.json">
+              <div class="llm-hint">GitHub 访问令牌与仓库名将自动复用「Memory」中保存的配置，无需重复输入。</div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+              <button class="llm-btn primary" id="tetherGhPullBtn" type="button" style="padding:12px; font-size:14px; font-weight:600;">
+                从 GitHub 拉取世界书 (自动识别 Moon 格式)
+              </button>
+              <button class="llm-btn" id="tetherGhPushBtn" type="button" style="padding:12px; font-size:14px;">
+                备份上传世界书到 GitHub
+              </button>
+            </div>
+            <div class="llm-hint" id="tetherGhStatus" style="margin-top:12px; font-size:12px; text-align:center;"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 编辑 Tether 书卷与条目弹窗 ── -->
+  <div id="tetherEditorModal"
+    style="display:none; position:fixed; inset:0; z-index:999999; background:rgba(0,0,0,.5); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); padding:16px; box-sizing:border-box; justify-content:center; align-items:center;">
+    <div
+      style="background:var(--card-bg, #fff); border:1px solid var(--card-line, rgba(150,168,182,.3)); border-radius:20px; width:100%; max-width:480px; max-height:90vh; display:flex; flex-direction:column; padding:18px 16px; box-sizing:border-box; box-shadow:0 16px 40px rgba(0,0,0,.35);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <span id="tetherModalTitle" style="font-weight:600; font-size:16px; color:var(--text);">编辑 Tether 协定</span>
+        <div style="display:flex; gap:8px;">
+          <button class="llm-btn danger" id="tetherCancelBtn" type="button" style="padding:4px 10px; font-size:12px;">取消</button>
+          <button class="llm-btn primary" id="tetherSaveBtn" type="button" style="padding:4px 12px; font-size:12px; font-weight:600;">保存</button>
+        </div>
+      </div>
+
+      <div style="overflow-y:auto; flex:1; padding-right:2px;">
+        <div class="llm-field" style="margin-bottom:10px;">
+          <label class="settings-label" for="tetherBookNameInput">书名 / 协定名称</label>
+          <input class="llm-input" id="tetherBookNameInput" type="text" placeholder="例如：白狗治人机 / 跨世界通讯协议">
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:10px; background:var(--card-sub-bg, rgba(255,255,255,.05)); margin-bottom:10px; border:1px solid var(--card-line, rgba(150,168,182,.2));">
+          <span style="font-size:13px; color:var(--text);">是否启用该书卷</span>
+          <input type="checkbox" id="tetherBookEnabledInput" checked style="width:18px; height:18px; accent-color:var(--tint); cursor:pointer;">
+        </div>
+
+        <div class="llm-field" style="margin-bottom:10px;">
+          <label class="settings-label" for="tetherPositionSelect">注入位置</label>
+          <select class="llm-input" id="tetherPositionSelect" style="cursor:pointer;">
+            <option value="front">提示词最前面 (Front)</option>
+            <option value="middle">提示词中间 (Middle)</option>
+            <option value="back" selected>提示词最后面 (Back)</option>
+          </select>
+        </div>
+
+        <div class="llm-field" style="margin-bottom:14px;">
+          <label class="settings-label" for="tetherCategoryInput">分类</label>
+          <input class="llm-input" id="tetherCategoryInput" type="text" placeholder="未分类" value="未分类">
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-top:1px solid var(--card-line, rgba(150,168,182,.2)); padding-top:12px;">
+          <span style="font-size:13px; font-weight:600; color:var(--text);">内容条目 (<span id="tetherModalEntryCount">0</span>)</span>
+          <button class="llm-btn" id="tetherAddEntryBtn" type="button" style="padding:4px 10px; font-size:12px;">+ 添加条目</button>
+        </div>
+
+        <div id="tetherModalEntriesContainer" style="display:flex; flex-direction:column; gap:10px;">
+          <!-- 动态条目卡片 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Menu (hub / 主菜单页 · 聊天页左箭头进入) ── -->
   <div class="menu-panel hidden" id="menuPanel" role="dialog" aria-modal="true" aria-label="主菜单">
     <div class="menu-page">
@@ -4374,15 +4575,17 @@
                 <path d="M9 6l6 6-6 6" />
               </svg></span>
           </button>
-          <button class="menu-item" type="button" data-menu="movie">
+          <button class="menu-item" type="button" data-menu="tether">
             <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
                 stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="5" width="18" height="14" rx="2.4" />
-                <path d="M7.5 5v14M16.5 5v14M3 9.5h4.5M3 14.5h4.5M16.5 9.5H21M16.5 14.5H21" />
+                <circle cx="6" cy="6" r="3" />
+                <circle cx="18" cy="18" r="3" />
+                <line x1="8.1" y1="8.1" x2="15.9" y2="15.9" />
+                <path d="M12 5a7 7 0 0 1 7 7" stroke-dasharray="2 2" />
+                <path d="M5 12a7 7 0 0 0 7 7" stroke-dasharray="2 2" />
               </svg></span>
             <span class="menu-dot"></span>
-            <span class="menu-copy"><span class="menu-name">Movie</span><span class="menu-sub">Fragments of
-                light.</span></span>
+            <span class="menu-copy"><span class="menu-name">Tether</span><span class="menu-sub">Field Protocol · 引力场协定</span></span>
             <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 6l6 6-6 6" />
@@ -4834,6 +5037,7 @@
         if (item.dataset.menu === "chat") closeMenu();       // back to chat
         else if (item.dataset.menu === "album") location.assign("album.html");  // album shell (wire your own backend)
         else if (item.dataset.menu === "memory") openMemory();
+        else if (item.dataset.menu === "tether") openTether();
         else showToast("即将开放");                           // placeholder items
       });
     }
@@ -4856,11 +5060,32 @@
       memoryCloseTimer = setTimeout(() => memoryPanel.classList.add("hidden"), 360);
     }
     if (memoryClose) memoryClose.addEventListener("click", closeMemory);
+
+    const tetherPanel = document.getElementById("tetherPanel");
+    const tetherClose = document.getElementById("tetherClose");
+    let tetherCloseTimer = null;
+    function openTether() {
+      if (!tetherPanel) return;
+      closeMenu();
+      clearTimeout(tetherCloseTimer);
+      tetherPanel.classList.remove("hidden");
+      requestAnimationFrame(() => requestAnimationFrame(() => tetherPanel.classList.add("open")));
+      if (typeof refreshTetherUi === "function") refreshTetherUi();
+    }
+    function closeTether() {
+      if (!tetherPanel) return;
+      tetherPanel.classList.remove("open");
+      clearTimeout(tetherCloseTimer);
+      tetherCloseTimer = setTimeout(() => tetherPanel.classList.add("hidden"), 360);
+    }
+    if (tetherClose) tetherClose.addEventListener("click", closeTether);
+
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && memoryPanel && !memoryPanel.classList.contains("hidden")) closeMemory();
-    });
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && menuPanel && !menuPanel.classList.contains("hidden")) closeMenu();
+      if (e.key === "Escape") {
+        if (memoryPanel && !memoryPanel.classList.contains("hidden")) closeMemory();
+        if (tetherPanel && !tetherPanel.classList.contains("hidden")) closeTether();
+        if (menuPanel && !menuPanel.classList.contains("hidden")) closeMenu();
+      }
     });
     document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshDays(); });
 
@@ -6069,6 +6294,46 @@
       }
     }
 
+    function getTetherContext() {
+      try {
+        if (localStorage.getItem("companion_tether_enabled") === "false") {
+          return { front: "", middle: "", back: "" };
+        }
+        const raw = localStorage.getItem("companion_tether_books");
+        if (!raw) return { front: "", middle: "", back: "" };
+        const books = JSON.parse(raw);
+        if (!Array.isArray(books) || !books.length) return { front: "", middle: "", back: "" };
+
+        const frontParts = [];
+        const middleParts = [];
+        const backParts = [];
+
+        books.forEach(book => {
+          if (book && book.enabled !== false && (book.isGlobal !== false)) {
+            const pos = book.position || "back";
+            const entries = Array.isArray(book.entries) ? book.entries : [];
+            const activeEntries = entries.filter(e => e && e.enabled !== false && (e.content || "").trim());
+            if (activeEntries.length) {
+              const bookHeader = `【${(book.name || "未命名协定").trim()}】`;
+              const contentBody = activeEntries.map(e => e.content.trim()).join("\n\n");
+              const block = `${bookHeader}\n${contentBody}`;
+              if (pos === "front") frontParts.push(block);
+              else if (pos === "middle") middleParts.push(block);
+              else backParts.push(block);
+            }
+          }
+        });
+
+        return {
+          front: frontParts.join("\n\n"),
+          middle: middleParts.join("\n\n"),
+          back: backParts.join("\n\n")
+        };
+      } catch (_) {
+        return { front: "", middle: "", back: "" };
+      }
+    }
+
     function getLongTermMemoryContext() {
       try {
         if (localStorage.getItem("companion_memory_enabled") === "false") {
@@ -6108,6 +6373,10 @@
         }
         payload.time_context = getTimePerceptionContext();
         payload.memory_context = getLongTermMemoryContext();
+        const _tetherCtx = getTetherContext();
+        if (_tetherCtx.front) payload.tether_front = _tetherCtx.front;
+        if (_tetherCtx.middle) payload.tether_middle = _tetherCtx.middle;
+        if (_tetherCtx.back) payload.tether_back = _tetherCtx.back;
         // 是否立刻触发回复（手动模式时不触发）
         payload.trigger = (currentTriggerMode === "auto");
       } catch (e) { }
@@ -8444,7 +8713,10 @@
               } : {},
               personas: typeof personaState !== "undefined" ? personaState : {},
               time_context: getTimePerceptionContext(),
-              memory_context: getLongTermMemoryContext()
+              memory_context: getLongTermMemoryContext(),
+              tether_front: getTetherContext().front,
+              tether_middle: getTetherContext().middle,
+              tether_back: getTetherContext().back
             };
             await fetch(`${API_BASE}/app/trigger_reply`, {
               method: "POST",
@@ -9483,6 +9755,633 @@
 
     document.addEventListener("DOMContentLoaded", initMemorySystem);
     setTimeout(initMemorySystem, 1000);
+
+    /* ════════════ Tether · 锚缰设定系统 (Field Protocol) ════════════ */
+    function initTetherSystem() {
+      const STORAGE_BOOKS = "companion_tether_books";
+      const STORAGE_ENABLE = "companion_tether_enabled";
+      const STORAGE_GH = "companion_github_config";
+
+      function loadBooks() {
+        try {
+          const raw = localStorage.getItem(STORAGE_BOOKS);
+          return raw ? JSON.parse(raw) : [];
+        } catch (_) {
+          return [];
+        }
+      }
+
+      function saveBooks(books) {
+        try {
+          localStorage.setItem(STORAGE_BOOKS, JSON.stringify(books));
+        } catch (e) {
+          console.error("保存 Tether 设定失败", e);
+        }
+        updateTetherUi();
+      }
+
+      // DOM 元素
+      const tetherCountBadge = document.getElementById("tetherCountBadge");
+      const tetherStatsText = document.getElementById("tetherStatsText");
+      const tetherGlobalToggle = document.getElementById("tetherGlobalToggle");
+      const tetherBookList = document.getElementById("tetherBookList");
+      const addTetherBtn = document.getElementById("addTetherBtn");
+      const tetherTabSeg = document.getElementById("tetherTabSeg");
+      const tetherPaneBooks = document.getElementById("tetherPaneBooks");
+      const tetherPaneGithub = document.getElementById("tetherPaneGithub");
+
+      // GitHub 同步 DOM
+      const tetherGhPath = document.getElementById("tetherGhPath");
+      const tetherGhPullBtn = document.getElementById("tetherGhPullBtn");
+      const tetherGhPushBtn = document.getElementById("tetherGhPushBtn");
+      const tetherGhStatus = document.getElementById("tetherGhStatus");
+
+      // 模态框 DOM
+      const tetherEditorModal = document.getElementById("tetherEditorModal");
+      const tetherModalTitle = document.getElementById("tetherModalTitle");
+      const tetherBookNameInput = document.getElementById("tetherBookNameInput");
+      const tetherBookEnabledInput = document.getElementById("tetherBookEnabledInput");
+      const tetherPositionSelect = document.getElementById("tetherPositionSelect");
+      const tetherCategoryInput = document.getElementById("tetherCategoryInput");
+      const tetherModalEntryCount = document.getElementById("tetherModalEntryCount");
+      const tetherAddEntryBtn = document.getElementById("tetherAddEntryBtn");
+      const tetherModalEntriesContainer = document.getElementById("tetherModalEntriesContainer");
+      const tetherCancelBtn = document.getElementById("tetherCancelBtn");
+      const tetherSaveBtn = document.getElementById("tetherSaveBtn");
+
+      let currentEditingBookId = null;
+      let tempEntries = [];
+
+      // 暴露给外部刷新
+      window.refreshTetherUi = updateTetherUi;
+
+      // 切换 Tab
+      if (tetherTabSeg) {
+        tetherTabSeg.addEventListener("click", (e) => {
+          const btn = e.target.closest("button[data-tab]");
+          if (!btn) return;
+          tetherTabSeg.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          const tab = btn.dataset.tab;
+          if (tetherPaneBooks) tetherPaneBooks.classList.toggle("hidden", tab !== "books");
+          if (tetherPaneGithub) tetherPaneGithub.classList.toggle("hidden", tab !== "github");
+        });
+      }
+
+      // 全局总开关
+      if (tetherGlobalToggle) {
+        tetherGlobalToggle.checked = localStorage.getItem(STORAGE_ENABLE) !== "false";
+        tetherGlobalToggle.addEventListener("change", () => {
+          localStorage.setItem(STORAGE_ENABLE, tetherGlobalToggle.checked ? "true" : "false");
+          updateTetherUi();
+          showToast(tetherGlobalToggle.checked ? "已启用 Tether 设定注入" : "已暂停 Tether 设定注入");
+        });
+      }
+
+      // UI 刷新渲染
+      function updateTetherUi() {
+        const books = loadBooks();
+        if (tetherCountBadge) tetherCountBadge.textContent = books.length;
+
+        let activeBooksCount = 0;
+        let activeEntriesCount = 0;
+        books.forEach(b => {
+          if (b.enabled !== false && b.isGlobal !== false) {
+            activeBooksCount++;
+            const ens = Array.isArray(b.entries) ? b.entries : [];
+            activeEntriesCount += ens.filter(e => e && e.enabled !== false && (e.content || "").trim()).length;
+          }
+        });
+
+        if (tetherStatsText) {
+          const isGlobalOn = localStorage.getItem(STORAGE_ENABLE) !== "false";
+          if (!isGlobalOn) {
+            tetherStatsText.textContent = "已全局暂停注入（点击右侧开启）";
+            tetherStatsText.style.color = "var(--text-faint)";
+          } else {
+            tetherStatsText.textContent = `已激活 ${activeBooksCount} 部书卷，共 ${activeEntriesCount} 个条目，已自动注入提示词`;
+            tetherStatsText.style.color = "var(--tint)";
+          }
+        }
+
+        if (!tetherBookList) return;
+        if (!books.length) {
+          tetherBookList.innerHTML = `
+            <div class="mem-empty">
+              <div style="font-weight:600; font-size:15px; margin-bottom:4px; color:var(--text);">Tether 设定库尚无书卷</div>
+              <div>你可以点击右上角「新增书卷」录入设定，<br>或在「GitHub 同步」中直接拉取 Mooncache 的世界书。</div>
+            </div>
+          `;
+          return;
+        }
+
+        const posNames = { front: "最前 Front", middle: "中间 Middle", back: "最后 Back" };
+
+        tetherBookList.innerHTML = books.map((book, idx) => {
+          const bookId = book.id || `book_${idx}`;
+          const isEnabled = book.enabled !== false && book.isGlobal !== false;
+          const pos = book.position || "back";
+          const posLabel = posNames[pos] || "最后 Back";
+          const category = (book.category || "未分类").trim();
+          const entries = Array.isArray(book.entries) ? book.entries : [];
+          const activeEntryCount = entries.filter(e => e && e.enabled !== false).length;
+
+          // 生成条目正文预览
+          const entriesHtml = entries.map((e, eIdx) => {
+            const eStatus = e.enabled !== false ? "已启用" : "已停用";
+            const eColor = e.enabled !== false ? "var(--tint)" : "var(--text-faint)";
+            return `<div style="margin-bottom:8px; padding-bottom:6px; border-bottom:1px dashed var(--card-line, rgba(150,168,182,.15));">
+              <div style="font-size:11px; color:${eColor}; margin-bottom:2px;">条目 #${eIdx + 1} (${eStatus})</div>
+              <div>${escapeHtml(e.content || "")}</div>
+            </div>`;
+          }).join("");
+
+          const firstSummary = entries[0] && entries[0].content ? entries[0].content.split("\n")[0].slice(0, 50) : "暂无条目内容";
+
+          return `
+            <div class="tether-card" data-id="${bookId}">
+              <div class="tether-card-head">
+                <span class="tether-card-title">
+                  <span style="color:var(--tint);">✦</span> ${escapeHtml(book.name || "未命名设定")}
+                </span>
+                <div class="tether-card-badges">
+                  <span class="tether-badge ${pos}">${posLabel}</span>
+                  <span class="tether-badge">${activeEntryCount}/${entries.length} 条目</span>
+                  <input type="checkbox" class="tether-toggle-single" data-id="${bookId}" ${isEnabled ? "checked" : ""} style="width:18px; height:18px; accent-color:var(--tint); cursor:pointer;">
+                </div>
+              </div>
+              <div class="tether-card-summary" title="点击展开/收起详情">
+                <span style="color:var(--text-faint); margin-right:4px;">[${escapeHtml(category)}]</span> ${escapeHtml(firstSummary)}
+              </div>
+              <div class="tether-card-entries-preview">
+                ${entriesHtml || '<div style="color:var(--text-faint);">暂无条目</div>'}
+              </div>
+              <div class="tether-card-actions">
+                <span style="font-size:11px; color:var(--text-faint); cursor:pointer;" class="tether-expand-btn" data-id="${bookId}">点击折叠/展开预览</span>
+                <div style="display:flex; gap:6px;">
+                  <button class="llm-btn tether-edit-btn" data-id="${bookId}" type="button" style="padding:3px 8px; font-size:12px;">编辑</button>
+                  <button class="llm-btn danger tether-del-btn" data-id="${bookId}" type="button" style="padding:3px 8px; font-size:12px;">删除</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      // 卡片点击事件委托
+      if (tetherBookList) {
+        tetherBookList.addEventListener("click", (e) => {
+          // 切换单本书开关
+          const toggle = e.target.closest(".tether-toggle-single");
+          if (toggle) {
+            const bId = toggle.dataset.id;
+            const books = loadBooks();
+            const target = books.find(b => (b.id || "").toString() === bId);
+            if (target) {
+              target.enabled = toggle.checked;
+              target.isGlobal = toggle.checked;
+              saveBooks(books);
+              showToast(toggle.checked ? `已启用《${target.name}》` : `已禁用《${target.name}》`);
+            }
+            return;
+          }
+
+          // 编辑按钮
+          const editBtn = e.target.closest(".tether-edit-btn");
+          if (editBtn) {
+            const bId = editBtn.dataset.id;
+            openBookEditor(bId);
+            return;
+          }
+
+          // 删除按钮
+          const delBtn = e.target.closest(".tether-del-btn");
+          if (delBtn) {
+            const bId = delBtn.dataset.id;
+            const books = loadBooks();
+            const target = books.find(b => (b.id || "").toString() === bId);
+            if (!target) return;
+            if (confirm(`确定要彻底删除《${target.name}》及其所有条目吗？`)) {
+              const updated = books.filter(b => (b.id || "").toString() !== bId);
+              saveBooks(updated);
+              showToast("已删除该书卷");
+            }
+            return;
+          }
+
+          // 展开/收起预览
+          const card = e.target.closest(".tether-card");
+          const summary = e.target.closest(".tether-card-summary");
+          const expandBtn = e.target.closest(".tether-expand-btn");
+          if (card && (summary || expandBtn)) {
+            card.classList.toggle("expanded");
+          }
+        });
+      }
+
+      // 打开编辑弹窗
+      function openBookEditor(bookId) {
+        currentEditingBookId = bookId || null;
+        const books = loadBooks();
+        const book = bookId ? books.find(b => (b.id || "").toString() === bookId) : null;
+
+        if (tetherModalTitle) tetherModalTitle.textContent = book ? "编辑 Tether 协定" : "新增 Tether 协定";
+        if (tetherBookNameInput) tetherBookNameInput.value = book ? (book.name || "") : "";
+        if (tetherBookEnabledInput) tetherBookEnabledInput.checked = book ? (book.enabled !== false && book.isGlobal !== false) : true;
+        if (tetherPositionSelect) tetherPositionSelect.value = (book && book.position) || "back";
+        if (tetherCategoryInput) tetherCategoryInput.value = (book && book.category) || "未分类";
+
+        if (book && Array.isArray(book.entries) && book.entries.length) {
+          tempEntries = JSON.parse(JSON.stringify(book.entries));
+        } else {
+          tempEntries = [{ id: "entry_" + Date.now(), content: "", enabled: true }];
+        }
+
+        renderModalEntries();
+        if (tetherEditorModal) tetherEditorModal.style.display = "flex";
+      }
+
+      // 渲染编辑弹窗中的条目卡片
+      function renderModalEntries() {
+        if (tetherModalEntryCount) tetherModalEntryCount.textContent = tempEntries.length;
+        if (!tetherModalEntriesContainer) return;
+
+        tetherModalEntriesContainer.innerHTML = tempEntries.map((entry, idx) => {
+          const isEn = entry.enabled !== false;
+          return `
+            <div class="tether-entry-box" data-idx="${idx}">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <input type="checkbox" class="entry-enable-check" ${isEn ? "checked" : ""} style="width:16px; height:16px; accent-color:var(--tint); cursor:pointer;">
+                  <span style="font-size:12px; font-weight:600; color:${isEn ? 'var(--tint)' : 'var(--text-faint)'};">${isEn ? '已启用' : '已禁用'}</span>
+                </div>
+                <button type="button" class="llm-btn danger entry-del-btn" style="padding:2px 8px; font-size:11px;">删除</button>
+              </div>
+              <textarea class="llm-textarea entry-content-textarea" rows="4" placeholder="输入条目正文规则..." style="font-size:13px; line-height:1.5;">${escapeHtml(entry.content || "")}</textarea>
+            </div>
+          `;
+        }).join("");
+      }
+
+      // 条目容器事件监听（同步修改与删除）
+      if (tetherModalEntriesContainer) {
+        tetherModalEntriesContainer.addEventListener("input", (e) => {
+          const area = e.target.closest(".entry-content-textarea");
+          if (area) {
+            const box = area.closest(".tether-entry-box");
+            const idx = parseInt(box.dataset.idx, 10);
+            if (!isNaN(idx) && tempEntries[idx]) {
+              tempEntries[idx].content = area.value;
+            }
+          }
+        });
+
+        tetherModalEntriesContainer.addEventListener("change", (e) => {
+          const check = e.target.closest(".entry-enable-check");
+          if (check) {
+            const box = check.closest(".tether-entry-box");
+            const idx = parseInt(box.dataset.idx, 10);
+            if (!isNaN(idx) && tempEntries[idx]) {
+              tempEntries[idx].enabled = check.checked;
+              renderModalEntries();
+            }
+          }
+        });
+
+        tetherModalEntriesContainer.addEventListener("click", (e) => {
+          const del = e.target.closest(".entry-del-btn");
+          if (del) {
+            const box = del.closest(".tether-entry-box");
+            const idx = parseInt(box.dataset.idx, 10);
+            if (!isNaN(idx) && tempEntries[idx]) {
+              tempEntries.splice(idx, 1);
+              renderModalEntries();
+            }
+          }
+        });
+      }
+
+      // 添加条目按钮
+      if (tetherAddEntryBtn) {
+        tetherAddEntryBtn.addEventListener("click", () => {
+          tempEntries.push({ id: "entry_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6), content: "", enabled: true });
+          renderModalEntries();
+          setTimeout(() => {
+            const boxes = tetherModalEntriesContainer.querySelectorAll(".entry-content-textarea");
+            if (boxes.length) boxes[boxes.length - 1].focus();
+          }, 50);
+        });
+      }
+
+      // 取消按钮
+      if (tetherCancelBtn) {
+        tetherCancelBtn.addEventListener("click", () => {
+          if (tetherEditorModal) tetherEditorModal.style.display = "none";
+        });
+      }
+      if (tetherEditorModal) {
+        tetherEditorModal.addEventListener("click", (e) => {
+          if (e.target === tetherEditorModal) tetherEditorModal.style.display = "none";
+        });
+      }
+
+      // 保存按钮
+      if (tetherSaveBtn) {
+        tetherSaveBtn.addEventListener("click", () => {
+          const name = tetherBookNameInput ? tetherBookNameInput.value.trim() : "";
+          if (!name) {
+            alert("请输入书卷名称！");
+            return;
+          }
+
+          // 读取最新内容
+          const boxes = tetherModalEntriesContainer ? tetherModalEntriesContainer.querySelectorAll(".tether-entry-box") : [];
+          const finalEntries = [];
+          boxes.forEach((box, i) => {
+            const area = box.querySelector(".entry-content-textarea");
+            const chk = box.querySelector(".entry-enable-check");
+            const val = area ? area.value.trim() : "";
+            if (val) {
+              finalEntries.push({
+                id: (tempEntries[i] && tempEntries[i].id) || `entry_${Date.now()}_${i}`,
+                content: val,
+                enabled: chk ? chk.checked : true
+              });
+            }
+          });
+
+          const books = loadBooks();
+          const isEn = tetherBookEnabledInput ? tetherBookEnabledInput.checked : true;
+          const pos = tetherPositionSelect ? tetherPositionSelect.value : "back";
+          const cat = (tetherCategoryInput ? tetherCategoryInput.value.trim() : "") || "未分类";
+
+          if (currentEditingBookId) {
+            const target = books.find(b => (b.id || "").toString() === currentEditingBookId);
+            if (target) {
+              target.name = name;
+              target.enabled = isEn;
+              target.isGlobal = isEn;
+              target.position = pos;
+              target.category = cat;
+              target.entries = finalEntries;
+            }
+          } else {
+            books.push({
+              id: "tether_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+              name: name,
+              enabled: isEn,
+              isGlobal: isEn,
+              position: pos,
+              category: cat,
+              entries: finalEntries
+            });
+          }
+
+          saveBooks(books);
+          if (tetherEditorModal) tetherEditorModal.style.display = "none";
+          showToast(`已保存《${name}》`);
+        });
+      }
+
+      if (addTetherBtn) {
+        addTetherBtn.addEventListener("click", () => openBookEditor(null));
+      }
+
+      // ── GitHub 同步逻辑 (支持大文件流式拉取 Mooncache 的 worldBooks) ──
+      if (tetherGhPullBtn) {
+        tetherGhPullBtn.addEventListener("click", async () => {
+          let ghConfig = {};
+          try {
+            ghConfig = JSON.parse(localStorage.getItem(STORAGE_GH) || "{}");
+          } catch (_) {}
+
+          const token = ghConfig.token || "";
+          const user = ghConfig.user || "";
+          const repo = ghConfig.repo || "";
+          const path = (tetherGhPath ? tetherGhPath.value.trim() : "") || ghConfig.path || "ephone_backup.json";
+
+          if (!token || !user || !repo || !path) {
+            alert("未找到 GitHub 配置，请先在「Memory」页面的 GitHub 同步中填写并保存 Token、用户名和仓库名！");
+            return;
+          }
+
+          tetherGhPullBtn.disabled = true;
+          const origText = tetherGhPullBtn.textContent;
+          tetherGhPullBtn.textContent = "正在从 GitHub 下载世界书...";
+          if (tetherGhStatus) tetherGhStatus.textContent = "正在连接 GitHub API...";
+
+          try {
+            const url = `https://api.github.com/repos/${encodeURIComponent(user)}/${encodeURIComponent(repo)}/contents/${path}`;
+            const resp = await fetch(url, {
+              headers: {
+                "Authorization": `token ${token}`,
+                "Accept": "application/vnd.github.v3+json"
+              }
+            });
+
+            if (!resp.ok) {
+              const err = await resp.text();
+              throw new Error(`GitHub 响应 ${resp.status}: ${err.slice(0, 150)}`);
+            }
+
+            const fileData = await resp.json();
+            let decodedText = "";
+
+            if (fileData.content) {
+              decodedText = decodeBase64Utf8(fileData.content);
+            } else if (fileData.sha) {
+              if (tetherGhStatus) tetherGhStatus.textContent = "检测到较大备份，正在流式下载世界书数据...";
+              const blobUrl = `https://api.github.com/repos/${encodeURIComponent(user)}/${encodeURIComponent(repo)}/git/blobs/${fileData.sha}`;
+              const blobResp = await fetch(blobUrl, {
+                headers: {
+                  "Authorization": `token ${token}`,
+                  "Accept": "application/vnd.github.raw"
+                }
+              });
+              if (!blobResp.ok) throw new Error(`下载大文件失败: HTTP ${blobResp.status}`);
+              decodedText = await blobResp.text();
+            } else {
+              throw new Error("未能获取远端文件内容");
+            }
+
+            if (tetherGhStatus) tetherGhStatus.textContent = "下载完成，正在解析世界书设定...";
+
+            const parsed = JSON.parse(decodedText);
+            let importedBooks = [];
+
+            if (Array.isArray(parsed.worldBooks)) {
+              importedBooks = parsed.worldBooks;
+            } else if (Array.isArray(parsed.tether_books)) {
+              importedBooks = parsed.tether_books;
+            } else if (Array.isArray(parsed)) {
+              importedBooks = parsed;
+            } else if (parsed.books && Array.isArray(parsed.books)) {
+              importedBooks = parsed.books;
+            }
+
+            if (!importedBooks.length) {
+              alert("已连接文件，但未在其中发现 worldBooks 世界书数据！");
+              return;
+            }
+
+            const currentBooks = loadBooks();
+            let addedCount = 0;
+            let updatedCount = 0;
+
+            importedBooks.forEach(ib => {
+              if (!ib || !ib.name) return;
+              const rawEntries = Array.isArray(ib.entries) ? ib.entries : [];
+              const cleanEntries = rawEntries.map((e, idx) => ({
+                id: (e && e.id) || `entry_${idx}`,
+                content: (e && e.content ? e.content : (typeof e === "string" ? e : "")).trim(),
+                enabled: e && typeof e === "object" ? (e.enabled !== false) : true
+              })).filter(e => e.content);
+
+              const existing = currentBooks.find(cb => cb.name.trim() === ib.name.trim());
+              if (existing) {
+                // 更新现有书卷的条目
+                existing.entries = cleanEntries;
+                existing.position = ib.position || existing.position || "back";
+                existing.enabled = ib.isGlobal !== false && ib.enabled !== false;
+                existing.isGlobal = existing.enabled;
+                updatedCount++;
+              } else {
+                currentBooks.push({
+                  id: ib.id || ("tether_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6)),
+                  name: ib.name.trim(),
+                  category: ib.category || "未分类",
+                  enabled: ib.isGlobal !== false && ib.enabled !== false,
+                  isGlobal: ib.isGlobal !== false && ib.enabled !== false,
+                  position: ib.position || "back",
+                  entries: cleanEntries
+                });
+                addedCount++;
+              }
+            });
+
+            saveBooks(currentBooks);
+            const timeStr = new Date().toLocaleString("zh-CN");
+            if (tetherGhStatus) tetherGhStatus.textContent = `同步成功 (${timeStr}): 导入新增 ${addedCount} 部书卷，更新 ${updatedCount} 部`;
+            showToast(`成功导入 ${addedCount + updatedCount} 部世界书`);
+
+            if (tetherTabSeg) {
+              const bBtn = tetherTabSeg.querySelector("button[data-tab='books']");
+              if (bBtn) bBtn.click();
+            }
+          } catch (err) {
+            alert(`拉取世界书失败: ${err.message}`);
+            if (tetherGhStatus) tetherGhStatus.textContent = `同步出错: ${err.message}`;
+          } finally {
+            tetherGhPullBtn.disabled = false;
+            tetherGhPullBtn.textContent = origText;
+          }
+        });
+      }
+
+      // 备份上传世界书到 GitHub
+      if (tetherGhPushBtn) {
+        tetherGhPushBtn.addEventListener("click", async () => {
+          let ghConfig = {};
+          try {
+            ghConfig = JSON.parse(localStorage.getItem(STORAGE_GH) || "{}");
+          } catch (_) {}
+
+          const token = ghConfig.token || "";
+          const user = ghConfig.user || "";
+          const repo = ghConfig.repo || "";
+          const path = (tetherGhPath ? tetherGhPath.value.trim() : "") || ghConfig.path || "ephone_backup.json";
+
+          if (!token || !user || !repo || !path) {
+            alert("请在「Memory」的 GitHub 同步中填写配置！");
+            return;
+          }
+
+          const books = loadBooks();
+          tetherGhPushBtn.disabled = true;
+          const origText = tetherGhPushBtn.textContent;
+          tetherGhPushBtn.textContent = "正在检查远端文件并上传...";
+          if (tetherGhStatus) tetherGhStatus.textContent = "正在连接 GitHub...";
+
+          try {
+            const url = `https://api.github.com/repos/${encodeURIComponent(user)}/${encodeURIComponent(repo)}/contents/${path}`;
+            let lastSha = "";
+            let existingJson = null;
+
+            try {
+              const getResp = await fetch(url, {
+                headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3+json" }
+              });
+              if (getResp.ok) {
+                const curFileData = await getResp.json();
+                lastSha = curFileData.sha || "";
+                let rawText = "";
+                if (curFileData.content) {
+                  rawText = decodeBase64Utf8(curFileData.content);
+                } else if (curFileData.sha) {
+                  const blobResp = await fetch(`https://api.github.com/repos/${encodeURIComponent(user)}/${encodeURIComponent(repo)}/git/blobs/${curFileData.sha}`, {
+                    headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.raw" }
+                  });
+                  if (blobResp.ok) rawText = await blobResp.text();
+                }
+                if (rawText) {
+                  try { existingJson = JSON.parse(rawText); } catch (_) {}
+                }
+              }
+            } catch (_) {}
+
+            let uploadContentStr = "";
+            if (existingJson && typeof existingJson === "object" && (existingJson.chats || existingJson.worldBooks)) {
+              existingJson.worldBooks = books;
+              uploadContentStr = JSON.stringify(existingJson, null, 2);
+            } else {
+              const payload = {
+                type: "tether_world_books",
+                updated_at: new Date().toISOString(),
+                total_books: books.length,
+                worldBooks: books
+              };
+              uploadContentStr = JSON.stringify(payload, null, 2);
+            }
+
+            const putBody = {
+              message: `chore: sync tether worldbooks from Tidal Echo (${new Date().toLocaleString("zh-CN")})`,
+              content: encodeBase64Utf8(uploadContentStr)
+            };
+            if (lastSha) putBody.sha = lastSha;
+
+            const putResp = await fetch(url, {
+              method: "PUT",
+              headers: {
+                "Authorization": `token ${token}`,
+                "Content-Type": "application/json",
+                "Accept": "application/vnd.github.v3+json"
+              },
+              body: JSON.stringify(putBody)
+            });
+
+            if (!putResp.ok) {
+              const err = await putResp.text();
+              throw new Error(`GitHub 响应 ${putResp.status}: ${err.slice(0, 150)}`);
+            }
+
+            const timeStr = new Date().toLocaleString("zh-CN");
+            if (tetherGhStatus) tetherGhStatus.textContent = `备份成功 (${timeStr}): 已上传 ${books.length} 部世界书到 GitHub`;
+            showToast("世界书已成功备份上传至 GitHub");
+          } catch (err) {
+            alert(`上传失败: ${err.message}`);
+            if (tetherGhStatus) tetherGhStatus.textContent = `上传出错: ${err.message}`;
+          } finally {
+            tetherGhPushBtn.disabled = false;
+            tetherGhPushBtn.textContent = origText;
+          }
+        });
+      }
+
+      updateTetherUi();
+    }
+
+    document.addEventListener("DOMContentLoaded", initTetherSystem);
+    setTimeout(initTetherSystem, 1000);
 
   </script>
 

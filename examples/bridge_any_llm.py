@@ -225,20 +225,36 @@ def _merge_consecutive_roles(msgs: list) -> list:
     return merged
 
 
-def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", memory_context: str = "", limit: int = 0) -> list:
-    sys_prompt = custom_persona or PERSONA
-    if user_persona:
-        sys_prompt += f"\n\n[关于与你对话的人类用户的设定]:\n{user_persona}"
-    if memory_context:
-        sys_prompt += f"\n\n{memory_context}"
-    if time_context:
-        sys_prompt += f"\n\n{time_context}"
-    sys_prompt += (
-        "\n\n[聊天格式规则]:\n"
+def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", memory_context: str = "", tether_front: str = "", tether_middle: str = "", tether_back: str = "", limit: int = 0) -> list:
+    base_persona = custom_persona or PERSONA
+    parts = []
+    # 1. 提示词最前面 (Front)
+    if tether_front and tether_front.strip():
+        parts.append(f"[全局世界设定与前置协定 (Front)]\n{tether_front.strip()}")
+    # 2. 基础人设与用户信息
+    if base_persona and base_persona.strip():
+        parts.append(base_persona.strip())
+    if user_persona and user_persona.strip():
+        parts.append(f"[关于与你对话的人类用户的设定]:\n{user_persona.strip()}")
+    # 3. 提示词中间 (Middle)
+    if tether_middle and tether_middle.strip():
+        parts.append(f"[环境世界观与场域协定 (Middle)]\n{tether_middle.strip()}")
+    # 4. 长期记忆与时间感知
+    if memory_context and memory_context.strip():
+        parts.append(memory_context.strip())
+    if time_context and time_context.strip():
+        parts.append(time_context.strip())
+    # 5. 提示词最后面 (Back - 最高执行准则)
+    if tether_back and tether_back.strip():
+        parts.append(f"[最高执行准则与核心协定 (Back)]\n{tether_back.strip()}")
+
+    parts.append(
+        "[聊天格式规则]:\n"
         "你可以像真人使用即时通讯软件（如微信）一样连续发送多条短消息。"
         "如果想分多条气泡发送，请在每条短消息之间加上 [分段] 标记（例如：好呀！[分段]这是你在哪拍的照片呀？）。"
         "不要总是把所有话堆在一个长段落里。"
     )
+    sys_prompt = "\n\n".join([p for p in parts if p.strip()])
     history = list(convo)
     if limit > 0 and len(history) > limit:
         history = history[-limit:]
@@ -405,6 +421,19 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
     dyn_personas = (bundle_meta or {}).get("personas") or latest_item.get("personas") or {}
     time_ctx = (bundle_meta or {}).get("time_context") or latest_item.get("time_context") or (latest_item.get("meta") or {}).get("time_context") or ""
     memory_ctx = (bundle_meta or {}).get("memory_context") or latest_item.get("memory_context") or (latest_item.get("meta") or {}).get("memory_context") or ""
+
+    # 提取 Tether (世界设定/场域协定) 的三个注入位置
+    t_front = (bundle_meta or {}).get("tether_front") or latest_item.get("tether_front") or (latest_item.get("meta") or {}).get("tether_front") or ""
+    t_middle = (bundle_meta or {}).get("tether_middle") or latest_item.get("tether_middle") or (latest_item.get("meta") or {}).get("tether_middle") or ""
+    t_back = (bundle_meta or {}).get("tether_back") or latest_item.get("tether_back") or (latest_item.get("meta") or {}).get("tether_back") or ""
+    t_ctx = (bundle_meta or {}).get("tether_context") or latest_item.get("tether_context") or (latest_item.get("meta") or {}).get("tether_context")
+    if isinstance(t_ctx, dict):
+        if not t_front and t_ctx.get("front"): t_front = t_ctx["front"]
+        if not t_middle and t_ctx.get("middle"): t_middle = t_ctx["middle"]
+        if not t_back and t_ctx.get("back"): t_back = t_ctx["back"]
+    elif isinstance(t_ctx, str) and t_ctx.strip() and not t_back:
+        t_back = t_ctx.strip()
+
     if not time_ctx:
         # 兜底生成当前时间
         try:
@@ -436,7 +465,16 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
 
     try:
         limit = max(history_n * 2, 8)
-        msgs = build_messages(custom_persona=custom_ai, user_persona=custom_user, time_context=time_ctx, memory_context=memory_ctx, limit=limit)
+        msgs = build_messages(
+            custom_persona=custom_ai,
+            user_persona=custom_user,
+            time_context=time_ctx,
+            memory_context=memory_ctx,
+            tether_front=t_front,
+            tether_middle=t_middle,
+            tether_back=t_back,
+            limit=limit
+        )
         reply = call_llm_dynamic(msgs, active_routes, temp)
     except Exception as e:
         log("err", f"生成失败: {e}")
