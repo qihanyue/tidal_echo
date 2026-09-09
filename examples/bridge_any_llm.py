@@ -225,10 +225,12 @@ def _merge_consecutive_roles(msgs: list) -> list:
     return merged
 
 
-def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", limit: int = 0) -> list:
+def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", memory_context: str = "", limit: int = 0) -> list:
     sys_prompt = custom_persona or PERSONA
     if user_persona:
         sys_prompt += f"\n\n[关于与你对话的人类用户的设定]:\n{user_persona}"
+    if memory_context:
+        sys_prompt += f"\n\n{memory_context}"
     if time_context:
         sys_prompt += f"\n\n{time_context}"
     sys_prompt += (
@@ -397,11 +399,12 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
         convo.append({"role": "user", "content": combined_text})
         log("in", f"收到打包消息 ({len(items)} 条): {combined_text[:60]}")
 
-    # 读取前端动态附带的 LLM 配置、双人设、上下文轮数与时间感知
+    # 读取前端动态附带的 LLM 配置、双人设、上下文轮数、时间感知与长期记忆
     latest_item = items[-1]
     dyn_llm = (bundle_meta or {}).get("llm_config") or latest_item.get("llm_config") or {}
     dyn_personas = (bundle_meta or {}).get("personas") or latest_item.get("personas") or {}
     time_ctx = (bundle_meta or {}).get("time_context") or latest_item.get("time_context") or (latest_item.get("meta") or {}).get("time_context") or ""
+    memory_ctx = (bundle_meta or {}).get("memory_context") or latest_item.get("memory_context") or (latest_item.get("meta") or {}).get("memory_context") or ""
     if not time_ctx:
         # 兜底生成当前时间
         try:
@@ -433,7 +436,7 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
 
     try:
         limit = max(history_n * 2, 8)
-        msgs = build_messages(custom_persona=custom_ai, user_persona=custom_user, time_context=time_ctx, limit=limit)
+        msgs = build_messages(custom_persona=custom_ai, user_persona=custom_user, time_context=time_ctx, memory_context=memory_ctx, limit=limit)
         reply = call_llm_dynamic(msgs, active_routes, temp)
     except Exception as e:
         log("err", f"生成失败: {e}")

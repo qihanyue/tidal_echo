@@ -1759,6 +1759,72 @@
       pointer-events: none;
     }
 
+    /* ── Memory Panel & Cards ── */
+    .mem-card {
+      background: var(--card-bg, #fff);
+      border: 1px solid var(--card-line, rgba(150,168,182,.3));
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 18px rgba(0,0,0,.04);
+      transition: all .2s ease;
+      position: relative;
+    }
+    .mem-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .mem-card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mem-card-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: rgba(120,150,180, .15);
+      color: var(--tint);
+      font-weight: 500;
+    }
+    .mem-card-body {
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--text-soft, #555);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 110px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+    }
+    .mem-card-body.expanded {
+      max-height: none;
+    }
+    .mem-card-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--card-line, rgba(150,168,182,.15));
+    }
+    .mem-empty {
+      background: var(--card-bg, #fff);
+      border: 1px dashed var(--card-line, rgba(150,168,182,.4));
+      border-radius: 18px;
+      padding: 32px 20px;
+      text-align: center;
+      color: var(--text-faint);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
     .profile-topbar {
       position: relative;
       z-index: 1;
@@ -4104,6 +4170,178 @@
     </div>
   </div>
 
+  <!-- ── Memory (full-screen 记忆殿堂) ── -->
+  <div class="profile-panel hidden" id="memoryPanel" role="dialog" aria-modal="true" aria-labelledby="memoryTitle">
+    <div class="profile-page">
+      <div class="profile-topbar" style="display:flex; justify-content:space-between; align-items:center;">
+        <button class="profile-back" id="memoryClose" type="button" aria-label="返回">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </button>
+        <div style="text-align:center;">
+          <h2 id="memoryTitle" style="font-size:16px; font-weight:600; margin:0; color:var(--text);">Memory · 记忆殿堂</h2>
+          <span style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic;">The echoes we keep</span>
+        </div>
+        <button class="llm-btn primary" id="addMemoryBtn" type="button" style="padding:4px 10px; font-size:12px;">+ 新增</button>
+      </div>
+
+      <div class="profile-scroll" style="padding-bottom:60px;">
+        <!-- 顶部标签切换 -->
+        <div class="segmented" id="memoryTabSeg" role="group" aria-label="记忆功能分类" style="margin-bottom:16px;">
+          <button type="button" data-tab="cards" class="active">回忆录 (<span id="memoryCountBadge">0</span>)</button>
+          <button type="button" data-tab="summary">✨ 古法总结</button>
+          <button type="button" data-tab="github">☁️ GitHub 同步</button>
+        </div>
+
+        <!-- ══ TAB 1: 记忆卡片列表 ══ -->
+        <div class="memory-tab-pane" id="memPaneCards">
+          <div class="settings-card" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:14px; font-weight:600; color:var(--text); margin-bottom:2px;">长期记忆注入</div>
+              <div style="font-size:12px; color:var(--text-faint);" id="memoryStatsText">已激活 0 条记忆段落，已自动注入对话背景</div>
+            </div>
+            <input type="checkbox" id="memoryEnableToggle" checked style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+          </div>
+
+          <div id="memoryCardList">
+            <!-- 动态渲染记忆卡片 -->
+          </div>
+        </div>
+
+        <!-- ══ TAB 2: 古法总结工作台 ══ -->
+        <div class="memory-tab-pane hidden" id="memPaneSummary">
+          <section class="settings-card" style="margin-bottom:14px;">
+            <div class="settings-label">✨ 古法总结工作台</div>
+            <div class="llm-hint" style="margin-top:-6px; margin-bottom:14px;">
+              挑选一段历史聊天，调用大模型客观提炼出你们之间的重要事件、约定承诺与情感变化，存为永久记忆。
+            </div>
+
+            <div class="llm-field">
+              <label class="settings-label">提取消息范围</label>
+              <div class="segmented" id="summaryRangeSeg" role="group" aria-label="范围快捷选择">
+                <button type="button" data-val="new" class="active">未总结消息</button>
+                <button type="button" data-val="recent30">最近 30 条</button>
+                <button type="button" data-val="recent60">最近 60 条</button>
+                <button type="button" data-val="custom">自定义范围</button>
+              </div>
+            </div>
+
+            <div class="llm-field hidden" id="summaryCustomRangeRow">
+              <div style="display:flex; gap:10px; align-items:center;">
+                <input class="llm-input" id="summaryStartIdx" type="number" placeholder="起始消息序号 (如 1)" style="flex:1;">
+                <span style="color:var(--text-faint);">至</span>
+                <input class="llm-input" id="summaryEndIdx" type="number" placeholder="截止消息序号 (如 100)" style="flex:1;">
+              </div>
+            </div>
+
+            <div class="llm-hint" id="summaryRangeHint" style="margin-bottom:12px; color:var(--tint);">正在统计可提炼对话条数...</div>
+
+            <div class="llm-field">
+              <label class="settings-label" for="summaryPromptInput">提炼提示词 (Summary Prompt)</label>
+              <textarea class="llm-textarea" id="summaryPromptInput" rows="5" style="font-size:12.5px; line-height:1.5;">你是一个客观敏锐的记录者。请仔细阅读以下两人的聊天记录，提炼出一份精炼的过往经历总结。
+要求：
+1. 重点提炼核心事实、双方发生的关键事件、达成的约定、重要的情感与态度转变；
+2. 以客观第三人称视角叙述，条理清晰，言简意赅，禁止套话与说教；
+3. 每项事件以时间或先后顺序分条列出；
+4. 输出内容将作为两人的长期记忆背景。</textarea>
+            </div>
+
+            <button class="llm-btn primary" id="doGenerateSummaryBtn" type="button" style="width:100%; padding:11px; font-size:14px; font-weight:600; margin-top:8px;">
+              ✨ 开始生成记忆总结
+            </button>
+          </section>
+
+          <!-- 总结结果草稿区 (生成后展示) -->
+          <section class="settings-card hidden" id="summaryResultBox">
+            <div class="settings-label" style="color:var(--tint);">🎉 记忆总结提炼结果</div>
+            <div class="llm-hint" style="margin-top:-6px; margin-bottom:12px;">已为你生成总结草稿，你可以直接在下方修改润色，确认无误后点击存入记忆殿堂。</div>
+
+            <div class="llm-field">
+              <label class="settings-label" for="summaryResultTitle">记忆段落标题</label>
+              <input class="llm-input" id="summaryResultTitle" type="text" placeholder="例如：<2026年9月上旬事件汇总>">
+            </div>
+
+            <div class="llm-field">
+              <label class="settings-label" for="summaryResultContent">提炼正文</label>
+              <textarea class="llm-textarea" id="summaryResultContent" rows="8" style="font-size:13px; line-height:1.6;"></textarea>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:10px;">
+              <button class="llm-btn primary" id="saveSummaryToMemoriesBtn" type="button" style="flex:1; padding:10px;">💾 存入记忆殿堂</button>
+              <button class="llm-btn" id="discardSummaryBtn" type="button" style="padding:10px 14px;">放弃</button>
+            </div>
+          </section>
+        </div>
+
+        <!-- ══ TAB 3: GitHub 记忆同步 ══ -->
+        <div class="memory-tab-pane hidden" id="memPaneGithub">
+          <section class="settings-card" style="margin-bottom:14px;">
+            <div class="settings-label">☁️ GitHub 云端同步配置</div>
+            <div class="llm-hint" style="margin-top:-6px; margin-bottom:14px;">
+              支持从你的 GitHub 私有仓库双向拉取和备份。完全兼容 Mooncache 的大备份 JSON（自动提取其中的所有 summary 总结），也支持专属记忆 JSON。
+            </div>
+
+            <div class="llm-field">
+              <label class="settings-label" for="ghToken">GitHub Personal Access Token</label>
+              <div style="position:relative;">
+                <input class="llm-input" id="ghToken" type="password" placeholder="ghp_xxxxxxxx (需要 repo 读写权限)">
+                <button class="status-copy" id="ghToggleToken" type="button" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:11px; padding:2px 6px;">显示</button>
+              </div>
+              <div class="llm-hint">仅存储在你的手机浏览器本地，绝不经过任何第三方服务器。</div>
+            </div>
+
+            <div class="llm-field">
+              <label class="settings-label" for="ghUser">GitHub 用户名</label>
+              <input class="llm-input" id="ghUser" type="text" placeholder="例如：qihanyue">
+            </div>
+
+            <div class="llm-field">
+              <label class="settings-label" for="ghRepo">仓库名</label>
+              <input class="llm-input" id="ghRepo" type="text" placeholder="例如：Gravity_Echo 或你的专属备份库">
+            </div>
+
+            <div class="llm-field">
+              <label class="settings-label" for="ghPath">备份文件相对路径</label>
+              <input class="llm-input" id="ghPath" type="text" placeholder="例如：ephone_backup.json 或 memory.json" value="ephone_backup.json">
+            </div>
+
+            <button class="llm-btn" id="ghSaveConfigBtn" type="button" style="width:100%; margin-top:6px; padding:9px;">保存配置</button>
+          </section>
+
+          <section class="settings-card">
+            <div class="settings-label">云端数据操作</div>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
+              <button class="llm-btn primary" id="ghPullBtn" type="button" style="padding:12px; font-size:14px; font-weight:600;">
+                📥 从 GitHub 拉取记忆 (自动提取 Moon 总结)
+              </button>
+              <button class="llm-btn" id="ghPushBtn" type="button" style="padding:12px; font-size:14px;">
+                🚀 备份上传记忆到 GitHub
+              </button>
+            </div>
+            <div class="llm-hint" id="ghSyncStatus" style="margin-top:12px; font-size:12px; text-align:center;"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑单条记忆弹窗 -->
+  <div id="memoryEditModal"
+    style="display:none; position:fixed; inset:0; z-index:999999; background:rgba(0,0,0,.5); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); padding:20px 16px; box-sizing:border-box; justify-content:center; align-items:center;">
+    <div
+      style="background:var(--card-bg, #fff); border:1px solid var(--card-line, rgba(150,168,182,.3)); border-radius:20px; width:100%; max-width:440px; max-height:86vh; display:flex; flex-direction:column; padding:20px 18px; box-sizing:border-box; box-shadow:0 16px 40px rgba(0,0,0,.35);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <span id="memEditModalTitle" style="font-weight:600; font-size:16px; color:var(--text);">编辑记忆段落</span>
+        <button class="llm-btn danger" id="memEditCancelBtn" type="button" style="padding:4px 10px;">取消</button>
+      </div>
+      <input class="llm-input" id="memEditTitleInput" type="text" placeholder="记忆标题 (如 <2026年7月前事件汇总>)" style="margin-bottom:12px;">
+      <textarea class="llm-textarea" id="memEditContentInput" rows="10" placeholder="记忆正文内容..." style="flex:1; margin-bottom:14px; font-size:13.5px; line-height:1.6;"></textarea>
+      <button class="llm-btn primary" id="memEditSaveBtn" type="button" style="padding:11px; font-size:14px; font-weight:600;">保存记忆</button>
+    </div>
+  </div>
+
   <!-- ── Menu (hub / 主菜单页 · 聊天页左箭头进入) ── -->
   <div class="menu-panel hidden" id="menuPanel" role="dialog" aria-modal="true" aria-label="主菜单">
     <div class="menu-page">
@@ -4595,9 +4833,32 @@
         if (!item) return;
         if (item.dataset.menu === "chat") closeMenu();       // back to chat
         else if (item.dataset.menu === "album") location.assign("album.html");  // album shell (wire your own backend)
+        else if (item.dataset.menu === "memory") openMemory();
         else showToast("即将开放");                           // placeholder items
       });
     }
+
+    const memoryPanel = document.getElementById("memoryPanel");
+    const memoryClose = document.getElementById("memoryClose");
+    let memoryCloseTimer = null;
+    function openMemory() {
+      if (!memoryPanel) return;
+      closeMenu();
+      clearTimeout(memoryCloseTimer);
+      memoryPanel.classList.remove("hidden");
+      requestAnimationFrame(() => requestAnimationFrame(() => memoryPanel.classList.add("open")));
+      if (typeof refreshMemoryUi === "function") refreshMemoryUi();
+    }
+    function closeMemory() {
+      if (!memoryPanel) return;
+      memoryPanel.classList.remove("open");
+      clearTimeout(memoryCloseTimer);
+      memoryCloseTimer = setTimeout(() => memoryPanel.classList.add("hidden"), 360);
+    }
+    if (memoryClose) memoryClose.addEventListener("click", closeMemory);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && memoryPanel && !memoryPanel.classList.contains("hidden")) closeMemory();
+    });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && menuPanel && !menuPanel.classList.contains("hidden")) closeMenu();
     });
@@ -5808,6 +6069,26 @@
       }
     }
 
+    function getLongTermMemoryContext() {
+      try {
+        if (localStorage.getItem("companion_memory_enabled") === "false") {
+          return "";
+        }
+        const raw = localStorage.getItem("companion_memories");
+        if (!raw) return "";
+        const list = JSON.parse(raw);
+        if (!Array.isArray(list) || !list.length) return "";
+        const parts = list.map((m, idx) => {
+          const title = (m.title || `过往记忆 #${idx + 1}`).trim();
+          const content = (m.content || "").trim();
+          return `【${title}】\n${content}`;
+        });
+        return `[长期记忆/过往回忆录 (来自你们的真实过往，请深刻牢记并在对话中自然体现)]:\n` + parts.join("\n\n");
+      } catch (_) {
+        return "";
+      }
+    }
+
     async function apiSend(text, attachments) {
       if (USE_MOCK) return Mock.send(text);
       const payload = { text: text || "" };
@@ -5826,6 +6107,7 @@
           payload.personas = personaState;
         }
         payload.time_context = getTimePerceptionContext();
+        payload.memory_context = getLongTermMemoryContext();
         // 是否立刻触发回复（手动模式时不触发）
         payload.trigger = (currentTriggerMode === "auto");
       } catch (e) { }
@@ -8161,7 +8443,8 @@
                 history_n: _activePreset.history_n || 12
               } : {},
               personas: typeof personaState !== "undefined" ? personaState : {},
-              time_context: getTimePerceptionContext()
+              time_context: getTimePerceptionContext(),
+              memory_context: getLongTermMemoryContext()
             };
             await fetch(`${API_BASE}/app/trigger_reply`, {
               method: "POST",
@@ -8468,6 +8751,712 @@
     }
     document.addEventListener("DOMContentLoaded", setupModelModal);
     setTimeout(setupModelModal, 800);
+
+    /* ════════════ 记忆殿堂系统 (Memory & 古法总结 & GitHub 同步) ════════════ */
+    function initMemorySystem() {
+      const STORAGE_MEMORIES = "companion_memories";
+      const STORAGE_GH = "companion_github_config";
+      const STORAGE_ENABLE = "companion_memory_enabled";
+      const STORAGE_LAST_ID = "companion_last_summarized_id";
+
+      function loadMemories() {
+        try {
+          const raw = localStorage.getItem(STORAGE_MEMORIES);
+          return raw ? JSON.parse(raw) : [];
+        } catch (_) {
+          return [];
+        }
+      }
+
+      function saveMemories(list) {
+        try {
+          localStorage.setItem(STORAGE_MEMORIES, JSON.stringify(list));
+        } catch (_) {}
+        updateMemoryUi();
+      }
+
+      function loadGhConfig() {
+        try {
+          const raw = localStorage.getItem(STORAGE_GH);
+          return raw ? JSON.parse(raw) : { token: "", user: "", repo: "", path: "ephone_backup.json" };
+        } catch (_) {
+          return { token: "", user: "", repo: "", path: "ephone_backup.json" };
+        }
+      }
+
+      function saveGhConfig(cfg) {
+        try {
+          localStorage.setItem(STORAGE_GH, JSON.stringify(cfg));
+        } catch (_) {}
+      }
+
+      function decodeBase64Utf8(base64Str) {
+        const clean = base64Str.replace(/\s/g, '');
+        const binary = atob(clean);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        return new TextDecoder('utf-8').decode(bytes);
+      }
+
+      function encodeBase64Utf8(str) {
+        const bytes = new TextEncoder().encode(str);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+      }
+
+      const memBadge = document.getElementById("memoryCountBadge");
+      const memStats = document.getElementById("memoryStatsText");
+      const memCardList = document.getElementById("memoryCardList");
+      const memEnableToggle = document.getElementById("memoryEnableToggle");
+      const addMemBtn = document.getElementById("addMemoryBtn");
+      const memTabSeg = document.getElementById("memoryTabSeg");
+
+      const memPaneCards = document.getElementById("memPaneCards");
+      const memPaneSummary = document.getElementById("memPaneSummary");
+      const memPaneGithub = document.getElementById("memPaneGithub");
+
+      const memEditModal = document.getElementById("memoryEditModal");
+      const memEditTitle = document.getElementById("memEditTitleInput");
+      const memEditContent = document.getElementById("memEditContentInput");
+      const memEditSaveBtn = document.getElementById("memEditSaveBtn");
+      const memEditCancelBtn = document.getElementById("memEditCancelBtn");
+      const memEditModalTitle = document.getElementById("memEditModalTitle");
+
+      const summaryRangeSeg = document.getElementById("summaryRangeSeg");
+      const summaryCustomRow = document.getElementById("summaryCustomRangeRow");
+      const summaryStartIdx = document.getElementById("summaryStartIdx");
+      const summaryEndIdx = document.getElementById("summaryEndIdx");
+      const summaryRangeHint = document.getElementById("summaryRangeHint");
+      const summaryPromptInput = document.getElementById("summaryPromptInput");
+      const doGenSummaryBtn = document.getElementById("doGenerateSummaryBtn");
+      const summaryResultBox = document.getElementById("summaryResultBox");
+      const summaryResultTitle = document.getElementById("summaryResultTitle");
+      const summaryResultContent = document.getElementById("summaryResultContent");
+      const saveSummaryBtn = document.getElementById("saveSummaryToMemoriesBtn");
+      const discardSummaryBtn = document.getElementById("discardSummaryBtn");
+
+      const ghToken = document.getElementById("ghToken");
+      const ghUser = document.getElementById("ghUser");
+      const ghRepo = document.getElementById("ghRepo");
+      const ghPath = document.getElementById("ghPath");
+      const ghSaveBtn = document.getElementById("ghSaveConfigBtn");
+      const ghToggleToken = document.getElementById("ghToggleToken");
+      const ghPullBtn = document.getElementById("ghPullBtn");
+      const ghPushBtn = document.getElementById("ghPushBtn");
+      const ghStatus = document.getElementById("ghSyncStatus");
+
+      let currentEditId = null;
+
+      window.refreshMemoryUi = updateMemoryUi;
+      function updateMemoryUi() {
+        const list = loadMemories();
+        const enabled = localStorage.getItem(STORAGE_ENABLE) !== "false";
+        if (memEnableToggle) memEnableToggle.checked = enabled;
+        if (memBadge) memBadge.textContent = list.length;
+
+        let totalChars = 0;
+        list.forEach(m => totalChars += (m.content || "").length);
+
+        if (memStats) {
+          memStats.textContent = enabled 
+            ? `已激活 ${list.length} 条记忆段落 (共约 ${totalChars} 字)，已自动注入对话背景`
+            : `长期记忆注入已关闭 (共有 ${list.length} 条记忆保存中)`;
+        }
+
+        if (!memCardList) return;
+        if (!list.length) {
+          memCardList.innerHTML = `
+            <div class="mem-empty">
+              <div style="font-size:28px; margin-bottom:8px;">📜</div>
+              <div style="font-weight:600; font-size:15px; margin-bottom:4px; color:var(--text);">记忆殿堂尚且空空如也</div>
+              <div>你可以点击上方「✨ 古法总结」从你们的历史对话中提炼新回忆，<br>或者在「☁️ GitHub 同步」直接拉取 Mooncache 的历史存档。</div>
+            </div>
+          `;
+          return;
+        }
+
+        memCardList.innerHTML = list.map((m, idx) => {
+          const title = escapeHtml(m.title || `记忆段落 #${idx + 1}`);
+          const content = escapeHtml(m.content || "");
+          const sourceTag = m.source === "github" ? "Moon/云端同步" : (m.source === "summary" ? "古法提炼" : "手动记录");
+          const timeStr = m.ts ? new Date(m.ts).toLocaleDateString("zh-CN") : "";
+          return `
+            <div class="mem-card" data-id="${m.id || idx}">
+              <div class="mem-card-head">
+                <span class="mem-card-title">
+                  <span style="color:var(--tint);">✦</span> ${title}
+                </span>
+                <span class="mem-card-badge">${sourceTag}${timeStr ? " · " + timeStr : ""}</span>
+              </div>
+              <div class="mem-card-body" title="点击展开/收起">${content}</div>
+              <div class="mem-card-actions">
+                <span style="font-size:11px; color:var(--text-faint);">点击正文可展开查看全文</span>
+                <div style="display:flex; gap:6px;">
+                  <button class="llm-btn mem-edit-btn" data-id="${m.id || idx}" type="button" style="padding:3px 8px; font-size:12px;">编辑</button>
+                  <button class="llm-btn danger mem-del-btn" data-id="${m.id || idx}" type="button" style="padding:3px 8px; font-size:12px;">删除</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      if (memCardList) {
+        memCardList.addEventListener("click", (e) => {
+          const bodyEl = e.target.closest(".mem-card-body");
+          if (bodyEl) {
+            bodyEl.classList.toggle("expanded");
+            return;
+          }
+          const editBtn = e.target.closest(".mem-edit-btn");
+          if (editBtn) {
+            const id = editBtn.dataset.id;
+            const list = loadMemories();
+            const target = list.find((m, idx) => String(m.id || idx) === String(id));
+            if (target) {
+              currentEditId = target.id || id;
+              if (memEditModalTitle) memEditModalTitle.textContent = "编辑记忆段落";
+              if (memEditTitle) memEditTitle.value = target.title || "";
+              if (memEditContent) memEditContent.value = target.content || "";
+              if (memEditModal) memEditModal.style.display = "flex";
+            }
+            return;
+          }
+          const delBtn = e.target.closest(".mem-del-btn");
+          if (delBtn) {
+            const id = delBtn.dataset.id;
+            if (confirm("确定要从记忆殿堂中移除这条记忆吗？")) {
+              let list = loadMemories();
+              list = list.filter((m, idx) => String(m.id || idx) !== String(id));
+              saveMemories(list);
+              showToast("记忆已删除");
+            }
+          }
+        });
+      }
+
+      if (memEnableToggle) {
+        memEnableToggle.addEventListener("change", () => {
+          localStorage.setItem(STORAGE_ENABLE, memEnableToggle.checked ? "true" : "false");
+          updateMemoryUi();
+          showToast(memEnableToggle.checked ? "长期记忆已开启注入" : "长期记忆已暂停注入");
+        });
+      }
+
+      if (addMemBtn) {
+        addMemBtn.addEventListener("click", () => {
+          currentEditId = null;
+          if (memEditModalTitle) memEditModalTitle.textContent = "新增记忆段落";
+          if (memEditTitle) memEditTitle.value = "";
+          if (memEditContent) memEditContent.value = "";
+          if (memEditModal) memEditModal.style.display = "flex";
+        });
+      }
+
+      if (memEditSaveBtn) {
+        memEditSaveBtn.addEventListener("click", () => {
+          const title = (memEditTitle ? memEditTitle.value.trim() : "") || "未命名记忆";
+          const content = memEditContent ? memEditContent.value.trim() : "";
+          if (!content) {
+            alert("记忆内容不能为空");
+            return;
+          }
+          const list = loadMemories();
+          if (currentEditId != null) {
+            const idx = list.findIndex((m, i) => String(m.id || i) === String(currentEditId));
+            if (idx >= 0) {
+              list[idx].title = title;
+              list[idx].content = content;
+              list[idx].updated_at = new Date().toISOString();
+            }
+          } else {
+            list.unshift({
+              id: "mem_" + Date.now(),
+              title,
+              content,
+              ts: new Date().toISOString(),
+              source: "manual"
+            });
+          }
+          saveMemories(list);
+          if (memEditModal) memEditModal.style.display = "none";
+          showToast("记忆保存成功");
+        });
+      }
+      if (memEditCancelBtn) {
+        memEditCancelBtn.addEventListener("click", () => {
+          if (memEditModal) memEditModal.style.display = "none";
+        });
+      }
+      if (memEditModal) {
+        memEditModal.addEventListener("click", (e) => {
+          if (e.target === memEditModal) memEditModal.style.display = "none";
+        });
+      }
+
+      if (memTabSeg) {
+        memTabSeg.querySelectorAll("button").forEach(btn => {
+          btn.addEventListener("click", () => {
+            memTabSeg.querySelectorAll("button").forEach(b => b.classList.toggle("active", b === btn));
+            const tab = btn.dataset.tab;
+            if (memPaneCards) memPaneCards.classList.toggle("hidden", tab !== "cards");
+            if (memPaneSummary) memPaneSummary.classList.toggle("hidden", tab !== "summary");
+            if (memPaneGithub) memPaneGithub.classList.toggle("hidden", tab !== "github");
+            if (tab === "summary") refreshSummaryRangeHint();
+          });
+        });
+      }
+
+      let currentSummaryMode = "new";
+      function getMessagesForSummary() {
+        if (typeof chatMessages === "undefined" || !Array.isArray(chatMessages)) return [];
+        const valid = chatMessages.filter(m => m && m.kind !== "thinking" && m.text);
+        if (currentSummaryMode === "recent30") {
+          return valid.slice(-30);
+        } else if (currentSummaryMode === "recent60") {
+          return valid.slice(-60);
+        } else if (currentSummaryMode === "custom") {
+          const s = parseInt(summaryStartIdx ? summaryStartIdx.value : 0, 10) || 0;
+          const e = parseInt(summaryEndIdx ? summaryEndIdx.value : valid.length, 10) || valid.length;
+          return valid.filter(m => {
+            const num = msgNum(m.id);
+            return num >= s && num <= e;
+          });
+        } else {
+          const lastSumId = parseInt(localStorage.getItem(STORAGE_LAST_ID) || "0", 10);
+          const unsummarized = valid.filter(m => msgNum(m.id) > lastSumId);
+          return unsummarized.length ? unsummarized : valid.slice(-40);
+        }
+      }
+
+      function refreshSummaryRangeHint() {
+        const msgs = getMessagesForSummary();
+        if (summaryRangeHint) {
+          summaryRangeHint.textContent = `当前范围已选中 ${msgs.length} 条对话记录`;
+        }
+      }
+
+      if (summaryRangeSeg) {
+        summaryRangeSeg.querySelectorAll("button").forEach(btn => {
+          btn.addEventListener("click", () => {
+            summaryRangeSeg.querySelectorAll("button").forEach(b => b.classList.toggle("active", b === btn));
+            currentSummaryMode = btn.dataset.val;
+            if (summaryCustomRow) {
+              summaryCustomRow.classList.toggle("hidden", currentSummaryMode !== "custom");
+            }
+            refreshSummaryRangeHint();
+          });
+        });
+      }
+      if (summaryStartIdx) summaryStartIdx.addEventListener("input", refreshSummaryRangeHint);
+      if (summaryEndIdx) summaryEndIdx.addEventListener("input", refreshSummaryRangeHint);
+
+      let lastSummarizedMaxId = 0;
+      if (doGenSummaryBtn) {
+        doGenSummaryBtn.addEventListener("click", async () => {
+          const msgs = getMessagesForSummary();
+          if (!msgs.length) {
+            alert("选定范围内没有找到可提炼的对话记录！");
+            return;
+          }
+          const promptText = summaryPromptInput ? summaryPromptInput.value.trim() : "";
+          if (!promptText) {
+            alert("请填写提炼提示词！");
+            return;
+          }
+
+          const activePreset = typeof getActivePreset === "function" ? getActivePreset() : {};
+          if (!activePreset || !activePreset.baseUrl || !activePreset.model) {
+            alert("请先在设置页配置并保存大模型 API (Base URL 和 Model)！");
+            return;
+          }
+
+          const userName = localStorage.getItem("companion_custom_user_name") || CONFIG.HUMAN_NAME || "我";
+          const aiName = localStorage.getItem("companion_custom_ai_name") || CONFIG.AI_NAME || "AI";
+
+          const convoLines = msgs.map(m => {
+            const sender = m.from === "human" ? userName : aiName;
+            return `${sender}: ${m.text}`;
+          }).join("\n");
+
+          doGenSummaryBtn.disabled = true;
+          const origBtnText = doGenSummaryBtn.textContent;
+          doGenSummaryBtn.textContent = "⏳ 正在分析对话并提炼记忆中...";
+
+          try {
+            const reqBody = {
+              base_url: activePreset.baseUrl,
+              api_key: activePreset.apiKey || "",
+              model: activePreset.model,
+              temperature: 0.5,
+              messages: [
+                { role: "system", content: promptText },
+                { role: "user", content: `以下是需要你客观提炼并分条总结的两人对话记录：\n\n${convoLines}` }
+              ]
+            };
+
+            const resp = await fetch(`${API_BASE}/app/proxy_completion`, {
+              method: "POST",
+              headers: { ...authHeaders(), "Content-Type": "application/json" },
+              body: JSON.stringify(reqBody)
+            });
+
+            if (!resp.ok) {
+              const err = await resp.text();
+              throw new Error(`HTTP ${resp.status}: ${err.slice(0, 150)}`);
+            }
+
+            const resJson = await resp.json();
+            const reply = (resJson.choices && resJson.choices[0] && resJson.choices[0].message && resJson.choices[0].message.content) || "";
+            if (!reply.trim()) {
+              throw new Error("模型未返回有效文本");
+            }
+
+            lastSummarizedMaxId = msgs.reduce((max, m) => Math.max(max, msgNum(m.id)), 0);
+
+            if (summaryResultTitle) {
+              const nowD = new Date();
+              summaryResultTitle.value = `<${nowD.getFullYear()}年${nowD.getMonth() + 1}月对话事件汇总 (${msgs.length}条)>`;
+            }
+            if (summaryResultContent) {
+              summaryResultContent.value = reply.trim();
+            }
+            if (summaryResultBox) {
+              summaryResultBox.classList.remove("hidden");
+              summaryResultBox.scrollIntoView({ behavior: "smooth" });
+            }
+            showToast("✨ 记忆提炼完成！请检查润色");
+          } catch (err) {
+            alert(`生成总结失败: ${err.message}`);
+          } finally {
+            doGenSummaryBtn.disabled = false;
+            doGenSummaryBtn.textContent = origBtnText;
+          }
+        });
+      }
+
+      if (saveSummaryBtn) {
+        saveSummaryBtn.addEventListener("click", () => {
+          const title = (summaryResultTitle ? summaryResultTitle.value.trim() : "") || "对话记忆汇总";
+          const content = summaryResultContent ? summaryResultContent.value.trim() : "";
+          if (!content) {
+            alert("提炼内容不能为空！");
+            return;
+          }
+          const list = loadMemories();
+          list.unshift({
+            id: "mem_" + Date.now(),
+            title,
+            content,
+            ts: new Date().toISOString(),
+            source: "summary"
+          });
+          saveMemories(list);
+          if (lastSummarizedMaxId > 0) {
+            localStorage.setItem(STORAGE_LAST_ID, String(lastSummarizedMaxId));
+          }
+          if (summaryResultBox) summaryResultBox.classList.add("hidden");
+
+          if (memTabSeg) {
+            const cardsBtn = memTabSeg.querySelector("button[data-tab='cards']");
+            if (cardsBtn) cardsBtn.click();
+          }
+          showToast("🎉 新记忆已存入记忆殿堂！");
+        });
+      }
+
+      if (discardSummaryBtn) {
+        discardSummaryBtn.addEventListener("click", () => {
+          if (summaryResultBox) summaryResultBox.classList.add("hidden");
+        });
+      }
+
+      const ghCfg = loadGhConfig();
+      if (ghToken) ghToken.value = ghCfg.token || "";
+      if (ghUser) ghUser.value = ghCfg.user || "";
+      if (ghRepo) ghRepo.value = ghCfg.repo || "";
+      if (ghPath) ghPath.value = ghCfg.path || "ephone_backup.json";
+
+      if (ghToggleToken && ghToken) {
+        ghToggleToken.addEventListener("click", () => {
+          const isPass = ghToken.type === "password";
+          ghToken.type = isPass ? "text" : "password";
+          ghToggleToken.textContent = isPass ? "隐藏" : "显示";
+        });
+      }
+
+      if (ghSaveBtn) {
+        ghSaveBtn.addEventListener("click", () => {
+          const cfg = {
+            token: (ghToken ? ghToken.value.trim() : ""),
+            user: (ghUser ? ghUser.value.trim() : ""),
+            repo: (ghRepo ? ghRepo.value.trim() : ""),
+            path: (ghPath ? ghPath.value.trim() : "ephone_backup.json")
+          };
+          saveGhConfig(cfg);
+          showToast("GitHub 配置已保存");
+        });
+      }
+
+      let lastRemoteSha = localStorage.getItem("companion_gh_last_sha") || "";
+
+      if (ghPullBtn) {
+        ghPullBtn.addEventListener("click", async () => {
+          const token = ghToken ? ghToken.value.trim() : "";
+          const user = ghUser ? ghUser.value.trim() : "";
+          const repo = ghRepo ? ghRepo.value.trim() : "";
+          const path = (ghPath ? ghPath.value.trim() : "") || "ephone_backup.json";
+
+          if (!token || !user || !repo || !path) {
+            alert("请完整填写 GitHub Token、用户名、仓库名和文件路径！");
+            return;
+          }
+
+          ghPullBtn.disabled = true;
+          const origText = ghPullBtn.textContent;
+          ghPullBtn.textContent = "⏳ 正在从 GitHub 下载并解密...";
+          if (ghStatus) ghStatus.textContent = "正在连接 GitHub API...";
+
+          try {
+            const url = `https://api.github.com/repos/${encodeURIComponent(user)}/${encodeURIComponent(repo)}/contents/${path}`;
+            const resp = await fetch(url, {
+              headers: {
+                "Authorization": `token ${token}`,
+                "Accept": "application/vnd.github.v3+json"
+              }
+            });
+
+            if (!resp.ok) {
+              const err = await resp.text();
+              throw new Error(`GitHub 响应 ${resp.status}: ${err.slice(0, 150)}`);
+            }
+
+            const fileData = await resp.json();
+            if (!fileData.content) {
+              throw new Error("GitHub 返回内容为空或超出限制");
+            }
+
+            lastRemoteSha = fileData.sha || "";
+            localStorage.setItem("companion_gh_last_sha", lastRemoteSha);
+
+            const decodedText = decodeBase64Utf8(fileData.content);
+            let importedSummaries = [];
+
+            try {
+              const parsed = JSON.parse(decodedText);
+              if (parsed.chats && typeof parsed.chats === "object") {
+                Object.values(parsed.chats).forEach(chat => {
+                  if (chat && Array.isArray(chat.history)) {
+                    chat.history.forEach(item => {
+                      if (item && (item.type === "summary" || (item.role === "system" && item.type === "summary"))) {
+                        if (item.content && item.content.trim()) {
+                          importedSummaries.push({
+                            title: extractTitleFromSummary(item.content),
+                            content: item.content.trim(),
+                            ts: item.timestamp ? new Date(item.timestamp).toISOString() : new Date().toISOString()
+                          });
+                        }
+                      }
+                    });
+                  }
+                });
+              } else if (Array.isArray(parsed.history)) {
+                parsed.history.forEach(item => {
+                  if (item && item.type === "summary" && item.content) {
+                    importedSummaries.push({
+                      title: extractTitleFromSummary(item.content),
+                      content: item.content.trim(),
+                      ts: item.timestamp ? new Date(item.timestamp).toISOString() : new Date().toISOString()
+                    });
+                  }
+                });
+              } else if (Array.isArray(parsed.memories)) {
+                importedSummaries = parsed.memories;
+              } else if (Array.isArray(parsed)) {
+                parsed.forEach((it, idx) => {
+                  if (typeof it === "string") {
+                    importedSummaries.push({ title: `记忆段落 #${idx + 1}`, content: it, ts: new Date().toISOString() });
+                  } else if (it && it.content) {
+                    importedSummaries.push(it);
+                  }
+                });
+              }
+            } catch (jsonErr) {
+              if (decodedText.trim()) {
+                importedSummaries.push({
+                  title: "GitHub 导入记忆",
+                  content: decodedText.trim(),
+                  ts: new Date().toISOString()
+                });
+              }
+            }
+
+            if (!importedSummaries.length) {
+              alert("已成功连接文件，但未在其中检测到类型为 summary 的总结或记忆数据！");
+              return;
+            }
+
+            const currentList = loadMemories();
+            let addedCount = 0;
+            importedSummaries.forEach(im => {
+              const exists = currentList.some(ex => ex.content.trim() === (im.content || "").trim());
+              if (!exists) {
+                currentList.push({
+                  id: "mem_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+                  title: im.title || "云端记忆",
+                  content: im.content.trim(),
+                  ts: im.ts || new Date().toISOString(),
+                  source: "github"
+                });
+                addedCount++;
+              }
+            });
+
+            saveMemories(currentList);
+            const timeStr = new Date().toLocaleString("zh-CN");
+            if (ghStatus) ghStatus.textContent = `✓ 同步成功 (${timeStr}): 新增导入 ${addedCount} 条记忆，共 ${currentList.length} 条`;
+            showToast(`🎉 成功从 GitHub 同步 ${addedCount} 条记忆！`);
+
+            if (memTabSeg) {
+              const cardsBtn = memTabSeg.querySelector("button[data-tab='cards']");
+              if (cardsBtn) cardsBtn.click();
+            }
+          } catch (err) {
+            alert(`拉取失败: ${err.message}`);
+            if (ghStatus) ghStatus.textContent = `❌ 同步出错: ${err.message}`;
+          } finally {
+            ghPullBtn.disabled = false;
+            ghPullBtn.textContent = origText;
+          }
+        });
+      }
+
+      function extractTitleFromSummary(text) {
+        const str = String(text || "").trim();
+        const m = str.match(/^<([^>]+)>/);
+        if (m && m[1]) return `<${m[1].trim()}>`;
+        const m2 = str.match(/^【([^】]+)】/);
+        if (m2 && m2[1]) return `【${m2[1].trim()}】`;
+        const firstLine = str.split("\n")[0].trim().slice(0, 24);
+        return firstLine ? firstLine : "总结记忆";
+      }
+
+      if (ghPushBtn) {
+        ghPushBtn.addEventListener("click", async () => {
+          const token = ghToken ? ghToken.value.trim() : "";
+          const user = ghUser ? ghUser.value.trim() : "";
+          const repo = ghRepo ? ghRepo.value.trim() : "";
+          const path = (ghPath ? ghPath.value.trim() : "") || "ephone_backup.json";
+
+          if (!token || !user || !repo || !path) {
+            alert("请完整填写 GitHub Token、用户名、仓库名和文件路径！");
+            return;
+          }
+
+          const memories = loadMemories();
+          if (!memories.length) {
+            if (!confirm("当前记忆殿堂里没有任何记忆，确定要上传一个空记忆文件到 GitHub 吗？")) return;
+          }
+
+          ghPushBtn.disabled = true;
+          const origText = ghPushBtn.textContent;
+          ghPushBtn.textContent = "⏳ 正在检查远端文件与加密上传...";
+          if (ghStatus) ghStatus.textContent = "正在查询远端最新版本 (SHA)...";
+
+          try {
+            const url = `https://api.github.com/repos/${encodeURIComponent(user)}/${encodeURIComponent(repo)}/contents/${path}`;
+            let existingFileJson = null;
+            try {
+              const getResp = await fetch(url, {
+                headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3+json" }
+              });
+              if (getResp.ok) {
+                const curFileData = await getResp.json();
+                lastRemoteSha = curFileData.sha || "";
+                if (curFileData.content) {
+                  try {
+                    existingFileJson = JSON.parse(decodeBase64Utf8(curFileData.content));
+                  } catch (_) {}
+                }
+              }
+            } catch (_) {}
+
+            let uploadContentStr = "";
+            if (existingFileJson && existingFileJson.chats && typeof existingFileJson.chats === "object") {
+              const chats = Object.values(existingFileJson.chats);
+              if (chats.length && Array.isArray(chats[0].history)) {
+                chats[0].history = chats[0].history.filter(m => !(m && (m.type === "summary" || (m.role === "system" && m.type === "summary"))));
+                memories.forEach(m => {
+                  chats[0].history.push({
+                    role: "system",
+                    type: "summary",
+                    content: m.content,
+                    timestamp: m.ts ? new Date(m.ts).getTime() : Date.now(),
+                    isHidden: true
+                  });
+                });
+              }
+              uploadContentStr = JSON.stringify(existingFileJson, null, 2);
+            } else {
+              const backupPayload = {
+                type: "tidal_echo_memories",
+                updated_at: new Date().toISOString(),
+                total_count: memories.length,
+                memories: memories
+              };
+              uploadContentStr = JSON.stringify(backupPayload, null, 2);
+            }
+
+            const putBody = {
+              message: `chore: sync memories from Tidal Echo (${new Date().toLocaleString("zh-CN")})`,
+              content: encodeBase64Utf8(uploadContentStr)
+            };
+            if (lastRemoteSha) putBody.sha = lastRemoteSha;
+
+            const putResp = await fetch(url, {
+              method: "PUT",
+              headers: {
+                "Authorization": `token ${token}`,
+                "Content-Type": "application/json",
+                "Accept": "application/vnd.github.v3+json"
+              },
+              body: JSON.stringify(putBody)
+            });
+
+            if (!putResp.ok) {
+              const err = await putResp.text();
+              throw new Error(`GitHub 响应 ${putResp.status}: ${err.slice(0, 150)}`);
+            }
+
+            const putResult = await putResp.json();
+            if (putResult.content && putResult.content.sha) {
+              lastRemoteSha = putResult.content.sha;
+              localStorage.setItem("companion_gh_last_sha", lastRemoteSha);
+            }
+
+            const timeStr = new Date().toLocaleString("zh-CN");
+            if (ghStatus) ghStatus.textContent = `✓ 备份成功 (${timeStr}): 已推送 ${memories.length} 条记忆到 GitHub！`;
+            showToast("🚀 记忆已成功备份上传至 GitHub！");
+          } catch (err) {
+            alert(`上传失败: ${err.message}`);
+            if (ghStatus) ghStatus.textContent = `❌ 上传出错: ${err.message}`;
+          } finally {
+            ghPushBtn.disabled = false;
+            ghPushBtn.textContent = origText;
+          }
+        });
+      }
+
+      updateMemoryUi();
+    }
+
+    document.addEventListener("DOMContentLoaded", initMemorySystem);
+    setTimeout(initMemorySystem, 1000);
 
   </script>
 

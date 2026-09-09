@@ -356,6 +356,8 @@ def plugin_payload(msg: dict) -> dict:
         p["personas"] = meta.get("personas")
     if meta.get("time_context"):
         p["time_context"] = meta.get("time_context")
+    if meta.get("memory_context"):
+        p["memory_context"] = meta.get("memory_context")
     return p
 
 
@@ -738,6 +740,39 @@ async def fetch_models_proxy(request: Request):
         raise HTTPException(status_code=502, detail=str(exc))
 
 
+@app.post("/app/proxy_completion")
+async def app_proxy_completion(request: Request):
+    """Proxy chat completion to bypass browser CORS (e.g. for generating summary)."""
+    check_auth(request)
+    body = await request.json()
+    base_url = (body.get("base_url") or "").rstrip("/")
+    api_key = body.get("api_key") or ""
+    messages = body.get("messages") or []
+    model = body.get("model") or ""
+    temperature = body.get("temperature", 0.7)
+    if not base_url or not model:
+        raise HTTPException(status_code=400, detail="base_url and model required")
+    target_url = f"{base_url}/chat/completions"
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    payload = json.dumps({
+        "model": model,
+        "messages": messages,
+        "temperature": temperature
+    }, ensure_ascii=False).encode("utf-8")
+    req = urllib.request.Request(target_url, data=payload, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=90) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return data
+    except urllib.error.HTTPError as exc:
+        err_body = exc.read().decode("utf-8", "replace")[:500]
+        raise HTTPException(status_code=exc.code, detail=f"HTTP {exc.code}: {err_body}")
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+
 @app.post("/app/trigger_reply")
 async def app_trigger_reply(request: Request):
     """Explicitly trigger AI response for pending user message(s)."""
@@ -796,6 +831,8 @@ async def app_trigger_reply(request: Request):
         bundle["personas"] = body.get("personas")
     if body.get("time_context"):
         bundle["time_context"] = body.get("time_context")
+    if body.get("memory_context"):
+        bundle["memory_context"] = body.get("memory_context")
 
     if brain_target() == "loop":
         asyncio.create_task(forward_to_loop(pending_msgs[-1]))
@@ -846,6 +883,8 @@ async def app_send(request: Request):
         meta["personas"] = body.get("personas")
     if body.get("time_context"):
         meta["time_context"] = body.get("time_context")
+    if body.get("memory_context"):
+        meta["memory_context"] = body.get("memory_context")
     msg = save_message("in", "user", text, meta)
     # echo to the PWA so the sender's bubble + other tabs stay in sync
     await broadcast(app_subs, app_payload(msg))
