@@ -1762,20 +1762,22 @@
     /* ── Memory Panel & Cards ── */
     .mem-card {
       background: var(--card-bg, #fff);
-      border: 1px solid var(--card-line, rgba(150,168,182,.3));
+      border: 1px solid var(--card-line, rgba(150, 168, 182, .3));
       border-radius: 18px;
       padding: 16px;
       margin-bottom: 14px;
-      box-shadow: 0 4px 18px rgba(0,0,0,.04);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, .04);
       transition: all .2s ease;
       position: relative;
     }
+
     .mem-card-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 8px;
     }
+
     .mem-card-title {
       font-size: 15px;
       font-weight: 600;
@@ -1784,14 +1786,16 @@
       align-items: center;
       gap: 6px;
     }
+
     .mem-card-badge {
       font-size: 11px;
       padding: 2px 8px;
       border-radius: 12px;
-      background: rgba(120,150,180, .15);
+      background: rgba(120, 150, 180, .15);
       color: var(--tint);
       font-weight: 500;
     }
+
     .mem-card-body {
       font-size: 13.5px;
       line-height: 1.6;
@@ -1803,20 +1807,23 @@
       position: relative;
       cursor: pointer;
     }
+
     .mem-card-body.expanded {
       max-height: none;
     }
+
     .mem-card-actions {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-top: 10px;
       padding-top: 8px;
-      border-top: 1px solid var(--card-line, rgba(150,168,182,.15));
+      border-top: 1px solid var(--card-line, rgba(150, 168, 182, .15));
     }
+
     .mem-empty {
       background: var(--card-bg, #fff);
-      border: 1px dashed var(--card-line, rgba(150,168,182,.4));
+      border: 1px dashed var(--card-line, rgba(150, 168, 182, .4));
       border-radius: 18px;
       padding: 32px 20px;
       text-align: center;
@@ -1828,20 +1835,22 @@
     /* ── Tether (Field Protocol · 锚缰设定) ── */
     .tether-card {
       background: var(--card-bg, #fff);
-      border: 1px solid var(--card-line, rgba(150,168,182,.3));
+      border: 1px solid var(--card-line, rgba(150, 168, 182, .3));
       border-radius: 18px;
       padding: 15px;
       margin-bottom: 12px;
-      box-shadow: 0 4px 18px rgba(0,0,0,.04);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, .04);
       transition: all .2s ease;
       position: relative;
     }
+
     .tether-card-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 6px;
     }
+
     .tether-card-title {
       font-size: 15px;
       font-weight: 600;
@@ -1850,22 +1859,37 @@
       align-items: center;
       gap: 6px;
     }
+
     .tether-card-badges {
       display: flex;
       align-items: center;
       gap: 6px;
     }
+
     .tether-badge {
       font-size: 11px;
       padding: 2px 7px;
       border-radius: 10px;
-      background: rgba(120,150,180,.15);
+      background: rgba(120, 150, 180, .15);
       color: var(--tint);
       font-weight: 500;
     }
-    .tether-badge.front { background: rgba(90, 160, 240, .18); color: #3b82f6; }
-    .tether-badge.middle { background: rgba(160, 120, 240, .18); color: #8b5cf6; }
-    .tether-badge.back { background: rgba(30, 180, 150, .18); color: #10b981; }
+
+    .tether-badge.front {
+      background: rgba(90, 160, 240, .18);
+      color: #3b82f6;
+    }
+
+    .tether-badge.middle {
+      background: rgba(160, 120, 240, .18);
+      color: #8b5cf6;
+    }
+
+    .tether-badge.back {
+      background: rgba(30, 180, 150, .18);
+      color: #10b981;
+    }
+
     .tether-card-summary {
       font-size: 12.5px;
       line-height: 1.5;
@@ -1876,11 +1900,12 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+
     .tether-card-entries-preview {
       display: none;
       margin-top: 10px;
       padding-top: 8px;
-      border-top: 1px dashed var(--card-line, rgba(150,168,182,.2));
+      border-top: 1px dashed var(--card-line, rgba(150, 168, 182, .2));
       font-size: 12.5px;
       line-height: 1.6;
       color: var(--text-soft);
@@ -1889,20 +1914,23 @@
       max-height: 240px;
       overflow-y: auto;
     }
+
     .tether-card.expanded .tether-card-entries-preview {
       display: block;
     }
+
     .tether-card-actions {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-top: 8px;
       padding-top: 6px;
-      border-top: 1px solid var(--card-line, rgba(150,168,182,.15));
+      border-top: 1px solid var(--card-line, rgba(150, 168, 182, .15));
     }
+
     .tether-entry-box {
-      background: var(--card-sub-bg, rgba(255,255,255,.05));
-      border: 1px solid var(--card-line, rgba(150,168,182,.25));
+      background: var(--card-sub-bg, rgba(255, 255, 255, .05));
+      border: 1px solid var(--card-line, rgba(150, 168, 182, .25));
       border-radius: 14px;
       padding: 12px;
       margin-bottom: 10px;
@@ -4149,7 +4177,8 @@
           <div class="llm-field">
             <div class="llm-row" style="display:flex; justify-content:space-between; align-items:center;">
               <label class="settings-label" for="timePerceptionToggle" style="margin-bottom:0;">时间感知 (现实时间与时差)</label>
-              <input type="checkbox" id="timePerceptionToggle" checked style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+              <input type="checkbox" id="timePerceptionToggle" checked
+                style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
             </div>
             <div class="llm-hint">开启后，AI 会实时感知当前现实时间（年月日、星期几、几点几分）以及距离上次聊天的时差。</div>
           </div>
@@ -4253,7 +4282,7 @@
     </div>
   </div>
 
-  <!-- ── Memory (full-screen 记忆殿堂) ── -->
+  <!-- ── Memory (full-screen) ── -->
   <div class="profile-panel hidden" id="memoryPanel" role="dialog" aria-modal="true" aria-labelledby="memoryTitle">
     <div class="profile-page">
       <div class="profile-topbar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -4264,10 +4293,12 @@
           </svg>
         </button>
         <div style="text-align:center;">
-          <h2 id="memoryTitle" style="font-size:16px; font-weight:600; margin:0; color:var(--text);">Memory · 记忆殿堂</h2>
-          <span style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic;">The echoes we keep</span>
+          <h2 id="memoryTitle" style="font-size:16px; font-weight:600; margin:0; color:var(--text);">Memory</h2>
+          <span style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic;">The
+            echoes we keep</span>
         </div>
-        <button class="llm-btn primary" id="addMemoryBtn" type="button" style="padding:4px 10px; font-size:12px;">新增记忆</button>
+        <button class="llm-btn primary" id="addMemoryBtn" type="button"
+          style="padding:4px 10px; font-size:12px;">新增记忆</button>
       </div>
 
       <div class="profile-scroll" style="padding-bottom:60px;">
@@ -4280,12 +4311,14 @@
 
         <!-- ══ TAB 1: 记忆卡片列表 ══ -->
         <div class="memory-tab-pane" id="memPaneCards">
-          <div class="settings-card" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+          <div class="settings-card"
+            style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
             <div>
               <div style="font-size:14px; font-weight:600; color:var(--text); margin-bottom:2px;">长期记忆注入</div>
               <div style="font-size:12px; color:var(--text-faint);" id="memoryStatsText">已激活 0 条记忆段落，已自动注入对话背景</div>
             </div>
-            <input type="checkbox" id="memoryEnableToggle" checked style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+            <input type="checkbox" id="memoryEnableToggle" checked
+              style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
           </div>
 
           <div id="memoryCardList">
@@ -4319,11 +4352,13 @@
               </div>
             </div>
 
-            <div class="llm-hint" id="summaryRangeHint" style="margin-bottom:12px; color:var(--tint);">正在统计可提炼对话条数...</div>
+            <div class="llm-hint" id="summaryRangeHint" style="margin-bottom:12px; color:var(--tint);">正在统计可提炼对话条数...
+            </div>
 
             <div class="llm-field">
               <label class="settings-label" for="summaryPromptInput">提炼提示词 (Summary Prompt)</label>
-              <textarea class="llm-textarea" id="summaryPromptInput" rows="5" style="font-size:12.5px; line-height:1.5;">你是一个客观敏锐的记录者。请仔细阅读以下两人的聊天记录，提炼出一份精炼的过往经历总结。
+              <textarea class="llm-textarea" id="summaryPromptInput" rows="5"
+                style="font-size:12.5px; line-height:1.5;">你是一个客观敏锐的记录者。请仔细阅读以下两人的聊天记录，提炼出一份精炼的过往经历总结。
 要求：
 1. 重点提炼核心事实、双方发生的关键事件、达成的约定、重要的情感与态度转变；
 2. 以客观第三人称视角叙述，条理清晰，言简意赅，禁止套话与说教；
@@ -4331,7 +4366,8 @@
 4. 输出内容将作为两人的长期记忆背景。</textarea>
             </div>
 
-            <button class="llm-btn primary" id="doGenerateSummaryBtn" type="button" style="width:100%; padding:11px; font-size:14px; font-weight:600; margin-top:8px;">
+            <button class="llm-btn primary" id="doGenerateSummaryBtn" type="button"
+              style="width:100%; padding:11px; font-size:14px; font-weight:600; margin-top:8px;">
               开始生成记忆总结
             </button>
           </section>
@@ -4339,7 +4375,8 @@
           <!-- 总结结果草稿区 (生成后展示) -->
           <section class="settings-card hidden" id="summaryResultBox">
             <div class="settings-label" style="color:var(--tint);">记忆总结提炼结果</div>
-            <div class="llm-hint" style="margin-top:-6px; margin-bottom:12px;">已为你生成总结草稿，你可以直接在下方修改润色，确认无误后点击存入回忆录。</div>
+            <div class="llm-hint" style="margin-top:-6px; margin-bottom:12px;">已为你生成总结草稿，你可以直接在下方修改润色，确认无误后点击存入回忆录。
+            </div>
 
             <div class="llm-field">
               <label class="settings-label" for="summaryResultTitle">记忆段落标题</label>
@@ -4348,11 +4385,13 @@
 
             <div class="llm-field">
               <label class="settings-label" for="summaryResultContent">提炼正文</label>
-              <textarea class="llm-textarea" id="summaryResultContent" rows="8" style="font-size:13px; line-height:1.6;"></textarea>
+              <textarea class="llm-textarea" id="summaryResultContent" rows="8"
+                style="font-size:13px; line-height:1.6;"></textarea>
             </div>
 
             <div style="display:flex; gap:10px; margin-top:10px;">
-              <button class="llm-btn primary" id="saveSummaryToMemoriesBtn" type="button" style="flex:1; padding:10px;">存入回忆录</button>
+              <button class="llm-btn primary" id="saveSummaryToMemoriesBtn" type="button"
+                style="flex:1; padding:10px;">存入回忆录</button>
               <button class="llm-btn" id="discardSummaryBtn" type="button" style="padding:10px 14px;">放弃</button>
             </div>
           </section>
@@ -4370,7 +4409,8 @@
               <label class="settings-label" for="ghToken">GitHub Personal Access Token</label>
               <div style="position:relative;">
                 <input class="llm-input" id="ghToken" type="password" placeholder="ghp_xxxxxxxx (需要 repo 读写权限)">
-                <button class="status-copy" id="ghToggleToken" type="button" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:11px; padding:2px 6px;">显示</button>
+                <button class="status-copy" id="ghToggleToken" type="button"
+                  style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:11px; padding:2px 6px;">显示</button>
               </div>
               <div class="llm-hint">仅存储在你的手机浏览器本地，绝不经过任何第三方服务器。</div>
             </div>
@@ -4387,16 +4427,19 @@
 
             <div class="llm-field">
               <label class="settings-label" for="ghPath">备份文件相对路径</label>
-              <input class="llm-input" id="ghPath" type="text" placeholder="例如：ephone_backup.json 或 memory.json" value="ephone_backup.json">
+              <input class="llm-input" id="ghPath" type="text" placeholder="例如：ephone_backup.json 或 memory.json"
+                value="ephone_backup.json">
             </div>
 
-            <button class="llm-btn" id="ghSaveConfigBtn" type="button" style="width:100%; margin-top:6px; padding:9px;">保存配置</button>
+            <button class="llm-btn" id="ghSaveConfigBtn" type="button"
+              style="width:100%; margin-top:6px; padding:9px;">保存配置</button>
           </section>
 
           <section class="settings-card">
             <div class="settings-label">云端数据操作</div>
             <div style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
-              <button class="llm-btn primary" id="ghPullBtn" type="button" style="padding:12px; font-size:14px; font-weight:600;">
+              <button class="llm-btn primary" id="ghPullBtn" type="button"
+                style="padding:12px; font-size:14px; font-weight:600;">
                 从 GitHub 拉取记忆 (自动提取 Moon 总结)
               </button>
               <button class="llm-btn" id="ghPushBtn" type="button" style="padding:12px; font-size:14px;">
@@ -4419,9 +4462,12 @@
         <span id="memEditModalTitle" style="font-weight:600; font-size:16px; color:var(--text);">编辑记忆段落</span>
         <button class="llm-btn danger" id="memEditCancelBtn" type="button" style="padding:4px 10px;">取消</button>
       </div>
-      <input class="llm-input" id="memEditTitleInput" type="text" placeholder="记忆标题 (如 <2026年7月前事件汇总>)" style="margin-bottom:12px;">
-      <textarea class="llm-textarea" id="memEditContentInput" rows="10" placeholder="记忆正文内容..." style="flex:1; margin-bottom:14px; font-size:13.5px; line-height:1.6;"></textarea>
-      <button class="llm-btn primary" id="memEditSaveBtn" type="button" style="padding:11px; font-size:14px; font-weight:600;">保存记忆</button>
+      <input class="llm-input" id="memEditTitleInput" type="text" placeholder="记忆标题 (如 <2026年7月前事件汇总>)"
+        style="margin-bottom:12px;">
+      <textarea class="llm-textarea" id="memEditContentInput" rows="10" placeholder="记忆正文内容..."
+        style="flex:1; margin-bottom:14px; font-size:13.5px; line-height:1.6;"></textarea>
+      <button class="llm-btn primary" id="memEditSaveBtn" type="button"
+        style="padding:11px; font-size:14px; font-weight:600;">保存记忆</button>
     </div>
   </div>
 
@@ -4436,27 +4482,31 @@
           </svg>
         </button>
         <div style="text-align:center;">
-          <h2 id="tetherTitle" style="font-size:16px; font-weight:600; margin:0; color:var(--text);">Tether · 锚缰</h2>
-          <span style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic;">Field Protocol · 世界设定</span>
+          <h2 id="tetherTitle" style="font-size:16px; font-weight:600; margin:0; color:var(--text);">Tether</h2>
+          <span style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic;">Field
+            Protocol · 引力场协定</span>
         </div>
-        <button class="llm-btn primary" id="addTetherBtn" type="button" style="padding:4px 10px; font-size:12px;">新增书卷</button>
+        <button class="llm-btn primary" id="addTetherBtn" type="button"
+          style="padding:4px 10px; font-size:12px;">新增书卷</button>
       </div>
 
       <div class="profile-scroll" style="padding-bottom:60px;">
         <!-- 顶部标签切换 -->
         <div class="segmented" id="tetherTabSeg" role="group" aria-label="Tether 功能分类" style="margin-bottom:16px;">
-          <button type="button" data-tab="books" class="active">协定书卷 (<span id="tetherCountBadge">0</span>)</button>
+          <button type="button" data-tab="books" class="active">协定规则 (<span id="tetherCountBadge">0</span>)</button>
           <button type="button" data-tab="github">GitHub 同步</button>
         </div>
 
         <!-- ══ TAB 1: 书卷列表 ══ -->
         <div class="tether-tab-pane" id="tetherPaneBooks">
-          <div class="settings-card" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+          <div class="settings-card"
+            style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
             <div>
               <div style="font-size:14px; font-weight:600; color:var(--text); margin-bottom:2px;">Tether 协定全局注入</div>
               <div style="font-size:12px; color:var(--text-faint);" id="tetherStatsText">已激活 0 部书卷，共 0 个条目</div>
             </div>
-            <input type="checkbox" id="tetherGlobalToggle" checked style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+            <input type="checkbox" id="tetherGlobalToggle" checked
+              style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
           </div>
 
           <div id="tetherBookList">
@@ -4474,12 +4524,14 @@
 
             <div class="llm-field">
               <label class="settings-label" for="tetherGhPath">备份文件相对路径</label>
-              <input class="llm-input" id="tetherGhPath" type="text" placeholder="例如：ephone_backup.json 或 tether.json" value="ephone_backup.json">
+              <input class="llm-input" id="tetherGhPath" type="text" placeholder="例如：ephone_backup.json 或 tether.json"
+                value="ephone_backup.json">
               <div class="llm-hint">GitHub 访问令牌与仓库名将自动复用「Memory」中保存的配置，无需重复输入。</div>
             </div>
 
             <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
-              <button class="llm-btn primary" id="tetherGhPullBtn" type="button" style="padding:12px; font-size:14px; font-weight:600;">
+              <button class="llm-btn primary" id="tetherGhPullBtn" type="button"
+                style="padding:12px; font-size:14px; font-weight:600;">
                 从 GitHub 拉取世界书 (自动识别 Moon 格式)
               </button>
               <button class="llm-btn" id="tetherGhPushBtn" type="button" style="padding:12px; font-size:14px;">
@@ -4501,8 +4553,10 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <span id="tetherModalTitle" style="font-weight:600; font-size:16px; color:var(--text);">编辑 Tether 协定</span>
         <div style="display:flex; gap:8px;">
-          <button class="llm-btn danger" id="tetherCancelBtn" type="button" style="padding:4px 10px; font-size:12px;">取消</button>
-          <button class="llm-btn primary" id="tetherSaveBtn" type="button" style="padding:4px 12px; font-size:12px; font-weight:600;">保存</button>
+          <button class="llm-btn danger" id="tetherCancelBtn" type="button"
+            style="padding:4px 10px; font-size:12px;">取消</button>
+          <button class="llm-btn primary" id="tetherSaveBtn" type="button"
+            style="padding:4px 12px; font-size:12px; font-weight:600;">保存</button>
         </div>
       </div>
 
@@ -4512,9 +4566,11 @@
           <input class="llm-input" id="tetherBookNameInput" type="text" placeholder="例如：白狗治人机 / 跨世界通讯协议">
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:10px; background:var(--card-sub-bg, rgba(255,255,255,.05)); margin-bottom:10px; border:1px solid var(--card-line, rgba(150,168,182,.2));">
+        <div
+          style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:10px; background:var(--card-sub-bg, rgba(255,255,255,.05)); margin-bottom:10px; border:1px solid var(--card-line, rgba(150,168,182,.2));">
           <span style="font-size:13px; color:var(--text);">是否启用该书卷</span>
-          <input type="checkbox" id="tetherBookEnabledInput" checked style="width:18px; height:18px; accent-color:var(--tint); cursor:pointer;">
+          <input type="checkbox" id="tetherBookEnabledInput" checked
+            style="width:18px; height:18px; accent-color:var(--tint); cursor:pointer;">
         </div>
 
         <div class="llm-field" style="margin-bottom:10px;">
@@ -4531,9 +4587,12 @@
           <input class="llm-input" id="tetherCategoryInput" type="text" placeholder="未分类" value="未分类">
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-top:1px solid var(--card-line, rgba(150,168,182,.2)); padding-top:12px;">
-          <span style="font-size:13px; font-weight:600; color:var(--text);">内容条目 (<span id="tetherModalEntryCount">0</span>)</span>
-          <button class="llm-btn" id="tetherAddEntryBtn" type="button" style="padding:4px 10px; font-size:12px;">+ 添加条目</button>
+        <div
+          style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-top:1px solid var(--card-line, rgba(150,168,182,.2)); padding-top:12px;">
+          <span style="font-size:13px; font-weight:600; color:var(--text);">内容条目 (<span
+              id="tetherModalEntryCount">0</span>)</span>
+          <button class="llm-btn" id="tetherAddEntryBtn" type="button" style="padding:4px 10px; font-size:12px;">+
+            添加条目</button>
         </div>
 
         <div id="tetherModalEntriesContainer" style="display:flex; flex-direction:column; gap:10px;">
@@ -4556,7 +4615,7 @@
         <!-- hero -->
         <div class="menu-hero">
           <h1 class="menu-title">Tidal Echo</h1>
-          <p class="menu-since">since 2026/01/01</p>
+          <p class="menu-since">since 2024/07/13</p>
           <div class="menu-days"><span class="num" id="menuDays">113</span><span class="lab">Days together</span></div>
         </div>
 
@@ -4585,7 +4644,8 @@
                 <path d="M5 12a7 7 0 0 0 7 7" stroke-dasharray="2 2" />
               </svg></span>
             <span class="menu-dot"></span>
-            <span class="menu-copy"><span class="menu-name">Tether</span><span class="menu-sub">Field Protocol · 引力场协定</span></span>
+            <span class="menu-copy"><span class="menu-name">Tether</span><span class="menu-sub">Field Protocol ·
+                引力场协定</span></span>
             <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 6l6 6-6 6" />
@@ -9024,7 +9084,7 @@
     document.addEventListener("DOMContentLoaded", setupModelModal);
     setTimeout(setupModelModal, 800);
 
-    /* ════════════ 记忆殿堂系统 (Memory & 古法总结 & GitHub 同步) ════════════ */
+    /* ════════════ Memory系统 (Memory & 古法总结 & GitHub 同步) ════════════ */
     function initMemorySystem() {
       const STORAGE_MEMORIES = "companion_memories";
       const STORAGE_GH = "companion_github_config";
@@ -9043,7 +9103,7 @@
       function saveMemories(list) {
         try {
           localStorage.setItem(STORAGE_MEMORIES, JSON.stringify(list));
-        } catch (_) {}
+        } catch (_) { }
         updateMemoryUi();
       }
 
@@ -9059,7 +9119,7 @@
       function saveGhConfig(cfg) {
         try {
           localStorage.setItem(STORAGE_GH, JSON.stringify(cfg));
-        } catch (_) {}
+        } catch (_) { }
       }
 
       function decodeBase64Utf8(base64Str) {
@@ -9135,7 +9195,7 @@
         list.forEach(m => totalChars += (m.content || "").length);
 
         if (memStats) {
-          memStats.textContent = enabled 
+          memStats.textContent = enabled
             ? `已激活 ${list.length} 条记忆段落 (共约 ${totalChars} 字)，已自动注入对话背景`
             : `长期记忆注入已关闭 (共有 ${list.length} 条记忆保存中)`;
         }
@@ -9144,7 +9204,7 @@
         if (!list.length) {
           memCardList.innerHTML = `
             <div class="mem-empty">
-              <div style="font-weight:600; font-size:15px; margin-bottom:4px; color:var(--text);">记忆殿堂尚且空空如也</div>
+              <div style="font-weight:600; font-size:15px; margin-bottom:4px; color:var(--text);">Memory尚且空空如也</div>
               <div>你可以点击上方「古法总结」从你们的历史对话中提炼新回忆，<br>或者在「GitHub 同步」直接拉取 Mooncache 的历史存档。</div>
             </div>
           `;
@@ -9201,7 +9261,7 @@
           const delBtn = e.target.closest(".mem-del-btn");
           if (delBtn) {
             const id = delBtn.dataset.id;
-            if (confirm("确定要从记忆殿堂中移除这条记忆吗？")) {
+            if (confirm("确定要从Memory中移除这条记忆吗？")) {
               let list = loadMemories();
               list = list.filter((m, idx) => String(m.id || idx) !== String(id));
               saveMemories(list);
@@ -9437,7 +9497,7 @@
             const cardsBtn = memTabSeg.querySelector("button[data-tab='cards']");
             if (cardsBtn) cardsBtn.click();
           }
-          showToast("🎉 新记忆已存入记忆殿堂！");
+          showToast("🎉 新记忆已存入Memory！");
         });
       }
 
@@ -9649,7 +9709,7 @@
 
           const memories = loadMemories();
           if (!memories.length) {
-            if (!confirm("当前记忆殿堂里没有任何记忆，确定要上传一个空记忆文件到 GitHub 吗？")) return;
+            if (!confirm("当前Memory里没有任何记忆，确定要上传一个空记忆文件到 GitHub 吗？")) return;
           }
 
           ghPushBtn.disabled = true;
@@ -9679,10 +9739,10 @@
                 if (rawText) {
                   try {
                     existingFileJson = JSON.parse(rawText);
-                  } catch (_) {}
+                  } catch (_) { }
                 }
               }
-            } catch (_) {}
+            } catch (_) { }
 
             let uploadContentStr = "";
             if (existingFileJson && existingFileJson.chats && typeof existingFileJson.chats === "object") {
@@ -10153,7 +10213,7 @@
           let ghConfig = {};
           try {
             ghConfig = JSON.parse(localStorage.getItem(STORAGE_GH) || "{}");
-          } catch (_) {}
+          } catch (_) { }
 
           const token = ghConfig.token || "";
           const user = ghConfig.user || "";
@@ -10284,7 +10344,7 @@
           let ghConfig = {};
           try {
             ghConfig = JSON.parse(localStorage.getItem(STORAGE_GH) || "{}");
-          } catch (_) {}
+          } catch (_) { }
 
           const token = ghConfig.token || "";
           const user = ghConfig.user || "";
@@ -10324,10 +10384,10 @@
                   if (blobResp.ok) rawText = await blobResp.text();
                 }
                 if (rawText) {
-                  try { existingJson = JSON.parse(rawText); } catch (_) {}
+                  try { existingJson = JSON.parse(rawText); } catch (_) { }
                 }
               }
-            } catch (_) {}
+            } catch (_) { }
 
             let uploadContentStr = "";
             if (existingJson && typeof existingJson === "object" && (existingJson.chats || existingJson.worldBooks)) {
