@@ -4629,16 +4629,16 @@
               <div style="font-size:11px; color:var(--text-soft);" id="tidesWebReaderStatusBadge">已开启 · 自动解析</div>
             </div>
             <div style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
+              <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">城市天气雷达</div>
+              <div style="font-size:11px; color:var(--text-soft);" id="tidesWeatherStatusBadge">未配置城市</div>
+            </div>
+            <div style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
               <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">现实时钟</div>
               <div style="font-size:11px; color:var(--text-soft);">已开启 · 昼夜与时差</div>
             </div>
             <div style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
-              <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">Memory 回溯</div>
-              <div style="font-size:11px; color:var(--text-soft);">长期回忆录注入</div>
-            </div>
-            <div style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
-              <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">Tether 协定</div>
-              <div style="font-size:11px; color:var(--text-soft);">场域前中后世界设定</div>
+              <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">Tether & Memory</div>
+              <div style="font-size:11px; color:var(--text-soft);">协定与长期回忆录</div>
             </div>
           </div>
         </section>
@@ -4653,7 +4653,39 @@
             <input type="checkbox" id="webReaderGlobalToggle" checked style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
           </div>
           <div class="llm-hint" style="margin-top:6px; line-height:1.6;">
-            支持微信公众号、知乎、新闻资讯、技术博客与常见推文链接。后台会自动过滤广告与样式，只将最纯净的核心正文交给 AI，完全不受模型是否开启联网搜索限制。
+            支持小红书、微信公众号、知乎、新闻资讯与博客链接。后台自动清洗广告代码，只将最纯净的正文喂给 AI，不依赖模型自身联网能力。
+          </div>
+        </section>
+
+        <!-- 城市天气雷达配置 -->
+        <section class="settings-card" style="margin-bottom:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div>
+              <div class="settings-label" style="margin-bottom:2px;">城市天气雷达 (Weather Radar)</div>
+              <div style="font-size:12px; color:var(--text-faint);">实时感知你所在城市的晴雨与温差，赋予 AI 真实气象时空感</div>
+            </div>
+            <input type="checkbox" id="weatherRadarGlobalToggle" checked style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+          </div>
+
+          <!-- 城市配置与定位 -->
+          <div style="display:flex; gap:8px; margin-top:12px; align-items:center;">
+            <input class="llm-input" id="weatherCityInput" type="text" placeholder="输入所在城市，如: 成都 / 杭州 / 上海" style="flex:1;">
+            <button class="llm-btn secondary" id="weatherGeoBtn" type="button" style="padding:6px 12px; font-size:13px; white-space:nowrap;">当前定位</button>
+            <button class="llm-btn primary" id="weatherQueryBtn" type="button" style="padding:6px 14px; font-size:13px; white-space:nowrap;">锁定城市</button>
+          </div>
+
+          <!-- 气象看板展示 -->
+          <div id="weatherDisplayCard" style="margin-top:14px; padding:14px 16px; border-radius:14px; background:linear-gradient(135deg, rgba(150,168,182,.08), rgba(150,168,182,.03)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <div id="weatherBoardCity" style="font-size:15px; font-weight:600; color:var(--text);">正在连接气象雷达...</div>
+                <div id="weatherBoardCondition" style="font-size:13px; color:var(--tint); margin-top:3px;">等待设定城市</div>
+              </div>
+              <div id="weatherBoardTemp" style="font-size:26px; font-weight:600; color:var(--text); letter-spacing:-0.5px;">--°C</div>
+            </div>
+            <div id="weatherBoardDetails" style="font-size:12px; color:var(--text-faint); margin-top:10px; line-height:1.5;">
+              点击“当前定位”或输入城市名，系统将自动从全球气象站抓取实时温度、湿度与气象状态。
+            </div>
           </div>
         </section>
 
@@ -4663,14 +4695,14 @@
           <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
             <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.15));">
               <div>
-                <div style="font-size:13px; font-weight:600; color:var(--text);">城市天气雷达</div>
-                <div style="font-size:11px; color:var(--text-faint);">AI 实时感知你所在城市的晴雨、气温与温差</div>
+                <div style="font-size:13px; font-weight:600; color:var(--text);">周边与地图探索 (Map Radar)</div>
+                <div style="font-size:11px; color:var(--text-faint);">与 AI 分享你漫步的街角、城市地标与出行距离</div>
               </div>
               <span class="tether-badge">准备就绪</span>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.15));">
               <div>
-                <div style="font-size:13px; font-weight:600; color:var(--text);">全网热点实时搜索</div>
+                <div style="font-size:13px; font-weight:600; color:var(--text);">全网热点实时搜索 (Search Engine)</div>
                 <div style="font-size:11px; color:var(--text-faint);">主动探索当下新鲜事、热点词与冷知识</div>
               </div>
               <span class="tether-badge">设计中</span>
@@ -5241,14 +5273,270 @@
 
     const webReaderGlobalToggle = document.getElementById("webReaderGlobalToggle");
     const tidesWebReaderStatusBadge = document.getElementById("tidesWebReaderStatusBadge");
-    function syncTidesUi() {
-      const isEn = localStorage.getItem("companion_web_reader_enabled") !== "false";
-      if (webReaderGlobalToggle) webReaderGlobalToggle.checked = isEn;
-      if (tidesWebReaderStatusBadge) {
-        tidesWebReaderStatusBadge.textContent = isEn ? "已开启 · 自动解析" : "已暂停 · 未启用";
-        tidesWebReaderStatusBadge.style.color = isEn ? "var(--tint)" : "var(--text-faint)";
+    const weatherRadarGlobalToggle = document.getElementById("weatherRadarGlobalToggle");
+    const tidesWeatherStatusBadge = document.getElementById("tidesWeatherStatusBadge");
+    const weatherCityInput = document.getElementById("weatherCityInput");
+    const weatherQueryBtn = document.getElementById("weatherQueryBtn");
+    const weatherGeoBtn = document.getElementById("weatherGeoBtn");
+    const weatherBoardCity = document.getElementById("weatherBoardCity");
+    const weatherBoardCondition = document.getElementById("weatherBoardCondition");
+    const weatherBoardTemp = document.getElementById("weatherBoardTemp");
+    const weatherBoardDetails = document.getElementById("weatherBoardDetails");
+
+    const WMO_CODE_MAP = {
+      0: "晴朗", 1: "大部晴朗", 2: "多云", 3: "阴天",
+      45: "轻雾", 48: "浓雾",
+      51: "细微毛毛雨", 53: "小毛毛雨", 55: "密集细雨",
+      61: "小雨", 63: "中雨", 65: "大雨",
+      66: "小冻雨", 67: "大冻雨",
+      71: "小雪", 73: "中雪", 75: "大雪", 77: "雪粒",
+      80: "小阵雨", 81: "阵雨", 82: "强阵雨",
+      85: "小阵雪", 86: "大阵雪",
+      95: "雷阵雨", 96: "雷阵雨伴有冰雹", 99: "暴雷雨"
+    };
+
+    function getWeatherContext() {
+      const isEn = localStorage.getItem("companion_weather_enabled") !== "false";
+      if (!isEn) return "";
+      try {
+        const raw = localStorage.getItem("companion_weather_data");
+        if (!raw) return "";
+        const d = JSON.parse(raw);
+        if (!d || !d.city) return "";
+        const cityStr = (d.province ? d.province + " " : "") + d.city;
+        const tempStr = Math.round(d.temp) + "°C";
+        const feelStr = d.apparentTemp != null ? ` (体感约 ${Math.round(d.apparentTemp)}°C)` : "";
+        const humidityStr = d.humidity != null ? `，空气湿度 ${d.humidity}%` : "";
+        const rangeStr = (d.tempMin != null && d.tempMax != null) ? `\n- 今日气温预报: ${Math.round(d.tempMin)}°C ~ ${Math.round(d.tempMax)}°C` : "";
+        return `[当前现实环境与气象感知]:\n- 用户所在城市: ${cityStr}\n- 当前天气: ${d.condition || "多云"}，实时气温 ${tempStr}${feelStr}${humidityStr}${rangeStr}\n(提示: 这是你与用户同频感知的真实世界天气。可在闲聊或关怀中自然流露，如温差大提醒添衣、雨天提醒带伞，但请切勿像天气预报员般机械报数据。)`;
+      } catch (e) {
+        return "";
       }
     }
+
+    function renderWeatherUi() {
+      const isEn = localStorage.getItem("companion_weather_enabled") !== "false";
+      if (weatherRadarGlobalToggle) weatherRadarGlobalToggle.checked = isEn;
+      const raw = localStorage.getItem("companion_weather_data");
+      const savedCity = localStorage.getItem("companion_weather_city") || "";
+      if (weatherCityInput && !weatherCityInput.value && savedCity) weatherCityInput.value = savedCity;
+
+      if (!isEn) {
+        if (tidesWeatherStatusBadge) {
+          tidesWeatherStatusBadge.textContent = "已暂停 · 未注入";
+          tidesWeatherStatusBadge.style.color = "var(--text-faint)";
+        }
+        if (weatherBoardCity) weatherBoardCity.textContent = savedCity || "未启用气象感知";
+        if (weatherBoardCondition) weatherBoardCondition.textContent = "雷达已暂停向 AI 发送天气数据";
+        if (weatherBoardTemp) weatherBoardTemp.textContent = "--°C";
+        if (weatherBoardDetails) weatherBoardDetails.textContent = "打开右上方开关后，AI 回复你时将感知你所在城市的冷暖晴雨。";
+        return;
+      }
+
+      if (!raw) {
+        if (tidesWeatherStatusBadge) {
+          tidesWeatherStatusBadge.textContent = "等待设定城市";
+          tidesWeatherStatusBadge.style.color = "var(--text-soft)";
+        }
+        if (weatherBoardCity) weatherBoardCity.textContent = "尚未设定城市";
+        if (weatherBoardCondition) weatherBoardCondition.textContent = "等待点击定位或输入城市";
+        if (weatherBoardTemp) weatherBoardTemp.textContent = "--°C";
+        if (weatherBoardDetails) weatherBoardDetails.textContent = "点击“当前定位”或输入城市名点击“锁定城市”，系统即可自动连接气象站。";
+        return;
+      }
+
+      try {
+        const d = JSON.parse(raw);
+        const cityDisplay = (d.province ? d.province + " · " : "") + d.city;
+        if (tidesWeatherStatusBadge) {
+          tidesWeatherStatusBadge.textContent = `${d.city} · ${Math.round(d.temp)}°C ${d.condition}`;
+          tidesWeatherStatusBadge.style.color = "var(--tint)";
+        }
+        if (weatherBoardCity) weatherBoardCity.textContent = cityDisplay;
+        if (weatherBoardCondition) weatherBoardCondition.textContent = `${d.condition} · 体感约 ${Math.round(d.apparentTemp)}°C`;
+        if (weatherBoardTemp) weatherBoardTemp.textContent = `${Math.round(d.temp)}°C`;
+        const timeStr = d.updateTime ? new Date(d.updateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
+        const minMax = (d.tempMin != null && d.tempMax != null) ? `今日 ${Math.round(d.tempMin)}°C ~ ${Math.round(d.tempMax)}°C · ` : "";
+        if (weatherBoardDetails) {
+          weatherBoardDetails.textContent = `${minMax}湿度 ${d.humidity || 50}% · 微风 · 更新于 ${timeStr} (每30分钟自动更新)`;
+        }
+      } catch (e) { }
+    }
+
+    async function fetchWeatherByCity(cityName) {
+      if (!cityName || !cityName.trim()) {
+        showToast("请输入有效的城市名");
+        return;
+      }
+      const city = cityName.trim();
+      if (weatherBoardCity) weatherBoardCity.textContent = `正在定位 ${city}...`;
+      if (weatherBoardCondition) weatherBoardCondition.textContent = "正在连接全球气象站...";
+      try {
+        // 1. 查找经纬度
+        const geoResp = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=zh&format=json`);
+        if (!geoResp.ok) throw new Error("地理编码服务无响应");
+        const geoData = await geoResp.json();
+        if (!geoData.results || !geoData.results.length) {
+          // 兜底尝试 wttr.in
+          return await fetchWeatherByWttr(city);
+        }
+        const place = geoData.results[0];
+        const lat = place.latitude;
+        const lon = place.longitude;
+        const resolvedCity = place.name || city;
+        const resolvedProvince = place.admin1 || "";
+
+        // 2. 查天气
+        const wResp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`);
+        if (!wResp.ok) throw new Error("气象数据获取失败");
+        const wData = await wResp.json();
+        const cur = wData.current || {};
+        const daily = wData.daily || {};
+        const code = cur.weather_code != null ? cur.weather_code : 1;
+        const cond = WMO_CODE_MAP[code] || "晴朗";
+
+        const weatherObj = {
+          city: resolvedCity,
+          province: resolvedProvince,
+          lat: lat,
+          lon: lon,
+          temp: cur.temperature_2m,
+          apparentTemp: cur.apparent_temperature != null ? cur.apparent_temperature : cur.temperature_2m,
+          humidity: cur.relative_humidity_2m,
+          weatherCode: code,
+          condition: cond,
+          tempMin: (daily.temperature_2m_min && daily.temperature_2m_min[0]) != null ? daily.temperature_2m_min[0] : null,
+          tempMax: (daily.temperature_2m_max && daily.temperature_2m_max[0]) != null ? daily.temperature_2m_max[0] : null,
+          updateTime: Date.now()
+        };
+
+        localStorage.setItem("companion_weather_data", JSON.stringify(weatherObj));
+        localStorage.setItem("companion_weather_city", resolvedCity);
+        renderWeatherUi();
+        showToast(`已成功同步 ${resolvedCity} 天气`);
+      } catch (err) {
+        console.warn("天气查询异常，尝试备用线路:", err);
+        await fetchWeatherByWttr(city);
+      }
+    }
+
+    async function fetchWeatherByWttr(city) {
+      try {
+        const resp = await fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1&lang=zh`);
+        if (!resp.ok) throw new Error("备用气象源响应失败");
+        const data = await resp.json();
+        const cur = (data.current_condition && data.current_condition[0]) || {};
+        const cond = (cur.lang_zh && cur.lang_zh[0] && cur.lang_zh[0].value) || "多云";
+        const temp = parseFloat(cur.temp_C || 20);
+        const feel = parseFloat(cur.FeelsLikeC || temp);
+        const hum = parseInt(cur.humidity || 50, 10);
+        const weatherObj = {
+          city: city,
+          province: "",
+          temp: temp,
+          apparentTemp: feel,
+          humidity: hum,
+          weatherCode: 1,
+          condition: cond.trim(),
+          tempMin: null,
+          tempMax: null,
+          updateTime: Date.now()
+        };
+        localStorage.setItem("companion_weather_data", JSON.stringify(weatherObj));
+        localStorage.setItem("companion_weather_city", city);
+        renderWeatherUi();
+        showToast(`已成功同步 ${city} 天气`);
+      } catch (err2) {
+        showToast("未能获取该城市气象，请确认城市名称");
+        if (weatherBoardCondition) weatherBoardCondition.textContent = "获取气象失败，请重试";
+      }
+    }
+
+    async function fetchWeatherByCoords(lat, lon) {
+      if (weatherBoardCity) weatherBoardCity.textContent = "定位成功，读取天气中...";
+      try {
+        const wResp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`);
+        if (!wResp.ok) throw new Error("经纬度气象查询失败");
+        const wData = await wResp.json();
+        const cur = wData.current || {};
+        const daily = wData.daily || {};
+        const code = cur.weather_code != null ? cur.weather_code : 1;
+        const cond = WMO_CODE_MAP[code] || "晴朗";
+
+        // 尝试从 openstreetmap 或 timezone 猜城市名
+        let cityName = "当前位置";
+        let provName = "";
+        try {
+          const revResp = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=zh`);
+          if (revResp.ok) {
+            const revData = await revResp.json();
+            const addr = revData.address || {};
+            cityName = addr.city || addr.town || addr.county || addr.state || "当前位置";
+            provName = (addr.state && addr.state !== cityName) ? addr.state : "";
+          }
+        } catch (re) { }
+
+        const weatherObj = {
+          city: cityName,
+          province: provName,
+          lat: lat,
+          lon: lon,
+          temp: cur.temperature_2m,
+          apparentTemp: cur.apparent_temperature != null ? cur.apparent_temperature : cur.temperature_2m,
+          humidity: cur.relative_humidity_2m,
+          weatherCode: code,
+          condition: cond,
+          tempMin: (daily.temperature_2m_min && daily.temperature_2m_min[0]) != null ? daily.temperature_2m_min[0] : null,
+          tempMax: (daily.temperature_2m_max && daily.temperature_2m_max[0]) != null ? daily.temperature_2m_max[0] : null,
+          updateTime: Date.now()
+        };
+
+        localStorage.setItem("companion_weather_data", JSON.stringify(weatherObj));
+        localStorage.setItem("companion_weather_city", cityName);
+        if (weatherCityInput) weatherCityInput.value = cityName;
+        renderWeatherUi();
+        showToast(`已定位至 ${cityName} 并更新天气`);
+      } catch (err) {
+        showToast("定位气象解析失败: " + err.message);
+      }
+    }
+
+    function checkAndAutoRefreshWeather() {
+      const isEn = localStorage.getItem("companion_weather_enabled") !== "false";
+      if (!isEn) return;
+      const raw = localStorage.getItem("companion_weather_data");
+      const city = localStorage.getItem("companion_weather_city");
+      if (!raw && !city) {
+        // 初次使用，若无城市设置，自动以上海/北京尝试一次，或等待用户定位
+        fetchWeatherByCity("北京");
+        return;
+      }
+      if (raw) {
+        try {
+          const d = JSON.parse(raw);
+          const age = Date.now() - (d.updateTime || 0);
+          // 超过 30 分钟静默刷新
+          if (age > 30 * 60 * 1000) {
+            if (d.lat && d.lon) {
+              fetchWeatherByCoords(d.lat, d.lon);
+            } else if (d.city) {
+              fetchWeatherByCity(d.city);
+            }
+          }
+        } catch (e) { }
+      }
+    }
+
+    function syncTidesUi() {
+      const isEnReader = localStorage.getItem("companion_web_reader_enabled") !== "false";
+      if (webReaderGlobalToggle) webReaderGlobalToggle.checked = isEnReader;
+      if (tidesWebReaderStatusBadge) {
+        tidesWebReaderStatusBadge.textContent = isEnReader ? "已开启 · 自动解析" : "已暂停 · 未启用";
+        tidesWebReaderStatusBadge.style.color = isEnReader ? "var(--tint)" : "var(--text-faint)";
+      }
+      renderWeatherUi();
+    }
+
     if (webReaderGlobalToggle) {
       webReaderGlobalToggle.addEventListener("change", () => {
         localStorage.setItem("companion_web_reader_enabled", webReaderGlobalToggle.checked ? "true" : "false");
@@ -5256,6 +5544,57 @@
         showToast(webReaderGlobalToggle.checked ? "已开启网页链接自动阅读" : "已关闭网页链接自动阅读");
       });
     }
+
+    if (weatherRadarGlobalToggle) {
+      weatherRadarGlobalToggle.addEventListener("change", () => {
+        localStorage.setItem("companion_weather_enabled", weatherRadarGlobalToggle.checked ? "true" : "false");
+        renderWeatherUi();
+        showToast(weatherRadarGlobalToggle.checked ? "已开启城市天气感知" : "已关闭城市天气感知");
+      });
+    }
+
+    if (weatherQueryBtn) {
+      weatherQueryBtn.addEventListener("click", () => {
+        const c = weatherCityInput ? weatherCityInput.value.trim() : "";
+        if (!c) {
+          showToast("请先输入城市名称");
+          return;
+        }
+        fetchWeatherByCity(c);
+      });
+    }
+
+    if (weatherCityInput) {
+      weatherCityInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (weatherQueryBtn) weatherQueryBtn.click();
+        }
+      });
+    }
+
+    if (weatherGeoBtn) {
+      weatherGeoBtn.addEventListener("click", () => {
+        if (!navigator.geolocation) {
+          showToast("当前环境不支持 GPS 定位，请直接输入城市名");
+          return;
+        }
+        showToast("正在获取定位权限...");
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            fetchWeatherByCoords(pos.coords.latitude, pos.coords.longitude);
+          },
+          (err) => {
+            console.warn("GPS 获取失败:", err);
+            showToast("定位权限未允许，可手动输入城市名");
+          },
+          { timeout: 8000, enableHighAccuracy: false }
+        );
+      });
+    }
+
+    // 页面启动时自动检查更新天气
+    setTimeout(checkAndAutoRefreshWeather, 2000);
 
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
@@ -6557,6 +6896,8 @@
         if (_tetherCtx.back) payload.tether_back = _tetherCtx.back;
         // 网页透视眼开关（默认开启）
         payload.web_reader_enabled = (localStorage.getItem("companion_web_reader_enabled") !== "false");
+        // 城市天气雷达注入
+        payload.weather_context = getWeatherContext();
         // 是否立刻触发回复（手动模式时不触发）
         payload.trigger = (currentTriggerMode === "auto");
       } catch (e) { }
@@ -8897,7 +9238,8 @@
               tether_front: getTetherContext().front,
               tether_middle: getTetherContext().middle,
               tether_back: getTetherContext().back,
-              web_reader_enabled: (localStorage.getItem("companion_web_reader_enabled") !== "false")
+              web_reader_enabled: (localStorage.getItem("companion_web_reader_enabled") !== "false"),
+              weather_context: getWeatherContext()
             };
             await fetch(`${API_BASE}/app/trigger_reply`, {
               method: "POST",

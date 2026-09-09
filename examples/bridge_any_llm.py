@@ -296,7 +296,7 @@ def fetch_web_content(url: str, max_chars: int = 3500) -> str:
     return f"【网页链接: {url}】\n{header_info}正文提取内容:\n{clean_text}"
 
 
-def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", memory_context: str = "", tether_front: str = "", tether_middle: str = "", tether_back: str = "", web_context: str = "", limit: int = 0) -> list:
+def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", memory_context: str = "", tether_front: str = "", tether_middle: str = "", tether_back: str = "", web_context: str = "", weather_context: str = "", limit: int = 0) -> list:
     base_persona = custom_persona or PERSONA
     parts = []
     # 1. 提示词最前面 (Front)
@@ -310,11 +310,13 @@ def build_messages(custom_persona: str = "", user_persona: str = "", time_contex
     # 3. 提示词中间 (Middle)
     if tether_middle and tether_middle.strip():
         parts.append(f"[环境世界观与场域协定 (Middle)]\n{tether_middle.strip()}")
-    # 4. 长期记忆与时间感知
+    # 4. 长期记忆、时间感知与天气雷达
     if memory_context and memory_context.strip():
         parts.append(memory_context.strip())
     if time_context and time_context.strip():
         parts.append(time_context.strip())
+    if weather_context and weather_context.strip():
+        parts.append(weather_context.strip())
     # 5. 网页实时阅读插件注入
     if web_context and web_context.strip():
         parts.append(
@@ -544,6 +546,8 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
                 web_ctx = "\n\n".join(web_snippets)
                 log("web", f"网页阅读完成，提取了 {len(web_ctx)} 字符")
 
+    weather_ctx = (bundle_meta or {}).get("weather_context") or latest_item.get("weather_context") or ""
+
     if not time_ctx:
         # 兜底生成当前时间
         try:
@@ -584,6 +588,7 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
             tether_middle=t_middle,
             tether_back=t_back,
             web_context=web_ctx,
+            weather_context=weather_ctx,
             limit=limit
         )
         reply = call_llm_dynamic(msgs, active_routes, temp)
