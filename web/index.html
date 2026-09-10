@@ -1969,12 +1969,15 @@
       background: rgba(0, 0, 0, 0.04);
     }
 
+    /* ── 【麦克风按钮（接收消息）位置与大小调节】 ──
+       可以在这里修改 width / height 改变按钮点击大小；
+       如果想微调左右或上下偏移，可以加 margin-left: 2px; 或 margin-top: -1px; 等 */
     .composer-wait-btn {
       background: transparent;
       border: none;
       cursor: pointer;
-      width: 34px;
-      height: 34px;
+      width: 34px;          /* 按钮点击区域宽 */
+      height: 34px;         /* 按钮点击区域高 */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -2012,13 +2015,17 @@
       color: var(--text);
     }
 
+    /* ── 【发送按钮（纸飞机）位置与大小调节】 ──
+       可以在这里修改 width / height 改变按钮大小；
+       修改 .floatbtn.send svg 里的数值可以改变纸飞机图标本身的大小；
+       如果想微调位置，可以加 margin-left: 4px; 或 margin-top: 1px; 等 */
     .floatbtn.send {
       background: transparent !important;
       border: none !important;
       box-shadow: none !important;
       color: #040000 !important;
-      width: 30px !important;
-      height: 30px !important;
+      width: 30px !important;   /* 按钮区域宽 */
+      height: 30px !important;  /* 按钮区域高 */
       flex-shrink: 0;
       display: flex !important;
       align-items: center;
@@ -2033,8 +2040,8 @@
     }
 
     .floatbtn.send svg {
-      width: 22px !important;
-      height: 22px !important;
+      width: 22px !important;   /* 纸飞机图标自身宽 */
+      height: 22px !important;  /* 纸飞机图标自身高 */
     }
 
     /* 发送键按压回弹动画 */
