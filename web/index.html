@@ -3020,14 +3020,15 @@
       display: block;
     }
 
-    /* footer */
+    /* footer — 不贪占剩余空间，用固定 padding 撑开底部即可 */
     .menu-foot {
-      flex: 1 1 auto;
+      flex: 0 0 auto;
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: center;
       text-align: center;
       padding-top: clamp(22px, 6vw, 40px);
+      padding-bottom: calc(env(safe-area-inset-bottom) + clamp(18px, 4vw, 28px));
       font-family: var(--font-en), var(--font-cn);
       font-size: clamp(10.5px, 2.7vw, 12.5px);
       font-style: italic;
