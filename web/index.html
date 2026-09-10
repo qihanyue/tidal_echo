@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Tidal Echo</title>
 
   <!-- PWA / iOS -->
@@ -16,12 +16,10 @@
   <link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/400.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/500.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@fontsource/pinyon-script@5/400.min.css" rel="stylesheet">
-  <meta name="theme-color" content="#f5f5f5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="mobile-web-app-capable" content="yes">
-
   <meta name="apple-mobile-web-app-title" content="Tidal Echo">
+  <meta name="mobile-web-app-capable" content="yes">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
 
@@ -4944,24 +4942,6 @@
       </div>
 
       <div class="profile-scroll" style="padding-bottom:60px;">
-        <!-- 预设管理卡片 -->
-        <section class="settings-card" style="margin-bottom:14px;">
-          <div class="settings-label" style="display:flex; justify-content:space-between; align-items:center;">
-            <span>美化预设方案 (Presets)</span>
-            <button class="llm-btn secondary" id="themeDeletePresetBtn" type="button" style="padding:2px 8px; font-size:11px; display:none; color:#e05252;">删除当前预设</button>
-          </div>
-          <div class="llm-hint" style="margin-top:-6px; margin-bottom:10px;">
-            切换整套美化风格，或将当前壁纸与自定义 CSS 另存为专属预设。
-          </div>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <select class="llm-input" id="themePresetSelect" style="flex:1; cursor:pointer;">
-              <option value="default">默认 · 粉色草莓冰淇淋</option>
-              <option value="pearl">原版 · 珍珠白沙 (Pearl)</option>
-              <option value="harbor">深色 · 避风港湾 (Harbor)</option>
-            </select>
-          </div>
-        </section>
-
         <!-- 壁纸切换卡片 -->
         <section class="settings-card" style="margin-bottom:14px;">
           <div class="settings-label">壁纸切换 (Wallpapers)</div>
@@ -5010,19 +4990,39 @@
           </div>
         </section>
 
-        <!-- 即时微调美化 (Live Custom CSS) -->
+        <!-- 自定义 CSS 美化 (Mooncache 经典样式管理器) -->
         <section class="settings-card">
           <div class="settings-label" style="display:flex; justify-content:space-between; align-items:center;">
-            <span>即时微调美化 (Live Custom CSS)</span>
-            <button class="llm-btn secondary" id="themeResetCssBtn" type="button" style="padding:2px 8px; font-size:11px;">清空代码</button>
+            <span style="color:#007aff; font-weight:600;">自定义css美化 (CSS)</span>
+            <div style="display:flex; gap:8px;">
+              <button class="llm-btn secondary" id="themeRenamePresetBtn" type="button" style="padding:2px 8px; font-size:11px;" title="重命名预设">✏️</button>
+              <button class="llm-btn secondary" id="themeDeletePresetBtn" type="button" style="padding:2px 8px; font-size:11px; color:#e05252;" title="删除预设">🗑️</button>
+            </div>
           </div>
           <div class="llm-hint" style="margin-top:-6px; margin-bottom:10px;">
-            在此输入或微调 CSS 代码，键盘输入瞬间<strong>即时生效</strong>！随时所见即所得。
+            在下方选择美化方案，框内会显示完整的样式代码，微调即时生效。
           </div>
-          <textarea class="llm-input" id="themeCustomCss" rows="8" placeholder="/* 在此输入自定义 CSS，输入后即时在全局生效 */" style="font-family:monospace; font-size:12px; line-height:1.5; resize:vertical; width:100%; box-sizing:border-box;"></textarea>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-            <div style="font-size:11px; color:var(--text-faint);" id="themeCssStatusText">改动将自动实时存入浏览器</div>
-            <button class="llm-btn primary" id="themeApplyCssBtn" type="button" style="padding:5px 14px; font-size:12px;">立即保存</button>
+          
+          <div style="margin-bottom:10px;">
+            <select class="llm-input" id="themePresetSelect" style="width:100%; cursor:pointer; font-size:13px; font-weight:600; padding:8px 10px;">
+              <option value="duobai">仿独白(简粉)</option>
+              <option value="minimal">默认 · 极简原版</option>
+              <option value="harbor">深色 · 避风港湾</option>
+            </select>
+          </div>
+
+          <textarea class="llm-input" id="themeCustomCss" rows="12" placeholder="/* 在此输入自定义 CSS */" style="font-family:Consolas, Monaco, monospace; font-size:12px; line-height:1.55; resize:vertical; width:100%; box-sizing:border-box; background:rgba(0,0,0,0.02);"></textarea>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px;">
+            <button class="llm-btn primary" id="themeApplyBtn" type="button" style="padding:8px 0; font-size:13px; background:#007aff; border-color:#007aff; color:#fff;">应用</button>
+            <button class="llm-btn primary" id="themeSaveBtn" type="button" style="padding:8px 0; font-size:13px; background:#007aff; border-color:#007aff; color:#fff;">保存</button>
+            <button class="llm-btn secondary" id="themeSaveAsBtn" type="button" style="padding:8px 0; font-size:13px; border-color:#007aff; color:#007aff;">另存为</button>
+            <button class="llm-btn secondary" id="themeExportBtn" type="button" style="padding:8px 0; font-size:13px; border-color:#007aff; color:#007aff;">导出</button>
+            <label class="llm-btn secondary" style="margin:0; text-align:center; padding:8px 0; font-size:13px; cursor:pointer; border-color:#007aff; color:#007aff; display:block;">
+              导入
+              <input type="file" id="themeImportInput" accept=".css,.txt" style="display:none;">
+            </label>
+            <button class="llm-btn secondary" id="themeResetBtn" type="button" style="padding:8px 0; font-size:13px; background:#ff3b30; border-color:#ff3b30; color:#fff;">重置</button>
           </div>
         </section>
       </div>
@@ -5390,7 +5390,7 @@
 
     /* ════════ 固定聊天背景 + 本地头像 ════════ */
     const THEMES = ["light", "harbor"];
-    const WALLS = { light: "chat-light.webp", harbor: "chat-harbor.webp" };
+    const WALLS = { light: "chat_pink_bear.jpg", harbor: "chat-harbor.webp" };
     const AVATAR_KEY = "companion_avatar";
     const REMARK_KEY = "companion_profile_remark";
     const SESSION_PICK_KEY = "companion_api_session_pick";
@@ -5403,25 +5403,18 @@
       const t = document.documentElement.getAttribute("data-theme");
       return THEMES.indexOf(t) >= 0 ? t : "light";
     }
-    function currentWall() { return WALLS[currentTheme()] || WALLS.light; }
+    function currentWall() {
+      const custom = localStorage.getItem("companion_chat_wall");
+      if (custom && custom.trim()) return custom.trim();
+      return WALLS[currentTheme()] || WALLS.light;
+    }
 
-    function setThemeColor(color) {
-      var meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute("content", color);
-    }
-    function sampleImageBand(img, yStart, ySize) {
-      var c = document.createElement("canvas"); c.width = 1; c.height = 1;
-      var ctx = c.getContext("2d");
-      ctx.drawImage(img, 0, yStart, img.width, Math.max(1, ySize), 0, 0, 1, 1);
-      var d = ctx.getImageData(0, 0, 1, 1).data;
-      return "rgb(" + d[0] + "," + d[1] + "," + d[2] + ")";
-    }
     function applyWall(url) {
-      const image = `url("${url}")`;
-      wallEl.style.backgroundImage = image;
+      if (!url) url = "chat_pink_bear.jpg";
+      const image = url.startsWith("url(") ? url : `url("${url}")`;
+      if (wallEl) wallEl.style.backgroundImage = image;
 
-      // iOS Home Screen paints status/home areas from host chrome. Keep root paint
-      // close to the fixed wallpaper, while leaving the real layout viewport alone.
+      // 确保 html 和 body 拥有壁纸，让 iOS 全屏与灵动岛处自然通透，不产生白条分割
       var de = document.documentElement, bd = document.body;
       [de, bd].forEach((el) => {
         if (!el) return;
@@ -5429,19 +5422,8 @@
         el.style.setProperty("background-size", "cover", "important");
         el.style.setProperty("background-position", "center", "important");
         el.style.setProperty("background-repeat", "no-repeat", "important");
+        el.style.setProperty("background-color", "transparent", "important");
       });
-
-      var img = new Image();
-      img.onload = function () {
-        try {
-          var topCol = sampleImageBand(img, 0, Math.max(1, Math.floor(img.height * 0.12)));
-          var botCol = sampleImageBand(img, Math.floor(img.height * 0.88), Math.max(1, Math.floor(img.height * 0.12)));
-          setThemeColor(topCol);
-          de.style.setProperty("background-color", botCol, "important");
-          bd.style.setProperty("background-color", botCol, "important");
-        } catch (e) { }
-      };
-      img.src = url;
     }
     function applyAvatar(url) {
       // 写 CSS 变量 → 顶栏头像、聊天每条消息旁的头像、空状态/登录 orb、profile 大头像一起换
@@ -5631,8 +5613,8 @@
 
     // DOM 元素
     const themePresetSelect = document.getElementById("themePresetSelect");
+    const themeRenamePresetBtn = document.getElementById("themeRenamePresetBtn");
     const themeDeletePresetBtn = document.getElementById("themeDeletePresetBtn");
-    const themeSavePresetBtn = document.getElementById("themeSavePresetBtn");
     const themeChatBgPreview = document.getElementById("themeChatBgPreview");
     const themeChatBgUrl = document.getElementById("themeChatBgUrl");
     const themeChatBgFile = document.getElementById("themeChatBgFile");
@@ -5642,19 +5624,95 @@
     const themeMenuBgFile = document.getElementById("themeMenuBgFile");
     const themeMenuBgResetBtn = document.getElementById("themeMenuBgResetBtn");
     const themeCustomCss = document.getElementById("themeCustomCss");
-    const themeResetCssBtn = document.getElementById("themeResetCssBtn");
-    const themeApplyCssBtn = document.getElementById("themeApplyCssBtn");
-    const themeCssStatusText = document.getElementById("themeCssStatusText");
+    const themeApplyBtn = document.getElementById("themeApplyBtn");
+    const themeSaveBtn = document.getElementById("themeSaveBtn");
+    const themeSaveAsBtn = document.getElementById("themeSaveAsBtn");
+    const themeExportBtn = document.getElementById("themeExportBtn");
+    const themeImportInput = document.getElementById("themeImportInput");
+    const themeResetBtn = document.getElementById("themeResetBtn");
 
-    // 壁纸生效函数
+    const DEFAULT_DUOBAI_CSS = `/* =========================================
+   仿独白(简粉) · 专属美化
+   ========================================= */
+
+/* 1. 顶栏：轻盈磨砂与居中排版 */
+.topbar {
+  background: rgba(245, 245, 245, 0.65) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.03) !important;
+}
+.peerpill .name {
+  font-size: 17px !important;
+  font-weight: 600 !important;
+  color: #000000 !important;
+}
+.peerpill .status {
+  font-size: 11px !important;
+  color: #a8a8a8 !important;
+}
+
+/* 2. 底栏输入区与胶囊造型 */
+.composer {
+  background: rgba(245, 245, 245, 0.65) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.03) !important;
+}
+.composer .field {
+  background: rgba(255, 255, 255, 0.42) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 14px !important;
+  height: 36px !important;
+}
+textarea {
+  font-size: 15px !important;
+  line-height: 22px !important;
+  color: #000000 !important;
+}
+
+/* 3. 消息气泡美化 */
+.msg.human .bubble {
+  background: #fce7f3 !important; /* 甜美柔粉 */
+  color: #374151 !important;
+  border-radius: 16px 4px 16px 16px !important;
+  box-shadow: 0 2px 10px rgba(244, 114, 182, 0.12) !important;
+}
+.msg.ai .bubble {
+  background: rgba(255, 255, 255, 0.88) !important;
+  color: #1f2937 !important;
+  border-radius: 4px 16px 16px 16px !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04) !important;
+}
+.msg .time {
+  font-size: 11px !important;
+  color: rgba(120, 120, 120, 0.65) !important;
+}
+
+/* 4. 心跳保活按钮：黑心+粉色荧光脉冲 */
+.topbtn.keep-alive {
+  color: #222222 !important;
+  filter: drop-shadow(0 0 5px rgba(255, 105, 180, 0.55)) !important;
+}
+.topbtn.keep-alive.active {
+  animation: pink-pulse 1.4s infinite !important;
+}
+@keyframes pink-pulse {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 105, 180, 0.6)); }
+  50% { filter: drop-shadow(0 0 10px rgba(255, 105, 180, 0.9)); transform: scale(1.06); }
+}`;
+
+    // 壁纸生效函数：同时驱动主聊天背景与各面板壁纸
     function applyChatWall(url) {
       if (!url) {
         document.documentElement.style.removeProperty("--wall-default");
         localStorage.removeItem("companion_chat_wall");
+        if (typeof applyWall === "function") applyWall("chat_pink_bear.jpg");
       } else {
         const cssVal = url.startsWith("url(") ? url : `url("${url}")`;
         document.documentElement.style.setProperty("--wall-default", cssVal);
         localStorage.setItem("companion_chat_wall", url);
+        if (typeof applyWall === "function") applyWall(url);
       }
       updateThemeWallPreviews();
     }
@@ -5690,7 +5748,7 @@
       }
     }
 
-    // 自定义 CSS 注入
+    // 自定义 CSS 注入与保存
     let cssSaveTimer = null;
     function applyLiveCss(css, save = true) {
       let st = document.getElementById("liveCustomCss");
@@ -5705,11 +5763,7 @@
         cssSaveTimer = setTimeout(() => {
           if (css) localStorage.setItem("companion_custom_css", css);
           else localStorage.removeItem("companion_custom_css");
-          if (themeCssStatusText) {
-            themeCssStatusText.textContent = "已自动实时保存";
-            setTimeout(() => { if (themeCssStatusText) themeCssStatusText.textContent = "改动将自动实时存入浏览器"; }, 2000);
-          }
-        }, 300);
+        }, 200);
       }
     }
 
@@ -5727,12 +5781,12 @@
     function renderPresetSelect() {
       if (!themePresetSelect) return;
       const presets = getThemePresets();
-      const current = localStorage.getItem("companion_current_preset") || "default";
+      const current = localStorage.getItem("companion_current_preset") || "duobai";
       
       themePresetSelect.innerHTML = `
-        <option value="default">默认 · 粉色草莓冰淇淋</option>
-        <option value="pearl">原版 · 珍珠白沙 (Pearl)</option>
-        <option value="harbor">深色 · 避风港湾 (Harbor)</option>
+        <option value="duobai">仿独白(简粉)</option>
+        <option value="minimal">默认 · 极简原版</option>
+        <option value="harbor">深色 · 避风港湾</option>
       `;
 
       presets.forEach(p => {
@@ -5743,20 +5797,27 @@
       });
 
       themePresetSelect.value = current;
-      if (themeDeletePresetBtn) {
-        themeDeletePresetBtn.style.display = (current === "default" || current === "pearl" || current === "harbor") ? "none" : "block";
-      }
+      const isBuiltin = (current === "duobai" || current === "minimal" || current === "harbor");
+      if (themeDeletePresetBtn) themeDeletePresetBtn.style.display = isBuiltin ? "none" : "block";
+      if (themeRenamePresetBtn) themeRenamePresetBtn.style.display = isBuiltin ? "none" : "block";
     }
 
     function syncThemeUi() {
       updateThemeWallPreviews();
       renderPresetSelect();
       if (themeCustomCss) {
-        themeCustomCss.value = localStorage.getItem("companion_custom_css") || "";
+        const curCss = localStorage.getItem("companion_custom_css");
+        // 如果用户从未修改过，默认把仿独白(简粉)的代码完整显示在输入框里
+        if (curCss === null || curCss === undefined || curCss.trim() === "") {
+          themeCustomCss.value = DEFAULT_DUOBAI_CSS;
+          applyLiveCss(DEFAULT_DUOBAI_CSS, true);
+        } else {
+          themeCustomCss.value = curCss;
+        }
       }
     }
 
-    // 监听事件：聊天背景 URL
+    // 聊天背景事件绑定
     if (themeChatBgUrl) {
       themeChatBgUrl.addEventListener("change", () => {
         const v = themeChatBgUrl.value.trim();
@@ -5766,8 +5827,6 @@
         }
       });
     }
-
-    // 监听事件：聊天背景 本地上传
     if (themeChatBgFile) {
       themeChatBgFile.addEventListener("change", (e) => {
         const f = e.target.files && e.target.files[0];
@@ -5780,8 +5839,6 @@
         reader.readAsDataURL(f);
       });
     }
-
-    // 监听事件：聊天背景 恢复默认
     if (themeChatBgResetBtn) {
       themeChatBgResetBtn.addEventListener("click", () => {
         applyChatWall("");
@@ -5789,7 +5846,7 @@
       });
     }
 
-    // 监听事件：菜单背景 URL
+    // 菜单背景事件绑定
     if (themeMenuBgUrl) {
       themeMenuBgUrl.addEventListener("change", () => {
         const v = themeMenuBgUrl.value.trim();
@@ -5799,8 +5856,6 @@
         }
       });
     }
-
-    // 监听事件：菜单背景 本地上传
     if (themeMenuBgFile) {
       themeMenuBgFile.addEventListener("change", (e) => {
         const f = e.target.files && e.target.files[0];
@@ -5813,8 +5868,6 @@
         reader.readAsDataURL(f);
       });
     }
-
-    // 监听事件：菜单背景 恢复默认
     if (themeMenuBgResetBtn) {
       themeMenuBgResetBtn.addEventListener("click", () => {
         applyMenuWall("");
@@ -5822,113 +5875,166 @@
       });
     }
 
-    // 监听事件：即时微调 CSS (实时输入实时生效！)
+    // 监听实时输入（边打字边生效）
     if (themeCustomCss) {
       themeCustomCss.addEventListener("input", () => {
         applyLiveCss(themeCustomCss.value, true);
       });
     }
 
-    // 监听事件：清空 CSS
-    if (themeResetCssBtn) {
-      themeResetCssBtn.addEventListener("click", () => {
-        if (themeCustomCss) themeCustomCss.value = "";
-        applyLiveCss("", true);
-        showToast("自定义 CSS 已清空");
+    // 按钮功能：【应用】
+    if (themeApplyBtn) {
+      themeApplyBtn.addEventListener("click", () => {
+        const code = themeCustomCss ? themeCustomCss.value : "";
+        applyLiveCss(code, false);
+        showToast("已应用当前美化");
       });
     }
 
-    // 监听事件：立即保存 CSS
-    if (themeApplyCssBtn) {
-      themeApplyCssBtn.addEventListener("click", () => {
-        const v = themeCustomCss ? themeCustomCss.value : "";
-        applyLiveCss(v, true);
-        showToast("美化已保存并实时生效");
-      });
-    }
-
-    // 监听事件：切换预设
-    if (themePresetSelect) {
-      themePresetSelect.addEventListener("change", () => {
-        const val = themePresetSelect.value;
-        localStorage.setItem("companion_current_preset", val);
-        if (themeDeletePresetBtn) {
-          themeDeletePresetBtn.style.display = (val === "default" || val === "pearl" || val === "harbor") ? "none" : "block";
-        }
-
-        if (val === "default") {
-          applyChatWall("");
-          applyMenuWall("");
-          applyLiveCss("", true);
-          document.documentElement.setAttribute("data-theme", "light");
-          localStorage.setItem("companion_theme", "light");
-          showToast("已切换至：默认 · 粉色草莓冰淇淋");
-        } else if (val === "pearl") {
-          applyChatWall("chat-light.webp");
-          applyMenuWall("menu-light.webp");
-          applyLiveCss("", true);
-          document.documentElement.setAttribute("data-theme", "light");
-          localStorage.setItem("companion_theme", "light");
-          showToast("已切换至：原版 · 珍珠白沙");
-        } else if (val === "harbor") {
-          applyChatWall("chat-harbor.webp");
-          applyMenuWall("menu-harbor.webp");
-          applyLiveCss("", true);
-          document.documentElement.setAttribute("data-theme", "harbor");
-          localStorage.setItem("companion_theme", "harbor");
-          showToast("已切换至：深色 · 避风港湾");
-        } else {
-          const presets = getThemePresets();
-          const target = presets.find(p => p.id === val);
+    // 按钮功能：【保存】
+    if (themeSaveBtn) {
+      themeSaveBtn.addEventListener("click", () => {
+        const code = themeCustomCss ? themeCustomCss.value : "";
+        applyLiveCss(code, true);
+        const cur = themePresetSelect ? themePresetSelect.value : "duobai";
+        if (cur !== "duobai" && cur !== "minimal" && cur !== "harbor") {
+          let presets = getThemePresets();
+          const target = presets.find(p => p.id === cur);
           if (target) {
-            applyChatWall(target.chatWall || "");
-            applyMenuWall(target.menuWall || "");
-            applyLiveCss(target.customCss || "", true);
-            showToast(`已应用预设：${target.name}`);
+            target.customCss = code;
+            saveThemePresets(presets);
           }
         }
-        syncThemeUi();
+        showToast("美化方案已成功保存");
       });
     }
 
-    // 监听事件：保存新预设
-    if (themeSavePresetBtn) {
-      themeSavePresetBtn.addEventListener("click", () => {
-        const name = prompt("请输入新美化预设方案名称：", "我的专属美化");
+    // 按钮功能：【另存为】
+    if (themeSaveAsBtn) {
+      themeSaveAsBtn.addEventListener("click", () => {
+        const name = prompt("请输入新美化预设方案名称：", "仿独白(我的微调版)");
         if (!name || !name.trim()) return;
         const id = "preset_" + Date.now();
-        const curChatWall = localStorage.getItem("companion_chat_wall") || "";
-        const curMenuWall = localStorage.getItem("companion_menu_wall") || "";
-        const curCss = localStorage.getItem("companion_custom_css") || "";
-
+        const code = themeCustomCss ? themeCustomCss.value : "";
         const presets = getThemePresets();
         presets.push({
           id,
           name: name.trim(),
-          chatWall: curChatWall,
-          menuWall: curMenuWall,
-          customCss: curCss
+          customCss: code
         });
         saveThemePresets(presets);
         localStorage.setItem("companion_current_preset", id);
         renderPresetSelect();
-        showToast("新预设方案已成功保存！");
+        showToast(`已另存为：${name.trim()}`);
       });
     }
 
-    // 监听事件：删除当前预设
+    // 按钮功能：【导出】
+    if (themeExportBtn) {
+      themeExportBtn.addEventListener("click", () => {
+        const code = themeCustomCss ? themeCustomCss.value : "";
+        const blob = new Blob([code], { type: "text/css;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "companion-theme.css";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast("美化代码已导出下载");
+      });
+    }
+
+    // 按钮功能：【导入】
+    if (themeImportInput) {
+      themeImportInput.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          const content = evt.target.result;
+          if (themeCustomCss) themeCustomCss.value = content;
+          applyLiveCss(content, true);
+          showToast("已成功导入并应用美化代码");
+        };
+        reader.readAsText(file);
+      });
+    }
+
+    // 按钮功能：【重置】
+    if (themeResetBtn) {
+      themeResetBtn.addEventListener("click", () => {
+        if (!confirm("确定将美化代码重置为默认「仿独白(简粉)」吗？")) return;
+        if (themeCustomCss) themeCustomCss.value = DEFAULT_DUOBAI_CSS;
+        applyLiveCss(DEFAULT_DUOBAI_CSS, true);
+        showToast("已恢复默认美化代码");
+      });
+    }
+
+    // 按钮功能：【重命名预设】
+    if (themeRenamePresetBtn) {
+      themeRenamePresetBtn.addEventListener("click", () => {
+        const cur = themePresetSelect ? themePresetSelect.value : "";
+        if (cur === "duobai" || cur === "minimal" || cur === "harbor") return;
+        const presets = getThemePresets();
+        const target = presets.find(p => p.id === cur);
+        if (!target) return;
+        const newName = prompt("请输入新预设名称：", target.name);
+        if (newName && newName.trim()) {
+          target.name = newName.trim();
+          saveThemePresets(presets);
+          renderPresetSelect();
+          showToast("预设名称已修改");
+        }
+      });
+    }
+
+    // 按钮功能：【删除预设】
     if (themeDeletePresetBtn) {
       themeDeletePresetBtn.addEventListener("click", () => {
-        const cur = themePresetSelect.value;
-        if (cur === "default" || cur === "pearl" || cur === "harbor") return;
+        const cur = themePresetSelect ? themePresetSelect.value : "";
+        if (cur === "duobai" || cur === "minimal" || cur === "harbor") return;
         if (!confirm("确定删除此美化预设吗？")) return;
         let presets = getThemePresets();
         presets = presets.filter(p => p.id !== cur);
         saveThemePresets(presets);
-        localStorage.setItem("companion_current_preset", "default");
-        themePresetSelect.value = "default";
-        showToast("预设已删除，恢复默认");
+        localStorage.setItem("companion_current_preset", "duobai");
+        showToast("预设已删除");
+        renderPresetSelect();
         syncThemeUi();
+      });
+    }
+
+    // 监听切换预设下拉框
+    if (themePresetSelect) {
+      themePresetSelect.addEventListener("change", () => {
+        const val = themePresetSelect.value;
+        localStorage.setItem("companion_current_preset", val);
+        renderPresetSelect();
+
+        if (val === "duobai") {
+          themeCustomCss.value = DEFAULT_DUOBAI_CSS;
+          applyLiveCss(DEFAULT_DUOBAI_CSS, true);
+          showToast("已载入：仿独白(简粉)");
+        } else if (val === "minimal") {
+          themeCustomCss.value = "/* 默认极简原版 · 无额外覆盖样式 */";
+          applyLiveCss("", true);
+          showToast("已载入：默认 · 极简原版");
+        } else if (val === "harbor") {
+          const harborCss = `/* Harbor 深色港湾夜间美化 */\n:root { --bg: #0F1722; --text: #E3E9F0; }`;
+          themeCustomCss.value = harborCss;
+          applyLiveCss(harborCss, true);
+          showToast("已载入：深色 · 避风港湾");
+        } else {
+          const presets = getThemePresets();
+          const target = presets.find(p => p.id === val);
+          if (target) {
+            themeCustomCss.value = target.customCss || "";
+            applyLiveCss(target.customCss || "", true);
+            showToast(`已载入预设：${target.name}`);
+          }
+        }
       });
     }
 
