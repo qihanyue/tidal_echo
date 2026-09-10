@@ -3,8 +3,9 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Tidal Echo</title>
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Gravity</title>
 
   <!-- PWA / iOS -->
   <link rel="manifest" href="manifest.webmanifest">
@@ -298,6 +299,14 @@
       padding: 0 76px;
     }
 
+    .peer-name-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      cursor: pointer;
+    }
+
     .peerpill .name {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
       font-size: 17px !important;
@@ -305,6 +314,28 @@
       color: #000000 !important;
       letter-spacing: 0;
       text-shadow: none !important;
+    }
+
+    .peer-remark-btn {
+      background: transparent;
+      border: none;
+      padding: 3px;
+      margin: 0;
+      cursor: pointer;
+      color: rgba(0, 0, 0, 0.3);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: color .15s ease, transform .15s ease;
+    }
+
+    .peer-remark-btn:hover {
+      color: #ff6b9d;
+    }
+
+    .peer-remark-btn:active {
+      transform: scale(0.88);
     }
 
     .peerpill .status {
@@ -1434,91 +1465,73 @@
       border-radius: 5px;
     }
 
-    /* ── act ── the AI's action chip: a quiet "what it just did", optionally expand to see raw tool calls ──
-     视觉与 thinking 同一族(--think-* 配色),但更小、更收,贴在头像缝隙里,不抢气泡 ── */
+    /* ── 工具调用指示条 (例如: Used 2 tools >) ──
+       与 AI 气泡左边缘严格对齐 (padding-left: 46px)，紧贴在对应气泡上方 ── */
     .row.act {
       justify-content: flex-start;
-      padding-left: calc(var(--avatar-size) + clamp(10px, 1.6vw, 16px));
+      padding-left: 46px !important;
       padding-right: clamp(12px, 4vw, 40px);
-      margin-top: clamp(4px, 0.9vw, 9px);
-      margin-bottom: clamp(4px, 0.9vw, 9px);
+      margin-top: clamp(8px, 1.4vw, 14px);
+      margin-bottom: 3px !important;
+    }
+
+    .row.act + .row.ai {
+      margin-top: 3px !important;    /* 紧贴工具条 */
     }
 
     .act-block {
-      max-width: min(80vw, 470px);
-      animation: pop .24s cubic-bezier(.2, .8, .2, 1) both;
+      max-width: min(86vw, 640px);
+      animation: pop .2s cubic-bezier(.2, .8, .2, 1) both;
     }
 
     .act-toggle {
       appearance: none;
       -webkit-appearance: none;
       margin: 0;
-      padding: 2px 0;
+      padding: 3px 0;
       border: 0;
       background: transparent;
-      color: inherit;
-      font: inherit;
       cursor: pointer;
-      text-align: left;
-      max-width: 100%;
       display: inline-flex;
-      align-items: baseline;
-      gap: 7px;
+      align-items: center;
+      gap: 5px;
+      color: #737373;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 450;
+      line-height: 1.3;
+      transition: color .15s ease;
+      user-select: none;
     }
 
-    .act-toggle.bare {
-      cursor: default;
-    }
-
-    .act-toggle:focus-visible {
-      outline: none;
-    }
-
-    .act-glyph {
-      flex: none;
-      color: var(--think-flourish);
-      font-size: 1.04em;
-      line-height: 1;
-      transform: translateY(.06em);
+    .act-toggle:hover {
+      color: #222222;
     }
 
     .act-label {
-      color: var(--think-label);
-      font-family: var(--font-cn);
-      /* 统一宋体:--font-en 末尾的通用 serif 会先吃掉 CJK→iOS 回退黑体 */
-      font-size: clamp(12px, 1.32vw, 13.5px);
-      line-height: 1.46;
-      letter-spacing: .02em;
+      color: inherit;
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
     }
 
-    /* 展开指示:沿用 thinking 的空心星 ✧(收起)→ 实心 ✦(展开),比"· 展开"文字更轻、不突兀 */
-    .act-state {
-      flex: none;
-      color: var(--think-flourish);
-      font-size: 1.1em;
-      line-height: 1;
-      transform: translateY(.02em);
-      transition: color var(--motion-fast) var(--ease-soft);
+    /* 类似用户截图中的向右轻量箭头 > */
+    .act-chevron {
+      width: 13px;
+      height: 13px;
+      display: inline-block;
+      flex-shrink: 0;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform .2s cubic-bezier(.2, .8, .2, 1);
+      transform: translateY(0.5px);
     }
 
-    .act-state::before {
-      content: "✧";
-    }
-
-    .act-block.open .act-state::before {
-      content: "✦";
-    }
-
-    .act-toggle:hover .act-state {
-      color: var(--accent);
-    }
-
-    .act-toggle:hover .act-label {
-      color: var(--think-body);
-    }
-
-    .act-toggle:active {
-      transform: translateY(1px);
+    .act-block.open .act-chevron {
+      transform: rotate(90deg) translateX(0.5px);
     }
 
     .act-detail[hidden] {
@@ -1526,23 +1539,56 @@
     }
 
     .act-detail {
-      margin-top: 8px;
+      margin-top: 6px;
+      margin-bottom: 4px;
       border-radius: 12px;
-      background: rgba(127, 127, 127, 0.08);
-      border: 1px solid var(--field-line);
-      padding: clamp(9px, 1.6vw, 13px) clamp(11px, 1.8vw, 14px);
-      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      background: rgba(255, 255, 255, 0.76);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      padding: 10px 13px;
       font-size: 12px;
-      line-height: 1.6;
-      color: var(--think-body);
+      line-height: 1.55;
+      color: #2b2b2b;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
       overflow-x: auto;
       animation: pop .2s cubic-bezier(.2, .8, .2, 1) both;
     }
 
-    .act-step+.act-step {
-      margin-top: 7px;
-      padding-top: 7px;
-      border-top: 1px dashed var(--field-line);
+    .act-step + .act-step {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(0, 0, 0, 0.08);
+    }
+
+    .act-tool-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+
+    .act-cmd-code {
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 11px;
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 6px;
+      padding: 4px 8px;
+      color: #4b5563;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    .act-result-code {
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 4px;
+      padding-left: 2px;
+      max-height: 120px;
+      overflow-y: auto;
     }
 
     .act-line {
@@ -1727,8 +1773,13 @@
     }
 
     @keyframes sheetUp {
-      from { transform: translate3d(0, 100%, 0); }
-      to { transform: translate3d(0, 0, 0); }
+      from {
+        transform: translate3d(0, 100%, 0);
+      }
+
+      to {
+        transform: translate3d(0, 0, 0);
+      }
     }
 
     .sticker-sheet-header {
@@ -1750,7 +1801,8 @@
     .sticker-hdr-btn {
       background: transparent;
       border: none;
-      color: #e86b8b; /* 温柔粉色调，告别生硬蓝字 */
+      color: #e86b8b;
+      /* 温柔粉色调，告别生硬蓝字 */
       font-size: 15px;
       font-weight: 500;
       cursor: pointer;
@@ -1852,13 +1904,19 @@
     .sticker-sheet-card.is-editing .sticker-card {
       animation: wobble .24s infinite alternate ease-in-out;
     }
+
     .sticker-sheet-card.is-editing .sticker-card:nth-child(2n) {
       animation-delay: 0.12s;
     }
 
     @keyframes wobble {
-      from { transform: rotate(-1deg); }
-      to { transform: rotate(1deg); }
+      from {
+        transform: rotate(-1deg);
+      }
+
+      to {
+        transform: rotate(1deg);
+      }
     }
 
     .sticker-empty {
@@ -1924,7 +1982,8 @@
       height: 130px !important;
       padding: 10px 12px;
       border-radius: 12px;
-      border: 1.5px solid #ffb3c7; /* 温柔粉色边框 */
+      border: 1.5px solid #ffb3c7;
+      /* 温柔粉色边框 */
       background: #ffffff;
       font-size: 13px;
       line-height: 1.5;
@@ -1962,7 +2021,8 @@
     }
 
     .sticker-modal-btn.confirm {
-      color: #e86b8b; /* 温柔粉色 */
+      color: #e86b8b;
+      /* 温柔粉色 */
     }
 
     .sticker-modal-btn:active {
@@ -1971,13 +2031,19 @@
 
     /* ── 【麦克风按钮（接收消息）位置与大小调节】 ──
        可以在这里修改 width / height 改变按钮点击大小；
-       如果想微调左右或上下偏移，可以加 margin-left: 2px; 或 margin-top: -1px; 等 */
+       【调节与输入框的间距】：
+       因为麦克风图标两侧有透明点击区，如果想让输入框往右延伸贴近麦克风（消除空隙），
+       把 margin-left 调得更负一点（比如 -8px 或 -10px），输入框就会自动变宽向右延伸！ */
     .composer-wait-btn {
       background: transparent;
       border: none;
       cursor: pointer;
-      width: 34px;          /* 按钮点击区域宽 */
-      height: 34px;         /* 按钮点击区域高 */
+      width: 40px;
+      /* 按钮点击区域宽 */
+      height: 40px;
+      /* 按钮点击区域高 */
+      margin-left: -8px;
+      /* 往左靠，消除与输入框之间的过多留白，间距跟左边头像对称 */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -2024,8 +2090,10 @@
       border: none !important;
       box-shadow: none !important;
       color: #040000 !important;
-      width: 30px !important;   /* 按钮区域宽 */
-      height: 30px !important;  /* 按钮区域高 */
+      width: 30px !important;
+      /* 按钮区域宽 */
+      height: 30px !important;
+      /* 按钮区域高 */
       flex-shrink: 0;
       display: flex !important;
       align-items: center;
@@ -2040,8 +2108,10 @@
     }
 
     .floatbtn.send svg {
-      width: 22px !important;   /* 纸飞机图标自身宽 */
-      height: 22px !important;  /* 纸飞机图标自身高 */
+      width: 22px !important;
+      /* 纸飞机图标自身宽 */
+      height: 22px !important;
+      /* 纸飞机图标自身高 */
     }
 
     /* 发送键按压回弹动画 */
@@ -2059,6 +2129,11 @@
       animation: send-go .22s cubic-bezier(.2, .8, .2, 1);
     }
 
+    /* ── 【输入框外层胶囊长宽与圆角调节】 ──
+       - 高度（变扁/变厚）：修改 height 和 min-height，后面带上 !important 防止被手机或主题覆盖（比如 32px 或 30px 会很扁）
+       - 圆角：修改 border-radius（高度变扁的话，圆角可以改小到 10px 或 12px 更协调）
+       - 整体往右平移：如果想让输入框远离左边头像，可以加 margin-left: 6px;
+       - 内边距：padding: 0 12px 控制文字离输入框两头的距离 */
     .composer .field {
       flex: 1 1 auto;
       display: flex;
@@ -2066,10 +2141,10 @@
       gap: 6px;
       background: rgba(255, 255, 255, 0.42);
       border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 14px;
-      padding: 0 14px;
-      height: 36px;
-      min-height: 36px;
+      border-radius: 12px;
+      padding: 0 12px;
+      height: 32px !important;       /* 变扁的高度，加了 !important 保证刷新绝对生效 */
+      min-height: 32px !important;   /* 最小高度，保持和上面 height 一致 */
       box-shadow: none;
       box-sizing: border-box;
       transition: border-color .2s ease, background-color .2s ease;
@@ -2086,6 +2161,9 @@
       outline: none;
     }
 
+    /* ── 【输入框内部文字打字区域】 ──
+       - 单行文字高：修改 height / min-height / line-height（一般比外层胶囊矮一点）
+       - 打字很多时的最大拉伸高度：修改 max-height */
     textarea {
       flex: 1 1 auto;
       border: none;
@@ -2155,20 +2233,24 @@
       box-sizing: border-box;
       outline: none;
     }
+
     .theme-act-btn:active {
       transform: scale(0.97);
     }
+
     .theme-act-btn.primary {
       background: #2b3a4a !important;
       color: #ffffff !important;
       border: 1px solid #2b3a4a !important;
       box-shadow: 0 2px 6px rgba(43, 58, 74, 0.15) !important;
     }
+
     .theme-act-btn.secondary {
       background: rgba(255, 255, 255, 0.72) !important;
       color: #2b3a4a !important;
       border: 1px solid rgba(0, 0, 0, 0.08) !important;
     }
+
     .theme-act-btn.danger {
       background: rgba(220, 38, 38, 0.08) !important;
       color: #c53030 !important;
@@ -3077,9 +3159,9 @@
         height: 20px;
       }
 
+      /* 移除手机屏幕对输入框高度的强行限制，完全听从上面的高度设置 */
       .composer .field {
-        min-height: 42px;
-        padding: 4px 8px 4px 12px;
+        padding: 0 10px;
       }
 
       textarea {
@@ -4486,8 +4568,8 @@
   <!-- ── Login ── -->
   <div class="login" id="login">
     <div class="orb"></div>
-    <h1>Gemini</h1>
-    <p class="sub">输入连接密钥,进入你和Gemini的频道。</p>
+    <h1>穷奇</h1>
+    <p class="sub">输入连接密钥,进入你和穷奇的频道。</p>
     <form id="loginForm" autocomplete="off">
       <input id="secretInput" type="password" inputmode="text" placeholder="连接密钥" autocomplete="off" spellcheck="false">
       <button type="submit">连接</button>
@@ -4506,8 +4588,16 @@
           <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
       </button>
-      <div class="peerpill">
-        <span class="name" id="peerName">Gemini</span>
+      <div class="peerpill" id="peerPill">
+        <div class="peer-name-wrap" title="点击设置备注名">
+          <span class="name" id="peerName">穷奇</span>
+          <button class="peer-remark-btn" id="peerRemarkBtn" type="button" aria-label="修改备注" title="设置备注名">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+            </svg>
+          </button>
+        </div>
         <span class="status" id="status">connecting…</span>
       </div>
       <div class="header-actions" aria-label="操作">
@@ -4547,7 +4637,7 @@
     <main class="scroll" id="scroll">
       <div class="empty" id="empty">
         <div class="orb"></div>
-        <p>这里只有你和Gemini。<br>说点什么吧。</p>
+        <p>这里只有你和穷奇。<br>说点什么吧。</p>
       </div>
     </main>
     <footer class="composer">
@@ -4558,49 +4648,55 @@
         <div class="action-grid">
           <!-- 1. 表情 -->
           <button type="button" class="action-item" id="actionEmojiBtn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
             <span class="action-text">表情</span>
           </button>
           <!-- 2. Reroll (重新生成) -->
           <button type="button" class="action-item" id="actionRerollBtn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
             </svg>
             <span class="action-text">重新生成</span>
           </button>
           <!-- 3. 番茄钟 -->
           <button type="button" class="action-item" id="actionPomodoroBtn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="9"/>
-              <polyline points="12 7 12 12 15 15"/>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9" />
+              <polyline points="12 7 12 12 15 15" />
             </svg>
             <span class="action-text">番茄钟</span>
           </button>
           <!-- 4. 发送真正的图片 -->
           <button type="button" class="action-item" id="actionUploadBtn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="3" ry="3"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21 15 16 10 5 21"/>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="3" ry="3" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
             </svg>
             <span class="action-text">发送图片</span>
           </button>
           <!-- 5. 发文字描述的假图片 -->
           <button type="button" class="action-item" id="actionFakeImgBtn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="3" ry="3"/>
-              <path d="M7 8h10M7 12h6M7 16h8"/>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="3" ry="3" />
+              <path d="M7 8h10M7 12h6M7 16h8" />
             </svg>
             <span class="action-text">文字假图</span>
           </button>
           <!-- 6. 清空记录 (凑齐整齐2行) -->
           <button type="button" class="action-item" id="actionClearBtn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
             </svg>
             <span class="action-text">清空记录</span>
           </button>
@@ -4634,7 +4730,7 @@
       </div>
       <!-- 麦克风：接收消息 -->
       <button class="composer-wait-btn" id="waitReplyBtn" type="button" aria-label="接收消息" title="接收消息">
-        <svg viewBox="0 0 1024 1024" width="27" height="27" fill="#000">
+        <svg viewBox="0 0 1024 1024" width="30" height="30" fill="#000">
           <path
             d="M544 768h96a32 32 0 0 1 0 64h-256a32 32 0 0 1 0-64h96v-66.24A224.064 224.064 0 0 1 288 480v-32a32 32 0 1 1 64 0v32a160 160 0 0 0 320 0v-32a32 32 0 0 1 64 0v32a224.064 224.064 0 0 1-192 221.76V768z m-32-192a96 96 0 0 1-96-96V288a96 96 0 1 1 192 0v192a96 96 0 0 1-96 96z m0-320a32 32 0 0 0-32 32v192a32 32 0 1 0 64 0V288a32 32 0 0 0-32-32z" />
         </svg>
@@ -4714,9 +4810,9 @@
           </div>
           <div class="profile-id-copy">
             <div class="profile-name-row">
-              <h3 id="profileName">Gemini</h3>
+              <h3 id="profileName">穷奇</h3>
               <input id="profileNameInput" class="hidden" type="text" maxlength="16" autocomplete="off"
-                spellcheck="false" placeholder="Gemini">
+                spellcheck="false" placeholder="穷奇">
               <button class="profile-name-edit" id="profileNameEdit" type="button" aria-label="编辑备注">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
                   stroke-linejoin="round">
@@ -4936,6 +5032,31 @@
             </span>
           </span>
         </div>
+
+        <!-- 聊天记录备份与迁移 (纯手机本地文件) -->
+        <section class="settings-card" style="margin-top: 14px; margin-bottom: 8px;">
+          <div class="settings-label">聊天记录备份 (本地文件)</div>
+          <div style="display:flex; gap:10px; margin-top:8px;">
+            <button class="llm-btn primary" id="exportHistoryBtn" type="button" style="flex:1; padding:9px 0; font-size:12px; display:flex; align-items:center; justify-content:center; gap:6px;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              导出记录文件
+            </button>
+            <button class="llm-btn" id="importHistoryBtn" type="button" style="flex:1; padding:9px 0; font-size:12px; display:flex; align-items:center; justify-content:center; gap:6px;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              导入记录文件
+            </button>
+          </div>
+          <input type="file" id="importHistoryFileInput" accept=".json,application/json" class="hidden" style="display:none;">
+          <div class="llm-hint" style="margin-top:6px;">直接在手机里生成或恢复 .json 备份文件，无需联网或上传 GitHub。</div>
+        </section>
 
         <!-- 清空全部历史记录 -->
         <button class="action-row" id="clearAllHistoryRow" type="button" style="color:var(--danger, #e05252);">
@@ -5423,7 +5544,8 @@
           style="position:absolute; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none; width:max-content; max-width:60vw;">
           <h2 id="themeTitle" style="font-size:16px; font-weight:600; margin:0; color:var(--text);">Theme</h2>
           <span
-            style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic; display:block;">Appearance & CSS · 外观微调</span>
+            style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic; display:block;">Appearance
+            & CSS · 外观微调</span>
         </div>
         <button class="llm-btn primary" id="themeSavePresetBtn" type="button"
           style="padding:4px 10px; font-size:12px;">+ 保存预设</button>
@@ -5439,28 +5561,40 @@
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
             <!-- 左列：聊天背景 -->
-            <div style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.18)); display:flex; flex-direction:column; gap:8px;">
+            <div
+              style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.18)); display:flex; flex-direction:column; gap:8px;">
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span style="font-size:12px; font-weight:600; color:var(--text);">聊天背景</span>
-                <button class="llm-btn secondary" id="themeChatBgResetBtn" type="button" style="padding:2px 6px; font-size:11px;">恢复默认</button>
+                <button class="llm-btn secondary" id="themeChatBgResetBtn" type="button"
+                  style="padding:2px 6px; font-size:11px;">恢复默认</button>
               </div>
-              <div id="themeChatBgPreview" style="width:100%; height:72px; border-radius:8px; border:1px solid var(--hairline); background-size:cover; background-position:center; background-color:rgba(0,0,0,0.04);"></div>
-              <input class="llm-input" id="themeChatBgUrl" type="text" placeholder="粘贴图片直链" style="font-size:11px; padding:6px 8px; width:100%;">
-              <label class="llm-btn secondary" style="margin:0; text-align:center; padding:6px 0; font-size:12px; cursor:pointer; width:100%; display:block;">
+              <div id="themeChatBgPreview"
+                style="width:100%; height:72px; border-radius:8px; border:1px solid var(--hairline); background-size:cover; background-position:center; background-color:rgba(0,0,0,0.04);">
+              </div>
+              <input class="llm-input" id="themeChatBgUrl" type="text" placeholder="粘贴图片直链"
+                style="font-size:11px; padding:6px 8px; width:100%;">
+              <label class="llm-btn secondary"
+                style="margin:0; text-align:center; padding:6px 0; font-size:12px; cursor:pointer; width:100%; display:block;">
                 相册上传
                 <input type="file" id="themeChatBgFile" accept="image/*" style="display:none;">
               </label>
             </div>
 
             <!-- 右列：主菜单背景 -->
-            <div style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.18)); display:flex; flex-direction:column; gap:8px;">
+            <div
+              style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.18)); display:flex; flex-direction:column; gap:8px;">
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span style="font-size:12px; font-weight:600; color:var(--text);">主菜单背景</span>
-                <button class="llm-btn secondary" id="themeMenuBgResetBtn" type="button" style="padding:2px 6px; font-size:11px;">恢复默认</button>
+                <button class="llm-btn secondary" id="themeMenuBgResetBtn" type="button"
+                  style="padding:2px 6px; font-size:11px;">恢复默认</button>
               </div>
-              <div id="themeMenuBgPreview" style="width:100%; height:72px; border-radius:8px; border:1px solid var(--hairline); background-size:cover; background-position:center; background-color:rgba(0,0,0,0.04);"></div>
-              <input class="llm-input" id="themeMenuBgUrl" type="text" placeholder="粘贴图片直链" style="font-size:11px; padding:6px 8px; width:100%;">
-              <label class="llm-btn secondary" style="margin:0; text-align:center; padding:6px 0; font-size:12px; cursor:pointer; width:100%; display:block;">
+              <div id="themeMenuBgPreview"
+                style="width:100%; height:72px; border-radius:8px; border:1px solid var(--hairline); background-size:cover; background-position:center; background-color:rgba(0,0,0,0.04);">
+              </div>
+              <input class="llm-input" id="themeMenuBgUrl" type="text" placeholder="粘贴图片直链"
+                style="font-size:11px; padding:6px 8px; width:100%;">
+              <label class="llm-btn secondary"
+                style="margin:0; text-align:center; padding:6px 0; font-size:12px; cursor:pointer; width:100%; display:block;">
                 相册上传
                 <input type="file" id="themeMenuBgFile" accept="image/*" style="display:none;">
               </label>
@@ -5473,16 +5607,19 @@
           <div class="settings-label" style="display:flex; justify-content:space-between; align-items:center;">
             <span style="font-weight:600; color:var(--text);">自定义 CSS 美化</span>
             <div style="display:flex; gap:6px;">
-              <button class="llm-btn secondary" id="themeRenamePresetBtn" type="button" style="padding:2px 8px; font-size:11px;">重命名</button>
-              <button class="llm-btn secondary" id="themeDeletePresetBtn" type="button" style="padding:2px 8px; font-size:11px; color:#d9534f;">删除</button>
+              <button class="llm-btn secondary" id="themeRenamePresetBtn" type="button"
+                style="padding:2px 8px; font-size:11px;">重命名</button>
+              <button class="llm-btn secondary" id="themeDeletePresetBtn" type="button"
+                style="padding:2px 8px; font-size:11px; color:#d9534f;">删除</button>
             </div>
           </div>
           <div class="llm-hint" style="margin-top:-6px; margin-bottom:10px;">
             在下方选择美化方案，框内显示完整样式代码，微调即时生效。
           </div>
-          
+
           <div style="margin-bottom:10px;">
-            <select class="llm-input" id="themePresetSelect" style="width:100%; cursor:pointer; font-size:13px; font-weight:600; padding:8px 10px;">
+            <select class="llm-input" id="themePresetSelect"
+              style="width:100%; cursor:pointer; font-size:13px; font-weight:600; padding:8px 10px;">
               <option value="duobai">仿独白(简粉)</option>
               <option value="minimal">默认 · 极简原版</option>
               <option value="harbor">深色 · 避风港湾</option>
@@ -5510,15 +5647,20 @@
   <!-- ── Font 面板 (字体方案与字号设置) ── -->
   <div class="profile-panel hidden" id="fontPanel" role="dialog" aria-modal="true" aria-labelledby="fontTitle">
     <div class="profile-page">
-      <div class="profile-topbar" style="display:flex; justify-content:space-between; align-items:center; position:relative;">
+      <div class="profile-topbar"
+        style="display:flex; justify-content:space-between; align-items:center; position:relative;">
         <button class="profile-back" id="fontClose" type="button" aria-label="返回">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+            stroke-linejoin="round">
             <path d="M15 5l-7 7 7 7" />
           </svg>
         </button>
-        <div style="position:absolute; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none; width:max-content; max-width:60vw;">
+        <div
+          style="position:absolute; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none; width:max-content; max-width:60vw;">
           <h2 id="fontTitle" style="font-size:16px; font-weight:600; margin:0; color:var(--text);">Font</h2>
-          <span style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic; display:block;">Typography & Size · 字体与字号</span>
+          <span
+            style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic; display:block;">Typography
+            & Size · 字体与字号</span>
         </div>
         <div style="width:36px;"></div>
       </div>
@@ -5535,9 +5677,11 @@
           </div>
           <div style="display:flex; align-items:center; gap:12px;">
             <span style="font-size:11px; color:var(--text-faint);">小</span>
-            <input type="range" id="chatFontSizeSlider" min="12" max="22" step="0.5" value="15" style="flex:1; accent-color:#ff7597; cursor:pointer;">
+            <input type="range" id="chatFontSizeSlider" min="12" max="22" step="0.5" value="15"
+              style="flex:1; accent-color:#ff7597; cursor:pointer;">
             <span style="font-size:15px; color:var(--text-faint);">大</span>
-            <button class="llm-btn secondary" id="resetFontSizeBtn" type="button" style="padding:3px 8px; font-size:11px; margin-left:4px;">默认</button>
+            <button class="llm-btn secondary" id="resetFontSizeBtn" type="button"
+              style="padding:3px 8px; font-size:11px; margin-left:4px;">默认</button>
           </div>
         </section>
 
@@ -5548,9 +5692,12 @@
             支持任意包含跨域许可的字体直链 URL（.ttf / .woff / .woff2 / .otf 等）。
           </div>
           <div style="display:flex; flex-direction:column; gap:8px;">
-            <input class="llm-input" id="newFontName" type="text" placeholder="字体名称 (例如: 我的手写体)" style="width:100%; font-size:12px; padding:7px 10px;">
-            <input class="llm-input" id="newFontUrl" type="text" placeholder="字体直链 URL (https://...)" style="width:100%; font-size:12px; padding:7px 10px;">
-            <button class="llm-btn primary" id="addFontSchemeBtn" type="button" style="padding:8px 0; font-size:12px; width:100%;">+ 保存字体方案</button>
+            <input class="llm-input" id="newFontName" type="text" placeholder="字体名称 (例如: 我的手写体)"
+              style="width:100%; font-size:12px; padding:7px 10px;">
+            <input class="llm-input" id="newFontUrl" type="text" placeholder="字体直链 URL (https://...)"
+              style="width:100%; font-size:12px; padding:7px 10px;">
+            <button class="llm-btn primary" id="addFontSchemeBtn" type="button"
+              style="padding:8px 0; font-size:12px; width:100%;">+ 保存字体方案</button>
           </div>
         </section>
 
@@ -5678,14 +5825,16 @@
           <button class="menu-item" type="button" data-menu="theme">
             <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 2-.5 2-1.5 0-.4-.2-.8-.4-1.1-.3-.4-.4-.8-.4-1.4 0-1.1.9-2 2-2h1.8c3.9 0 7-3.1 7-7 0-5-4.5-9-10-9z"/>
-                <circle cx="13.5" cy="6.5" r="1" fill="currentColor"/>
-                <circle cx="17.5" cy="10.5" r="1" fill="currentColor"/>
-                <circle cx="8.5" cy="7.5" r="1" fill="currentColor"/>
-                <circle cx="6.5" cy="12.5" r="1" fill="currentColor"/>
+                <path
+                  d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 2-.5 2-1.5 0-.4-.2-.8-.4-1.1-.3-.4-.4-.8-.4-1.4 0-1.1.9-2 2-2h1.8c3.9 0 7-3.1 7-7 0-5-4.5-9-10-9z" />
+                <circle cx="13.5" cy="6.5" r="1" fill="currentColor" />
+                <circle cx="17.5" cy="10.5" r="1" fill="currentColor" />
+                <circle cx="8.5" cy="7.5" r="1" fill="currentColor" />
+                <circle cx="6.5" cy="12.5" r="1" fill="currentColor" />
               </svg></span>
             <span class="menu-dot"></span>
-            <span class="menu-copy"><span class="menu-name">Theme</span><span class="menu-sub">Appearance & CSS · 外观美化</span></span>
+            <span class="menu-copy"><span class="menu-name">Theme</span><span class="menu-sub">Appearance & CSS ·
+                外观美化</span></span>
             <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 6l6 6-6 6" />
@@ -5882,7 +6031,8 @@
     <div class="sticker-modal-card" role="dialog" aria-modal="true">
       <div class="sticker-modal-title">批量添加表情(URL)</div>
       <div class="sticker-modal-body">
-        <textarea class="sticker-batch-textarea" id="stickerBatchInput" placeholder="一行一个，名称和链接用空格或冒号隔开&#10;例如：&#10;小狗哭泣 https://...&#10;晚安 https://..."></textarea>
+        <textarea class="sticker-batch-textarea" id="stickerBatchInput"
+          placeholder="一行一个，名称和链接用空格或冒号隔开&#10;例如：&#10;小狗哭泣 https://...&#10;晚安 https://..."></textarea>
       </div>
       <div class="sticker-modal-footer">
         <button type="button" class="sticker-modal-btn cancel" id="stickerBatchCancelBtn">取消</button>
@@ -5891,11 +6041,30 @@
     </div>
   </div>
 
+  <!-- ── 设置聊天备注名弹窗 ── -->
+  <div class="sticker-modal-wrap hidden" id="remarkModal" aria-hidden="true">
+    <div class="sticker-modal-scrim" id="remarkScrim"></div>
+    <div class="sticker-modal-card" role="dialog" aria-modal="true" style="max-width: 320px;">
+      <div class="sticker-modal-title">设置聊天备注名</div>
+      <div class="sticker-modal-body" style="padding: 14px 18px 8px;">
+        <p style="font-size: 11px; color: var(--text-faint); margin: 0 0 10px; line-height: 1.45;">
+          仅在聊天页顶部替换展示，AI 无法看到此备注。留空保存即恢复原名。
+        </p>
+        <input class="llm-input" id="remarkModalInput" type="text" maxlength="20" placeholder="例如：专属昵称"
+          style="width: 100%; box-sizing: border-box; font-size: 14px; padding: 9px 12px; border-radius: 10px;">
+      </div>
+      <div class="sticker-modal-footer">
+        <button type="button" class="sticker-modal-btn cancel" id="remarkModalCancelBtn">取消</button>
+        <button type="button" class="sticker-modal-btn confirm" id="remarkModalConfirmBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
   <audio id="keepAliveAudio" loop playsinline webkit-playsinline preload="auto" src="./silence.mp3"></audio>
 
   <script>
     /* ════════════════════════════════════════════════════════════════
-       Tidal Echo — PWA chat shell (open source)
+       Gravity — PWA chat shell (open source)
        A private 1:1 chat front-end for a person and their AI companion,
        talking to a self-hosted relay backend. No domain or secret is baked in.
        Backend contract: GET /app/history · SSE /app/stream · POST /app/send · /healthz
@@ -5903,9 +6072,9 @@
 
     /* ── identity / branding — the ONE place to set names + app title ── */
     const CONFIG = {
-      APP_NAME: "Tidal Echo",  // app + menu title (and manifest, set there too)
-      AI_NAME: "Gemini",       // your AI companion's display name (header / call / push / narration)
-      HUMAN_NAME: "你",           // how you're referred to in narration (rarely shown)
+      APP_NAME: "Gravity",   // app + menu title (and manifest, set there too)
+      AI_NAME: "穷奇",       // your AI companion's display name (header / call / push / narration)
+      HUMAN_NAME: "月月",    // how you're referred to in narration (rarely shown)
       SINCE: "2024/07/13",   // "together since" date YYYY/MM/DD for the menu counter ("" hides it)
     };
     const AI_NAME = CONFIG.AI_NAME, HUMAN_NAME = CONFIG.HUMAN_NAME, APP_NAME = CONFIG.APP_NAME;
@@ -6269,7 +6438,7 @@
         nameRow.style.cssText = "display: flex; align-items: center; gap: 6px;";
         nameRow.innerHTML = `<span style="font-size: 13px; font-weight: 600; color: var(--text);">${escapeHtml(s.name)}</span>` +
           (isActive ? `<span style="font-size: 10px; color: #ff7597; background: rgba(255,117,151,0.15); padding: 1px 5px; border-radius: 6px; font-weight: 600;">当前</span>` : "");
-        
+
         const urlRow = document.createElement("span");
         urlRow.style.cssText = "font-size: 10px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
         urlRow.textContent = s.url || "系统自带字体族";
@@ -6816,7 +6985,7 @@ textarea {
       if (!themePresetSelect) return;
       const presets = getThemePresets();
       const current = localStorage.getItem("companion_current_preset") || "duobai";
-      
+
       themePresetSelect.innerHTML = `
         <option value="duobai">仿独白(简粉)</option>
         <option value="minimal">默认 · 极简原版</option>
@@ -9729,68 +9898,100 @@ textarea {
       if (openThinkKeys.has(m._key)) setThinkOpen(true, { persist: false });
       return row;
     }
-    /* ── 动作 chip(kind:"act") ──
-       contract: m.text = a friendly phrase (e.g. "looked at notes" / "ran 3 commands"); the AI name is prefixed by the UI;
-       m.meta.glyph = 字形提示(memory→✦ / terminal→∞ …,缺省 ✦);
-       m.meta.steps = 可选的原始工具调用 [{tool,cmd,result}…],非空才显示「· 展开」。
-       字段也容忍平铺在 meta 顶层(relay 把 /channel/out 的 body 摊进 meta)。 */
-    function actGlyph(name) {
-      switch (name) {
-        case "terminal": case "shell": case "loop": return "∞";
-        case "search": case "grep": return "✱";
-        case "web": case "fetch": return "❍";
-        case "memory": case "spark": default: return "✦";
+    /* ── 提取消息中的工具调用列表 ── */
+    function extractToolSteps(m) {
+      if (!m) return [];
+      const meta = m.meta || {};
+      const a = (meta.act && typeof meta.act === "object") ? meta.act : meta;
+      let rawList = [];
+      if (Array.isArray(a.steps) && a.steps.length) rawList = a.steps;
+      else if (Array.isArray(meta.steps) && meta.steps.length) rawList = meta.steps;
+      else if (Array.isArray(meta.tool_calls) && meta.tool_calls.length) {
+        rawList = meta.tool_calls.map((tc) => ({
+          tool: (tc.function && tc.function.name) || tc.name || "Tool",
+          cmd: (tc.function && tc.function.arguments) || tc.arguments || "",
+          result: tc.result || ""
+        }));
+      } else if (Array.isArray(meta.tools) && meta.tools.length) {
+        rawList = meta.tools.map((t) => (typeof t === "string" ? { tool: t } : t));
+      } else if (a.tool || a.cmd) {
+        rawList = [{ tool: a.tool || "Tool", cmd: a.cmd, result: a.result }];
+      } else if (m.kind === "act" && m.text) {
+        rawList = [{ tool: m.text, cmd: a.cmd || "", result: a.result || "" }];
       }
+      return rawList;
     }
+
     function renderActStep(s) {
       if (!s || typeof s !== "object") return "";
-      const line = (k, v) => (v == null || String(v) === "") ? ""
-        : `<div class="act-line"><span class="act-k">${k}: </span><span class="act-v">${escapeHtml(String(v))}</span></div>`;
-      const body = line("tool", s.tool) + line("cmd", s.cmd) + line("result", s.result);
-      return body ? `<div class="act-step">${body}</div>` : "";
+      const toolName = s.tool || s.name || "Tool";
+      const cmd = s.cmd != null && String(s.cmd).trim() !== "" ? String(s.cmd) : "";
+      const result = s.result != null && String(s.result).trim() !== "" ? String(s.result) : "";
+      let html = `<div class="act-step">`;
+      html += `<div class="act-tool-badge">`;
+      html += `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`;
+      html += `<span>${escapeHtml(toolName)}</span></div>`;
+      if (cmd) html += `<div class="act-cmd-code">${escapeHtml(cmd)}</div>`;
+      if (result) html += `<div class="act-result-code">${escapeHtml(result.length > 300 ? result.slice(0, 300) + '...' : result)}</div>`;
+      html += `</div>`;
+      return html;
     }
+
+    /* ── 构建类似用户截图中的极简折叠条：Used X tools > ── */
+    function createToolBannerElement(m, key) {
+      const steps = extractToolSteps(m);
+      if (!steps || steps.length === 0) return null;
+
+      const count = steps.length;
+      let summaryText = `Used ${count} tools`;
+      if (count === 1) {
+        const singleName = steps[0].tool || steps[0].name || "";
+        if (singleName && singleName.length <= 25) {
+          summaryText = `Used ${singleName}`;
+        } else {
+          summaryText = "Used 1 tool";
+        }
+      }
+
+      const block = document.createElement("div");
+      block.className = "act-block";
+      const stepHtml = steps.map(renderActStep).filter(Boolean).join("");
+
+      block.innerHTML =
+        `<button class="act-toggle" type="button" aria-expanded="false" aria-label="展开工具明细">`
+        + `<span class="act-label">${escapeHtml(summaryText)}</span>`
+        + `<svg class="act-chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>`
+        + `</button>`
+        + `<div class="act-detail" hidden>${stepHtml}</div>`;
+
+      const toggle = block.querySelector(".act-toggle");
+      const detail = block.querySelector(".act-detail");
+      const setActOpen = (open, { persist = true } = {}) => {
+        block.classList.toggle("open", open);
+        detail.hidden = !open;
+        toggle.setAttribute("aria-expanded", String(open));
+        toggle.setAttribute("aria-label", open ? "收起工具明细" : "展开工具明细");
+        if (persist && key) {
+          if (open) openActKeys.add(key); else openActKeys.delete(key);
+          scheduleRender({ preserveAnchor: true });
+        }
+      };
+      toggle.addEventListener("click", () => setActOpen(detail.hidden));
+      if (key && openActKeys.has(key)) setActOpen(true, { persist: false });
+      return block;
+    }
+
     function makeAct(rowData) {
       const m = rowData.message;
-      const meta = m.meta || {};
-      const a = (meta.act && typeof meta.act === "object") ? meta.act : meta;   // 嵌套或平铺都吃
-      const steps = (Array.isArray(a.steps) ? a.steps : []).map(renderActStep).filter(Boolean);
-      const glyph = actGlyph(a.glyph || meta.glyph);
-      const label = m.text || "做了点什么";
-      const expandable = steps.length > 0;
-
       const row = document.createElement("div");
       row.className = "row act";
       row.dataset.id = m.id; row.dataset.from = "ai"; row.dataset.messageKey = m._key;
 
-      const block = document.createElement("div");
-      block.className = "act-block";
-      block.innerHTML =
-        `<button class="act-toggle${expandable ? "" : " bare"}" type="button"${expandable ? ' aria-expanded="false" aria-label="展开工具明细"' : ' tabindex="-1"'}>`
-        + `<span class="act-glyph" aria-hidden="true">${glyph}</span>`
-        + `<span class="act-label">${escapeHtml(AI_NAME + label)}</span>`
-        + (expandable ? `<span class="act-state" aria-hidden="true"></span>` : "")
-        + `</button>`
-        + (expandable ? `<div class="act-detail" hidden>${steps.join("")}</div>` : "");
-
-      if (expandable) {
-        const toggle = block.querySelector(".act-toggle");
-        const detail = block.querySelector(".act-detail");
-        const setActOpen = (open, { persist = true } = {}) => {
-          block.classList.toggle("open", open);             // 翻转空心/实心星
-          detail.hidden = !open;
-          toggle.setAttribute("aria-expanded", String(open));
-          toggle.setAttribute("aria-label", open ? "收起工具明细" : "展开工具明细");
-          if (persist) {
-            if (open) openActKeys.add(m._key); else openActKeys.delete(m._key);
-            scheduleRender({ preserveAnchor: true });
-          }
-        };
-        toggle.addEventListener("click", () => setActOpen(detail.hidden));
-        if (openActKeys.has(m._key)) setActOpen(true, { persist: false });
-      }
-      row.appendChild(block);
+      const block = createToolBannerElement(m, m._key);
+      if (block) row.appendChild(block);
       return row;
     }
+
     function makeMessage(rowData) {
       const m = rowData.message;
       const isErr = m.kind === "error";
@@ -9802,6 +10003,16 @@ textarea {
         row.classList.add(cls);
         freshKeys.delete(m._key);
         row.addEventListener("animationend", () => row.classList.remove(cls), { once: true });
+      }
+
+      // 如果是 AI 消息且自身带有工具调用，直接在气泡正上方插入折叠条
+      if (m.from === "ai") {
+        const inlineBlock = createToolBannerElement(m, m._key + "_tool");
+        if (inlineBlock) {
+          row.style.flexDirection = "column";
+          row.style.alignItems = "flex-start";
+          row.appendChild(inlineBlock);
+        }
       }
 
       const bubble = document.createElement("div");
@@ -11104,16 +11315,74 @@ textarea {
       try {
         const savedAi = localStorage.getItem("companion_custom_ai_name");
         const savedUser = localStorage.getItem("companion_custom_user_name");
-        const aiName = savedAi ? savedAi.trim() : (CONFIG.AI_NAME || "Gemini");
-        const userName = savedUser ? savedUser.trim() : (CONFIG.HUMAN_NAME || "你");
+        const aiName = savedAi ? savedAi.trim() : (CONFIG.AI_NAME || "穷奇");
+        const userName = savedUser ? savedUser.trim() : (CONFIG.HUMAN_NAME || "月月");
 
-        if (peerNameEl) peerNameEl.textContent = aiName;
+        // 备注名：仅在聊天页为你展示，替换原名；若没填显示原名；AI 完全看不到此备注
+        const remarkName = (localStorage.getItem("companion_remark_name") || "").trim();
+        const displayNameInChat = remarkName || aiName;
+
+        if (peerNameEl) peerNameEl.textContent = displayNameInChat;
         if (profileNameEl) profileNameEl.textContent = aiName;
         const loginTitle = document.querySelector(".login h1");
         if (loginTitle) loginTitle.textContent = aiName;
         const loginSub = document.querySelector(".login .sub");
         if (loginSub) loginSub.textContent = "密钥将连接至 " + aiName + " 的频道";
       } catch (_) { }
+    }
+
+    /* ── 聊天页顶栏备注名弹窗与修改（只在聊天页展示，AI 无法感知） ── */
+    function initRemarkNameFeature() {
+      const peerRemarkBtn = document.getElementById("peerRemarkBtn");
+      const peerNameWrap = document.querySelector(".peer-name-wrap");
+      const modal = document.getElementById("remarkModal");
+      const scrim = document.getElementById("remarkScrim");
+      const input = document.getElementById("remarkModalInput");
+      const cancelBtn = document.getElementById("remarkModalCancelBtn");
+      const confirmBtn = document.getElementById("remarkModalConfirmBtn");
+
+      function openModal() {
+        if (!modal) return;
+        const currentRemark = localStorage.getItem("companion_remark_name") || "";
+        const savedAi = localStorage.getItem("companion_custom_ai_name");
+        const aiName = savedAi ? savedAi.trim() : (CONFIG.AI_NAME || "穷奇");
+        if (input) {
+          input.value = currentRemark;
+          input.placeholder = `原名：${aiName} (留空则恢复原名)`;
+        }
+        modal.classList.remove("hidden");
+        requestAnimationFrame(() => input && input.focus());
+      }
+
+      function closeModal() {
+        if (modal) modal.classList.add("hidden");
+      }
+
+      function saveRemark() {
+        if (!input) return;
+        const val = input.value.trim();
+        if (val) {
+          localStorage.setItem("companion_remark_name", val);
+          showToast(`已设置备注为「${val}」`);
+        } else {
+          localStorage.removeItem("companion_remark_name");
+          showToast("已清除备注，恢复原名");
+        }
+        applyCustomNames();
+        closeModal();
+      }
+
+      if (peerRemarkBtn) peerRemarkBtn.addEventListener("click", (e) => { e.stopPropagation(); openModal(); });
+      if (peerNameWrap) peerNameWrap.addEventListener("click", openModal);
+      if (scrim) scrim.addEventListener("click", closeModal);
+      if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+      if (confirmBtn) confirmBtn.addEventListener("click", saveRemark);
+      if (input) {
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); saveRemark(); }
+          else if (e.key === "Escape") { e.preventDefault(); closeModal(); }
+        });
+      }
     }
 
 
@@ -11139,6 +11408,130 @@ textarea {
         hideTyping();
         showToast("聊天记录已彻底清空");
       });
+    }
+
+    /* ── 手机本地聊天记录导入导出 ── */
+    function initChatHistoryBackupFeature() {
+      const exportBtn = document.getElementById("exportHistoryBtn");
+      const importBtn = document.getElementById("importHistoryBtn");
+      const fileInput = document.getElementById("importHistoryFileInput");
+
+      if (exportBtn) {
+        exportBtn.addEventListener("click", () => {
+          const msgs = (typeof sortedMessages === "function") ? sortedMessages() : chatMessages;
+          if (!msgs || msgs.length === 0) {
+            alert("当前没有任何聊天记录可以导出哦~");
+            return;
+          }
+
+          const exportPayload = {
+            format: "tidal-echo-chat-history",
+            version: "1.0",
+            exportedAt: new Date().toISOString(),
+            totalMessages: msgs.length,
+            companionName: localStorage.getItem("companion_custom_ai_name") || (typeof CONFIG !== "undefined" && CONFIG.AI_NAME) || "AI",
+            messages: msgs.map(m => ({
+              id: m.id,
+              from: m.from,
+              kind: m.kind || "reply",
+              text: m.text || "",
+              ts: m.ts || new Date().toISOString(),
+              meta: m.meta || {}
+            }))
+          };
+
+          const jsonStr = JSON.stringify(exportPayload, null, 2);
+          const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          const dateStr = new Date().toISOString().slice(0, 10);
+          a.href = url;
+          a.download = `Companion_Chat_${dateStr}.json`;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, 250);
+          showToast(`已成功导出 ${msgs.length} 条记录到本地！`);
+        });
+      }
+
+      if (importBtn && fileInput) {
+        importBtn.addEventListener("click", () => {
+          fileInput.value = "";
+          fileInput.click();
+        });
+
+        fileInput.addEventListener("change", (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = async (event) => {
+            try {
+              const parsed = JSON.parse(event.target.result);
+              let list = [];
+              if (Array.isArray(parsed)) {
+                list = parsed;
+              } else if (parsed && Array.isArray(parsed.messages)) {
+                list = parsed.messages;
+              }
+
+              if (!list || list.length === 0) {
+                alert("选取的 JSON 文件中未找到有效的聊天记录！");
+                return;
+              }
+
+              const doAppend = confirm(
+                `成功读取到 ${list.length} 条聊天记录！\n\n【确定】：保留当前消息，合并导入\n【取消】：清空当前聊天，完全覆盖`
+              );
+
+              if (!doAppend) {
+                // 完全覆盖模式
+                resetChatState();
+                try {
+                  if (window.indexedDB && typeof openMessageDb === "function") {
+                    const db = await openMessageDb();
+                    const tx = db.transaction(CACHE_STORE, "readwrite");
+                    tx.objectStore(CACHE_STORE).clear();
+                  }
+                } catch (_) {}
+              }
+
+              let importedCount = 0;
+              for (const item of list) {
+                if (item && (item.text != null || item.kind)) {
+                  setMessage({
+                    id: item.id || ("imp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7)),
+                    from: item.from === "human" ? "human" : "ai",
+                    kind: item.kind || "reply",
+                    text: item.text || "",
+                    ts: item.ts || new Date().toISOString(),
+                    meta: item.meta || {},
+                    status: "sent"
+                  }, { render: false, cache: false });
+                  importedCount++;
+                }
+              }
+
+              invalidateRows();
+              if (typeof scheduleCacheSave === "function") scheduleCacheSave();
+              if (typeof renderVirtualList === "function") {
+                renderVirtualList({ stickToBottom: true });
+              } else if (typeof scheduleRender === "function") {
+                scheduleRender({ stickToBottom: true });
+              }
+
+              alert(`导入完成！已成功恢复 ${importedCount} 条记录。`);
+              showToast("聊天记录导入成功");
+            } catch (err) {
+              alert("导入失败，文件格式有误：" + err.message);
+            }
+          };
+          reader.readAsText(file, "utf-8");
+        });
+      }
     }
 
     function initLlmSettings() {
@@ -11500,7 +11893,7 @@ textarea {
         // 异步向服务端数据库删除这些废弃的 AI 记录
         if (aiIdsToDelete.length > 0) {
           aiIdsToDelete.forEach((id) => {
-            fetch(`${API_BASE}/app/messages/${id}`, { method: "DELETE", headers: authHeaders() }).catch(() => {});
+            fetch(`${API_BASE}/app/messages/${id}`, { method: "DELETE", headers: authHeaders() }).catch(() => { });
           });
         }
 
@@ -11525,7 +11918,7 @@ textarea {
 
         removeMessage(lastHuman._key, { render: true, cache: true });
         if (Number.isInteger(oldHumanId) && oldHumanId > 0) {
-          fetch(`${API_BASE}/app/messages/${oldHumanId}`, { method: "DELETE", headers: authHeaders() }).catch(() => {});
+          fetch(`${API_BASE}/app/messages/${oldHumanId}`, { method: "DELETE", headers: authHeaders() }).catch(() => { });
         }
 
         inputEl.value = retryText;
@@ -11588,12 +11981,16 @@ textarea {
         initChatUiEnhancements();
         initStickerFeature();
         initFontFeature();
+        initChatHistoryBackupFeature();
+        initRemarkNameFeature();
       });
     } else {
       initLlmSettings();
       initChatUiEnhancements();
       initStickerFeature();
       initFontFeature();
+      initChatHistoryBackupFeature();
+      initRemarkNameFeature();
     }
 
 
@@ -11981,8 +12378,8 @@ textarea {
             return;
           }
 
-          const userName = localStorage.getItem("companion_custom_user_name") || CONFIG.HUMAN_NAME || "我";
-          const aiName = localStorage.getItem("companion_custom_ai_name") || CONFIG.AI_NAME || "AI";
+          const userName = localStorage.getItem("companion_custom_user_name") || CONFIG.HUMAN_NAME || "月月";
+          const aiName = localStorage.getItem("companion_custom_ai_name") || CONFIG.AI_NAME || "穷奇";
 
           const convoLines = msgs.map(m => {
             const sender = m.from === "human" ? userName : aiName;
