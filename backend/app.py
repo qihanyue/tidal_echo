@@ -951,6 +951,9 @@ async def delete_single_message(request: Request, msg_id: int):
     with db() as conn:
         conn.execute("DELETE FROM messages WHERE id = ?", (msg_id,))
         conn.commit()
+    # 广播通知所有前端窗口清理本地气泡，并通知 bridge 彻底重新对齐上下文记忆（绝不读取被删消息）
+    await broadcast(app_subs, {"type": "messages_deleted", "ids": [msg_id]})
+    await broadcast(plugin_subs, {"type": "sync_history"})
     return {"ok": True, "deleted_id": msg_id}
 
 
@@ -978,6 +981,8 @@ async def edit_single_message(request: Request, msg_id: int):
             params.append(msg_id)
             conn.execute(f"UPDATE messages SET {', '.join(updates)} WHERE id = ?", params)
             conn.commit()
+    # 消息修改后，通知 bridge 重新加载对齐最新上下文
+    await broadcast(plugin_subs, {"type": "sync_history"})
     return {"ok": True, "id": msg_id, "text": new_text, "from": new_from}
 
 
@@ -1001,6 +1006,8 @@ async def insert_single_message(request: Request):
         )
         conn.commit()
         mid = cur.lastrowid
+    # 插入新消息后，通知 bridge 重新对齐上下文
+    await broadcast(plugin_subs, {"type": "sync_history"})
     return {"ok": True, "message": {"id": mid, "ts": ts, "from": role, "kind": kind, "text": text, "meta": meta}}
 
 

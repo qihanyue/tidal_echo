@@ -11146,13 +11146,15 @@ textarea {
         const key = openKey;
         close();
         if (key == null) return;
+        const m = messageByKey.get(msgKey(key));
+        const numId = m ? Number(m.id) : (Number(key) || null);
         deletedKeys.add(msgKey(key));
         persistDeletedKeys();
         removeMessage(key);
-        // 同步删除后端数据库记录
-        if (typeof key === "number" || (/^\d+$/.test(String(key)))) {
+        // 同步删除后端数据库记录，并促使 AI 侧对齐上下文
+        if (Number.isInteger(numId) && numId > 0) {
           try {
-            fetch(`${API_BASE}/app/messages/${key}`, {
+            fetch(`${API_BASE}/app/messages/${numId}`, {
               method: "DELETE",
               headers: authHeaders()
             }).catch(() => { });
@@ -12617,7 +12619,7 @@ textarea {
         });
       }
 
-      // 4. 重新生成 (Reroll) —— 自动清理末尾连续 AI 消息并重新触发
+      // 4. 重新生成 (Reroll) —— 彻底清理服务端数据库及 AI 侧内存中的旧回复，重新对齐生成
       async function doReroll() {
         if (actionPop) actionPop.classList.add("hidden");
 
@@ -12646,39 +12648,55 @@ textarea {
           scheduleRender({ stickToBottom: true });
         }
 
-        // 异步向服务端数据库删除这些废弃的 AI 记录
-        if (aiIdsToDelete.length > 0) {
-          aiIdsToDelete.forEach((id) => {
-            fetch(`${API_BASE}/app/messages/${id}`, { method: "DELETE", headers: authHeaders() }).catch(() => { });
-          });
-        }
+        showTyping(); // 立即进入等待状态，消除迟钝感
 
         if (USE_MOCK) {
           Mock.reroll();
           return;
         }
 
-        // 3. 寻找触发这轮回复的最后一条人类消息
-        const remaining = sortedMessages().filter(m => !aiKeysToRemove.includes(m._key));
-        const lastHuman = remaining.slice().reverse().find(m => m.from === "human");
-        if (!lastHuman) {
-          showToast("没有找到可供重试的消息");
-          return;
+        // 3. 构造请求体，附带当前的 LLM 设定、双人设、感知与记忆
+        const payload = { delete_ids: aiIdsToDelete };
+        try {
+          const _activePreset = getActivePreset ? getActivePreset() : null;
+          if (_activePreset && _activePreset.baseUrl) {
+            payload.llm_config = {
+              base_url: _activePreset.baseUrl,
+              api_key: _activePreset.apiKey,
+              model: _activePreset.model,
+              temperature: _activePreset.temperature,
+              history_n: _activePreset.history_n || 12
+            };
+          }
+          if (typeof personaState !== "undefined" && (personaState.ai || personaState.user)) {
+            payload.personas = personaState;
+          }
+          payload.time_context = getTimePerceptionContext();
+          payload.memory_context = getLongTermMemoryContext();
+          const _tetherCtx = getTetherContext();
+          if (_tetherCtx.front) payload.tether_front = _tetherCtx.front;
+          if (_tetherCtx.middle) payload.tether_middle = _tetherCtx.middle;
+          if (_tetherCtx.back) payload.tether_back = _tetherCtx.back;
+          payload.web_reader_enabled = (localStorage.getItem("companion_web_reader_enabled") !== "false");
+          payload.weather_context = getWeatherContext();
+        } catch (_) { }
+
+        // 4. 调用服务端的 /app/reroll 原生接口
+        // 服务端会自动：物理删除数据库记录 -> 广播清空 Bridge(AI) 内存记忆 -> 重新拉取对齐 -> 下发重新生成
+        try {
+          const r = await fetch(`${API_BASE}/app/reroll`, {
+            method: "POST",
+            headers: { ...authHeaders(), "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          if (!r.ok) {
+            hideTyping();
+            showToast("重新生成失败 (" + r.status + ")");
+          }
+        } catch (err) {
+          hideTyping();
+          showToast("网络异常，请重试");
         }
-
-        // 4. 终极稳妥重试策略：
-        // 抹除旧的人类提问，将该内容重新交给 doSend() 原生通道发出
-        // 拥有全新的递增 ID，不论任何版本的 relay/bridge 都 100% 能触发大模型回复，绝不再卡死在 typing！
-        const retryText = lastHuman.text || "";
-        const oldHumanId = Number(lastHuman.id);
-
-        removeMessage(lastHuman._key, { render: true, cache: true });
-        if (Number.isInteger(oldHumanId) && oldHumanId > 0) {
-          fetch(`${API_BASE}/app/messages/${oldHumanId}`, { method: "DELETE", headers: authHeaders() }).catch(() => { });
-        }
-
-        inputEl.value = retryText;
-        doSend();
       }
 
       if (actionRerollBtn) {

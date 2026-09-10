@@ -504,11 +504,16 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
         prompt_text = combined_text if combined_text else "（这是一张我发送给你的图片，请查看图片内容并结合上下文回复我）"
         parts.append({"type": "text", "text": prompt_text})
         parts.extend(image_parts)
-        convo.append({"role": "user", "content": parts})
-        log("in", f"收到打包消息 ({len(items)} 条, 含 {len(image_parts)} 张图片): {combined_text[:40]}")
+        user_content = parts
     else:
-        convo.append({"role": "user", "content": combined_text})
-        log("in", f"收到打包消息 ({len(items)} 条): {combined_text[:60]}")
+        user_content = combined_text
+
+    # 防重入与防重复：如果 convo 尾部已经是完全相同的用户提问（例如刚执行完 sync_history 重载），直接复用，避免上下文出现重复的人类气泡
+    if convo and convo[-1].get("role") == "user" and convo[-1].get("content") == user_content:
+        log("in", f"对齐上下文：复用已同步的用户提问 ({combined_text[:40]})")
+    else:
+        convo.append({"role": "user", "content": user_content})
+        log("in", f"收到消息 ({len(items)} 条): {combined_text[:60]}")
 
     # 读取前端动态附带的 LLM 配置、双人设、上下文轮数、时间感知与长期记忆
     latest_item = items[-1]
