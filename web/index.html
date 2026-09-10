@@ -1093,6 +1093,64 @@
       color: #ffffff !important;
     }
 
+    /* ── 文字假图（兔兔咬坏素材）：无气泡包裹，直接展示图片 ── */
+    .row .bubble.fake-img-only {
+      background: transparent !important;
+      padding: 0 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      position: relative;
+    }
+
+    .fake-img-chat-wrap {
+      position: relative;
+      display: inline-block;
+      line-height: 0;
+      cursor: pointer;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .fake-img-chat-wrap:active {
+      transform: scale(0.97);
+    }
+
+    .fake-img-chat-img {
+      display: block;
+      width: clamp(120px, 42vw, 175px);
+      height: auto;
+      max-height: 200px;
+      object-fit: contain;
+      border-radius: 12px;
+    }
+
+    /* 文字假图右下角半透明时间角标 */
+    .row .bubble.fake-img-only .meta {
+      position: absolute;
+      right: 6px;
+      bottom: 6px;
+      background: rgba(0, 0, 0, 0.4);
+      color: #ffffff !important;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 10px;
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 2;
+    }
+
+    .row .bubble.fake-img-only .meta svg {
+      fill: #ffffff !important;
+      color: #ffffff !important;
+    }
+
     /* 内联在普通文字气泡里的表情 */
     .inline-sticker-img {
       display: inline-block;
@@ -6064,6 +6122,47 @@
     </div>
   </div>
 
+  <!-- ── 发送文字假图弹窗 ── -->
+  <div class="sticker-modal-wrap hidden" id="fakeImgModal" aria-hidden="true">
+    <div class="sticker-modal-scrim" id="fakeImgScrim"></div>
+    <div class="sticker-modal-card" role="dialog" aria-modal="true" style="max-width: 340px;">
+      <div class="sticker-modal-title">发送文字假图</div>
+      <div class="sticker-modal-body" style="padding: 12px 18px 8px;">
+        <p style="font-size: 11px; color: var(--text-faint); margin: 0 0 10px; line-height: 1.45;">
+          图片将显示为被兔兔咬坏的素材图，对方点击图片可阅读详细的文字画面描述。
+        </p>
+        <textarea class="sticker-batch-textarea" id="fakeImgInput"
+          placeholder="请用文字详细描述照片里的画面、光线、动作、氛围等..."
+          style="min-height: 105px; font-size: 13px; line-height: 1.55;"></textarea>
+      </div>
+      <div class="sticker-modal-footer">
+        <button type="button" class="sticker-modal-btn cancel" id="fakeImgCancelBtn">取消</button>
+        <button type="button" class="sticker-modal-btn confirm" id="fakeImgConfirmBtn">发送照片</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 查看文字假图详情弹窗 ── -->
+  <div class="sticker-modal-wrap hidden" id="fakeImgViewModal" aria-hidden="true">
+    <div class="sticker-modal-scrim" id="fakeImgViewScrim"></div>
+    <div class="sticker-modal-card" role="dialog" aria-modal="true" style="max-width: 340px;">
+      <div class="sticker-modal-title" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <span>🐰</span><span>照片描述</span>
+      </div>
+      <div class="sticker-modal-body" style="padding: 10px 18px 12px; text-align: center;">
+        <img src="broken_by_bunny.png" alt="图片已被兔兔咬坏"
+          style="width: 140px; height: auto; border-radius: 12px; margin: 0 auto 12px; display: block; box-shadow: 0 4px 14px rgba(0,0,0,0.08);">
+        <div id="fakeImgViewDesc"
+          style="font-size: 13px; line-height: 1.6; color: var(--text); text-align: left; background: rgba(125,128,135,0.08); padding: 12px 14px; border-radius: 12px; max-height: 220px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; user-select: text; -webkit-user-select: text;">
+        </div>
+      </div>
+      <div class="sticker-modal-footer">
+        <button type="button" class="sticker-modal-btn cancel" id="fakeImgCopyBtn">复制描述</button>
+        <button type="button" class="sticker-modal-btn confirm" id="fakeImgCloseBtn">我知道啦</button>
+      </div>
+    </div>
+  </div>
+
   <audio id="keepAliveAudio" loop playsinline webkit-playsinline preload="auto" src="./silence.mp3"></audio>
 
   <script>
@@ -6168,6 +6267,42 @@
       const names = list.map(s => s.name).filter(Boolean);
       if (!names.length) return "";
       return `[表情包发送与识别规则]\n你和用户可以在聊天中发送表情包。发送表情时，必须单独一行输出格式：[表情: 表情名称]（例如：[表情: ${names[0]}]）。\n当前你可用的表情包库名称如下：\n【${names.join("、")}】\n当用户发给你类似 [表情: 名称] 时，代表用户向你发送了对应的表情。`;
+    }
+
+    /* ════════════ 文字假图系统 (兔兔咬坏假图 / Fake Image System) ════════════ */
+    function getFakeImageSystemPrompt() {
+      return `[图片/照片发送与识别规则]\n你和用户可以在聊天中模拟发送真实照片。因为当前为纯文本通信，发送照片时需通过生动的文字详细描述画面。\n- 当你想向用户发送照片时，请单独输出一行指令：{"type": "ai_image", "description": "照片的详细生动画面描述..."} 或者格式：[图片: 照片的详细生动画面描述...]（例如：[图片: 一杯冒着热气的摩卡咖啡，奶泡上拉了一只小猫图案]）。\n- 当用户发给你类似 [图片: ...] 时，代表用户向你发送了该照片，请根据用户描述的照片画面内容，做出自然、贴切且带有情感的人设反馈。`;
+    }
+
+    function parseFakeImageText(text) {
+      if (!text || typeof text !== "string") return null;
+      const t = text.trim();
+      // 1. 标准括号格式: [图片: ...] / [图片：...] / [文字图: ...] / [ai_image: ...]
+      const match = t.match(/^\[(?:图片|文字图|photo|image|ai_image)[：:]\s*([\s\S]+?)\]$/i);
+      if (match) return match[1].trim();
+
+      // 2. JSON 格式: {"type": "ai_image", "description": "..."}
+      let jsonStr = t;
+      if (jsonStr.startsWith("```")) {
+        jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+      }
+      if (jsonStr.startsWith("{") && jsonStr.endsWith("}")) {
+        try {
+          const obj = JSON.parse(jsonStr);
+          if (obj && (obj.type === "ai_image" || obj.type === "user_photo" || obj.type === "image")) {
+            const d = obj.description || obj.content || obj.prompt || "";
+            if (d) return String(d).trim();
+          }
+        } catch (_) { }
+      }
+
+      // 3. 容错：如果文本中包含 {"type":"ai_image", "description":"..."}
+      const jsonEmbedMatch = t.match(/\{"type"\s*:\s*"(?:ai_image|user_photo|image)"\s*,\s*"description"\s*:\s*"([^"]+)"\s*\}/);
+      if (jsonEmbedMatch) {
+        return jsonEmbedMatch[1].trim();
+      }
+
+      return null;
     }
 
     function renderStickerGrid() {
@@ -8937,6 +9072,12 @@ textarea {
           backParts.push(stickerPrompt);
         }
 
+        // 注入文字假图系统提示词，让 AI 理解并能发送文字照片
+        const fakeImgPrompt = (typeof getFakeImageSystemPrompt === "function") ? getFakeImageSystemPrompt() : "";
+        if (fakeImgPrompt) {
+          backParts.push(fakeImgPrompt);
+        }
+
         return {
           front: frontParts.join("\n\n"),
           middle: middleParts.join("\n\n"),
@@ -8944,7 +9085,9 @@ textarea {
         };
       } catch (_) {
         const sp = (typeof getStickerSystemPrompt === "function") ? getStickerSystemPrompt() : "";
-        return { front: "", middle: "", back: sp || "" };
+        const fp = (typeof getFakeImageSystemPrompt === "function") ? getFakeImageSystemPrompt() : "";
+        const combined = [sp, fp].filter(Boolean).join("\n\n");
+        return { front: "", middle: "", back: combined || "" };
       }
     }
 
@@ -10028,9 +10171,15 @@ textarea {
       const stkMatch = (m.text && !atts.length) ? m.text.trim().match(/^\[(?:表情|sticker):\s*(.+?)\]$/i) : null;
       const stkInfo = stkMatch ? ((typeof findSticker === "function") ? findSticker(stkMatch[1]) : null) : null;
 
+      // 检查是否为文字假图消息（兔兔咬坏素材，不被气泡包裹）
+      const fakeImgDesc = (!atts.length && m.text) ? ((typeof parseFakeImageText === "function") ? parseFakeImageText(m.text) : null) : null;
+
       if (stkInfo) {
         bubble.classList.add("sticker-only");
         _inner = `<div class="sticker-chat-wrap"><img class="sticker-chat-img" src="${escapeHtml(stkInfo.url)}" alt="${escapeHtml(stkInfo.name)}" loading="lazy"></div><span class="meta"></span>`;
+      } else if (fakeImgDesc) {
+        bubble.classList.add("fake-img-only");
+        _inner = `<div class="fake-img-chat-wrap" data-desc="${escapeHtml(fakeImgDesc)}" title="点击查看照片描述"><img class="fake-img-chat-img" src="broken_by_bunny.png" alt="图片已被兔兔咬坏" loading="lazy"></div><span class="meta"></span>`;
       } else {
         if (atts.length) _inner += renderAttachments(atts);
         if (m.text) _inner += `<span class="txt">${renderText(m.text)}</span>`;
@@ -11951,11 +12100,85 @@ textarea {
         });
       }
 
-      // 7. 发文字描述的假图片（占位反馈）
+      // 7. 发文字假图 (兔兔咬坏素材图)
+      const fakeImgModal = document.getElementById("fakeImgModal");
+      const fakeImgScrim = document.getElementById("fakeImgScrim");
+      const fakeImgCancelBtn = document.getElementById("fakeImgCancelBtn");
+      const fakeImgConfirmBtn = document.getElementById("fakeImgConfirmBtn");
+      const fakeImgInput = document.getElementById("fakeImgInput");
+
+      const fakeImgViewModal = document.getElementById("fakeImgViewModal");
+      const fakeImgViewScrim = document.getElementById("fakeImgViewScrim");
+      const fakeImgCloseBtn = document.getElementById("fakeImgCloseBtn");
+      const fakeImgCopyBtn = document.getElementById("fakeImgCopyBtn");
+      const fakeImgViewDesc = document.getElementById("fakeImgViewDesc");
+      let currentFakeImgDesc = "";
+
+      function closeFakeImgModal() {
+        if (fakeImgModal) fakeImgModal.classList.add("hidden");
+      }
+      function closeFakeImgViewModal() {
+        if (fakeImgViewModal) fakeImgViewModal.classList.add("hidden");
+      }
+
       if (actionFakeImgBtn) {
         actionFakeImgBtn.addEventListener("click", () => {
           if (actionPop) actionPop.classList.add("hidden");
-          showToast("文字假图功能制作中");
+          if (fakeImgModal) {
+            fakeImgModal.classList.remove("hidden");
+            if (fakeImgInput) {
+              fakeImgInput.value = "";
+              setTimeout(() => fakeImgInput.focus(), 80);
+            }
+          }
+        });
+      }
+
+      if (fakeImgScrim) fakeImgScrim.addEventListener("click", closeFakeImgModal);
+      if (fakeImgCancelBtn) fakeImgCancelBtn.addEventListener("click", closeFakeImgModal);
+
+      if (fakeImgConfirmBtn && fakeImgInput) {
+        fakeImgConfirmBtn.addEventListener("click", () => {
+          const desc = fakeImgInput.value.trim();
+          if (!desc) {
+            if (typeof showToast === "function") showToast("请先输入照片画面描述哦");
+            return;
+          }
+          closeFakeImgModal();
+          // 封装为标准文字图格式，通过原生通道发送
+          const fakeText = `[图片: ${desc}]`;
+          const mainInput = document.getElementById("input");
+          const sBtn = document.getElementById("sendBtn");
+          if (mainInput && sBtn) {
+            mainInput.value = fakeText;
+            mainInput.dispatchEvent(new Event("input"));
+            sBtn.click();
+          }
+        });
+      }
+
+      // 点击聊天区域中的兔兔咬坏假图，打开详情查看弹窗
+      document.addEventListener("click", (e) => {
+        const wrap = e.target.closest(".fake-img-chat-wrap");
+        if (wrap) {
+          const desc = wrap.dataset.desc || "";
+          currentFakeImgDesc = desc;
+          if (fakeImgViewDesc) fakeImgViewDesc.textContent = desc;
+          if (fakeImgViewModal) fakeImgViewModal.classList.remove("hidden");
+        }
+      });
+
+      if (fakeImgViewScrim) fakeImgViewScrim.addEventListener("click", closeFakeImgViewModal);
+      if (fakeImgCloseBtn) fakeImgCloseBtn.addEventListener("click", closeFakeImgViewModal);
+
+      if (fakeImgCopyBtn) {
+        fakeImgCopyBtn.addEventListener("click", () => {
+          if (!currentFakeImgDesc) return;
+          navigator.clipboard.writeText(currentFakeImgDesc).then(() => {
+            if (typeof showToast === "function") showToast("已复制照片描述");
+          }).catch(() => {
+            if (typeof showToast === "function") showToast("复制失败");
+          });
         });
       }
 

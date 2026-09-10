@@ -2,9 +2,10 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "穷奇";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v38-apple-touch-icon-v3";
+const CACHE = "companion-v39-broken-bunny-fake-img";
 const PRECACHE = [
   "./index.html",
+  "./broken_by_bunny.png",
   "./apple-touch-icon.png",
   "./favicon.png",
   "./icon-192.png",
