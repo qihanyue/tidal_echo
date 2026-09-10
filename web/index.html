@@ -74,9 +74,10 @@
       --keyboard-offset: 0px;
       --ios-pwa-bottom-bleed: 0px;
       --ref-width: 941px;
-      --ref-height: 1672px;
-      --font-en: "Cormorant Garamond", Georgia, serif;
-      --font-cn: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+      --chat-font-size: 15px;
+      --font-main: "ActiveUserCustomFont", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-en: var(--font-main);
+      --font-cn: var(--font-main);
       --wall-light: url("chat_pink_bear.jpg");
       --wall-harbor: url("chat-harbor.webp");
       --wall-default: var(--wall-light);
@@ -179,6 +180,12 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    @font-face {
+      font-family: 'ActiveUserCustomFont';
+      src: url('https://qihanyue0416.neocities.org/韩系苹方80.ttf') format('truetype');
+      font-display: swap;
+    }
+
     html {
       margin: 0;
       padding: 0;
@@ -193,6 +200,7 @@
       background-repeat: no-repeat;
       overflow: hidden;
       overscroll-behavior: none;
+      font-family: var(--font-main);
     }
 
     body {
@@ -206,7 +214,7 @@
       background-position: center;
       background-repeat: no-repeat;
       color: var(--text);
-      font-family: var(--font-cn);
+      font-family: var(--font-main);
       font-size: clamp(14px, 1.45vw, 16px);
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
@@ -885,8 +893,8 @@
       max-width: min(86vw, 640px) !important;
       border-radius: 18px !important;
       position: relative;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      font-size: 15px;
+      font-family: var(--font-main) !important;
+      font-size: var(--chat-font-size, 15px) !important;
       line-height: 1.5;
       word-wrap: break-word;
       overflow-wrap: break-word;
@@ -984,6 +992,7 @@
     }
 
     .bubble .txt {
+      font-size: var(--chat-font-size, 15px) !important;
       white-space: normal;
     }
 
@@ -3027,7 +3036,7 @@
 
       .bubble {
         max-width: min(63vw, 520px);
-        font-size: 13.5px;
+        font-size: var(--chat-font-size, 14px) !important;
         line-height: 1.56;
         padding: 8px 13px 8px;
       }
@@ -5491,6 +5500,67 @@
     </div>
   </div>
 
+  <!-- ── Font 面板 (字体方案与字号设置) ── -->
+  <div class="profile-panel hidden" id="fontPanel" role="dialog" aria-modal="true" aria-labelledby="fontTitle">
+    <div class="profile-page">
+      <div class="profile-topbar" style="display:flex; justify-content:space-between; align-items:center; position:relative;">
+        <button class="profile-back" id="fontClose" type="button" aria-label="返回">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </button>
+        <div style="position:absolute; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none; width:max-content; max-width:60vw;">
+          <h2 id="fontTitle" style="font-size:16px; font-weight:600; margin:0; color:var(--text);">Font</h2>
+          <span style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic; display:block;">Typography & Size · 字体与字号</span>
+        </div>
+        <div style="width:36px;"></div>
+      </div>
+
+      <div class="profile-scroll" style="padding-bottom:60px;">
+        <!-- 1. 聊天页字号调节拉杆（只调节聊天页） -->
+        <section class="settings-card" style="margin-bottom:14px;">
+          <div class="settings-label" style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:600; color:var(--text);">聊天字号调节</span>
+            <span id="fontSizeDisplay" style="font-size:13px; font-weight:600; color:#ff7597;">15.0 px</span>
+          </div>
+          <div class="llm-hint" style="margin-top:-4px; margin-bottom:12px;">
+            拖动下方拉杆，仅实时调节聊天气泡文字大小，不影响其他界面。
+          </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-size:11px; color:var(--text-faint);">小</span>
+            <input type="range" id="chatFontSizeSlider" min="12" max="22" step="0.5" value="15" style="flex:1; accent-color:#ff7597; cursor:pointer;">
+            <span style="font-size:15px; color:var(--text-faint);">大</span>
+            <button class="llm-btn secondary" id="resetFontSizeBtn" type="button" style="padding:3px 8px; font-size:11px; margin-left:4px;">默认</button>
+          </div>
+        </section>
+
+        <!-- 2. 添加新字体方案 -->
+        <section class="settings-card" style="margin-bottom:14px;">
+          <div class="settings-label">添加自定义字体</div>
+          <div class="llm-hint" style="margin-top:-4px; margin-bottom:12px;">
+            支持任意包含跨域许可的字体直链 URL（.ttf / .woff / .woff2 / .otf 等）。
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <input class="llm-input" id="newFontName" type="text" placeholder="字体名称 (例如: 我的手写体)" style="width:100%; font-size:12px; padding:7px 10px;">
+            <input class="llm-input" id="newFontUrl" type="text" placeholder="字体直链 URL (https://...)" style="width:100%; font-size:12px; padding:7px 10px;">
+            <button class="llm-btn primary" id="addFontSchemeBtn" type="button" style="padding:8px 0; font-size:12px; width:100%;">+ 保存字体方案</button>
+          </div>
+        </section>
+
+        <!-- 3. 已保存方案列表 -->
+        <section class="settings-card">
+          <div class="settings-label">字体方案库</div>
+          <div class="llm-hint" style="margin-top:-4px; margin-bottom:12px;">
+            点击方案立即切换全局字体，自动本地保存。
+          </div>
+          <div id="fontSchemeList" style="display:flex; flex-direction:column; gap:8px;">
+            <!-- JS 动态渲染 -->
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Menu (hub / 主菜单页 · 聊天页左箭头进入) ── -->
   <div class="menu-panel hidden" id="menuPanel" role="dialog" aria-modal="true" aria-label="主菜单">
     <div class="menu-page">
@@ -5585,16 +5655,14 @@
                 <path d="M9 6l6 6-6 6" />
               </svg></span>
           </button>
-          <button class="menu-item" type="button" data-menu="room">
+          <button class="menu-item" type="button" data-menu="font">
             <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 21V9a7 7 0 0 1 14 0v12" />
-                <path d="M4 21h16" />
-                <circle cx="15" cy="13" r=".95" fill="currentColor" stroke="none" />
+                <path d="M4 7V4h16v3M9 20h6M12 4v16" />
               </svg></span>
             <span class="menu-dot"></span>
-            <span class="menu-copy"><span class="menu-name">Room</span><span class="menu-sub">Our quiet
-                place.</span></span>
+            <span class="menu-copy"><span class="menu-name">Font</span><span class="menu-sub">Typography & Size ·
+                字体与字号</span></span>
             <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 6l6 6-6 6" />
@@ -6080,6 +6148,233 @@
       }
     }
 
+    /* ── Font & Typography Feature ── */
+    const DEFAULT_FONT_SCHEMES = [
+      {
+        id: "korean_pingfang",
+        name: "韩系苹方 (默认)",
+        url: "https://qihanyue0416.neocities.org/韩系苹方80.ttf",
+        isDefault: true
+      },
+      {
+        id: "system_default",
+        name: "系统默认 (System Default)",
+        url: "",
+        isDefault: true
+      }
+    ];
+
+    let fontSchemes = [];
+    let activeFontId = "korean_pingfang";
+
+    function loadFontSettings() {
+      try {
+        const savedSchemes = localStorage.getItem("companion_font_schemes");
+        if (savedSchemes) {
+          fontSchemes = JSON.parse(savedSchemes);
+        } else {
+          fontSchemes = [...DEFAULT_FONT_SCHEMES];
+        }
+      } catch (e) {
+        fontSchemes = [...DEFAULT_FONT_SCHEMES];
+      }
+      activeFontId = localStorage.getItem("companion_active_font_id") || "korean_pingfang";
+      if (!fontSchemes.some(s => s.id === activeFontId)) {
+        activeFontId = "korean_pingfang";
+      }
+      applyActiveFont(activeFontId);
+
+      // 读取并应用聊天字号
+      const savedFontSize = localStorage.getItem("companion_chat_font_size") || "15";
+      applyChatFontSize(savedFontSize);
+    }
+
+    function applyActiveFont(schemeId) {
+      const scheme = fontSchemes.find(s => s.id === schemeId) || fontSchemes[0];
+      activeFontId = scheme ? scheme.id : "korean_pingfang";
+      localStorage.setItem("companion_active_font_id", activeFontId);
+
+      let styleEl = document.getElementById("dynamicCustomFontStyle");
+      if (!styleEl) {
+        styleEl = document.createElement("style");
+        styleEl.id = "dynamicCustomFontStyle";
+        document.head.appendChild(styleEl);
+      }
+
+      if (scheme && scheme.url) {
+        styleEl.textContent = `
+          @font-face {
+            font-family: 'ActiveUserCustomFont';
+            src: url('${scheme.url}') format('truetype');
+            font-display: swap;
+          }
+          :root {
+            --font-main: 'ActiveUserCustomFont', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+          }
+          body, html, button, input, textarea, select {
+            font-family: var(--font-main) !important;
+          }
+        `;
+      } else {
+        styleEl.textContent = `
+          :root {
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+          }
+          body, html, button, input, textarea, select {
+            font-family: var(--font-main) !important;
+          }
+        `;
+      }
+    }
+
+    function applyChatFontSize(size) {
+      const num = parseFloat(size) || 15;
+      document.documentElement.style.setProperty('--chat-font-size', `${num}px`);
+      localStorage.setItem("companion_chat_font_size", String(num));
+      const displayEl = document.getElementById("fontSizeDisplay");
+      if (displayEl) displayEl.textContent = `${num.toFixed(1)} px`;
+      const sliderEl = document.getElementById("chatFontSizeSlider");
+      if (sliderEl && Math.abs(parseFloat(sliderEl.value) - num) > 0.1) sliderEl.value = String(num);
+    }
+
+    function renderFontSchemeList() {
+      const listEl = document.getElementById("fontSchemeList");
+      if (!listEl) return;
+      listEl.innerHTML = "";
+
+      fontSchemes.forEach(s => {
+        const isActive = s.id === activeFontId;
+        const item = document.createElement("div");
+        item.style.cssText = `
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 12px;
+          border-radius: 12px;
+          background: ${isActive ? "rgba(255, 117, 151, 0.08)" : "var(--card-sub-bg, rgba(255, 255, 255, 0.05))"};
+          border: 1px solid ${isActive ? "#ff7597" : "var(--card-line, rgba(150, 168, 182, 0.18))"};
+          transition: all 0.2s ease;
+        `;
+
+        const left = document.createElement("div");
+        left.style.cssText = "display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0;";
+        const nameRow = document.createElement("div");
+        nameRow.style.cssText = "display: flex; align-items: center; gap: 6px;";
+        nameRow.innerHTML = `<span style="font-size: 13px; font-weight: 600; color: var(--text);">${escapeHtml(s.name)}</span>` +
+          (isActive ? `<span style="font-size: 10px; color: #ff7597; background: rgba(255,117,151,0.15); padding: 1px 5px; border-radius: 6px; font-weight: 600;">当前</span>` : "");
+        
+        const urlRow = document.createElement("span");
+        urlRow.style.cssText = "font-size: 10px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
+        urlRow.textContent = s.url || "系统自带字体族";
+        left.appendChild(nameRow);
+        left.appendChild(urlRow);
+
+        const right = document.createElement("div");
+        right.style.cssText = "display: flex; gap: 6px; margin-left: 10px;";
+
+        if (!isActive) {
+          const useBtn = document.createElement("button");
+          useBtn.className = "llm-btn primary";
+          useBtn.type = "button";
+          useBtn.style.cssText = "padding: 3px 8px; font-size: 11px;";
+          useBtn.textContent = "应用";
+          useBtn.addEventListener("click", () => {
+            applyActiveFont(s.id);
+            renderFontSchemeList();
+            showToast(`已切换字体: ${s.name}`);
+          });
+          right.appendChild(useBtn);
+        }
+
+        if (!s.isDefault) {
+          const delBtn = document.createElement("button");
+          delBtn.className = "llm-btn secondary";
+          delBtn.type = "button";
+          delBtn.style.cssText = "padding: 3px 6px; font-size: 11px; color: #d9534f;";
+          delBtn.textContent = "删除";
+          delBtn.addEventListener("click", () => {
+            if (confirm(`确定删除字体方案【${s.name}】吗？`)) {
+              fontSchemes = fontSchemes.filter(x => x.id !== s.id);
+              localStorage.setItem("companion_font_schemes", JSON.stringify(fontSchemes));
+              if (activeFontId === s.id) {
+                applyActiveFont("korean_pingfang");
+              }
+              renderFontSchemeList();
+              showToast("方案已删除");
+            }
+          });
+          right.appendChild(delBtn);
+        }
+
+        item.appendChild(left);
+        item.appendChild(right);
+        listEl.appendChild(item);
+      });
+    }
+
+    function initFontFeature() {
+      loadFontSettings();
+
+      // 字号拉杆事件
+      const slider = document.getElementById("chatFontSizeSlider");
+      if (slider) {
+        slider.addEventListener("input", (e) => {
+          applyChatFontSize(e.target.value);
+        });
+      }
+
+      // 恢复默认字号按钮
+      const resetBtn = document.getElementById("resetFontSizeBtn");
+      if (resetBtn) {
+        resetBtn.addEventListener("click", () => {
+          applyChatFontSize(15);
+          showToast("已恢复默认字号 (15px)");
+        });
+      }
+
+      // 添加新方案按钮
+      const addBtn = document.getElementById("addFontSchemeBtn");
+      const nameInp = document.getElementById("newFontName");
+      const urlInp = document.getElementById("newFontUrl");
+
+      if (addBtn && nameInp && urlInp) {
+        addBtn.addEventListener("click", () => {
+          const name = nameInp.value.trim();
+          const url = urlInp.value.trim();
+          if (!name) {
+            showToast("请输入字体名称");
+            nameInp.focus();
+            return;
+          }
+          if (!url || !/^https?:\/\//i.test(url)) {
+            showToast("请输入有效的 http(s) 字体直链");
+            urlInp.focus();
+            return;
+          }
+
+          const newScheme = {
+            id: "font_" + Date.now(),
+            name,
+            url,
+            isDefault: false
+          };
+          fontSchemes.push(newScheme);
+          localStorage.setItem("companion_font_schemes", JSON.stringify(fontSchemes));
+          nameInp.value = "";
+          urlInp.value = "";
+          applyActiveFont(newScheme.id);
+          renderFontSchemeList();
+          showToast(`已添加并生效: ${name}`);
+        });
+      }
+    }
+
+    function refreshFontUi() {
+      const savedFontSize = localStorage.getItem("companion_chat_font_size") || "15";
+      applyChatFontSize(savedFontSize);
+      renderFontSchemeList();
+    }
+
     /* ── DOM ── */
     const $ = (s) => document.querySelector(s);
     const loginEl = $("#login"), appEl = $("#app");
@@ -6241,6 +6536,7 @@
         else if (item.dataset.menu === "tether") openTether();
         else if (item.dataset.menu === "tides") openTides();
         else if (item.dataset.menu === "theme") openTheme();
+        else if (item.dataset.menu === "font") openFont();
         else showToast("即将开放");                           // placeholder items
       });
     }
@@ -6300,7 +6596,26 @@
       clearTimeout(tidesCloseTimer);
       tidesCloseTimer = setTimeout(() => tidesPanel.classList.add("hidden"), 360);
     }
-    if (tidesClose) tidesClose.addEventListener("click", closeTides);
+    /* ── Font & Typography Panel ── */
+    const fontPanel = document.getElementById("fontPanel");
+    const fontClose = document.getElementById("fontClose");
+    let fontCloseTimer = null;
+
+    function openFont() {
+      if (!fontPanel) return;
+      closeMenu();
+      clearTimeout(fontCloseTimer);
+      fontPanel.classList.remove("hidden");
+      requestAnimationFrame(() => requestAnimationFrame(() => fontPanel.classList.add("open")));
+      if (typeof refreshFontUi === "function") refreshFontUi();
+    }
+    function closeFont() {
+      if (!fontPanel) return;
+      fontPanel.classList.remove("open");
+      clearTimeout(fontCloseTimer);
+      fontCloseTimer = setTimeout(() => fontPanel.classList.add("hidden"), 360);
+    }
+    if (fontClose) fontClose.addEventListener("click", closeFont);
 
     /* ── Theme & Appearance Panel ── */
     const themePanel = document.getElementById("themePanel");
@@ -11146,7 +11461,6 @@ textarea {
         });
       }
 
-      // 4. 重新生成 (Reroll)
       // 4. 重新生成 (Reroll) —— 自动清理末尾连续 AI 消息并重新触发
       async function doReroll() {
         if (actionPop) actionPop.classList.add("hidden");
@@ -11176,60 +11490,39 @@ textarea {
           scheduleRender({ stickToBottom: true });
         }
 
-        // 3. 顶栏立即呈现 typing 动画
-        showTyping();
+        // 异步向服务端数据库删除这些废弃的 AI 记录
+        if (aiIdsToDelete.length > 0) {
+          aiIdsToDelete.forEach((id) => {
+            fetch(`${API_BASE}/app/messages/${id}`, { method: "DELETE", headers: authHeaders() }).catch(() => {});
+          });
+        }
 
         if (USE_MOCK) {
           Mock.reroll();
           return;
         }
 
-        // 4. 请求后端重试生成
-        try {
-          const _activePreset = getActivePreset ? getActivePreset() : null;
-          const bodyData = {
-            delete_ids: aiIdsToDelete,
-            llm_config: _activePreset ? {
-              base_url: _activePreset.baseUrl,
-              api_key: _activePreset.apiKey,
-              model: _activePreset.model,
-              temperature: _activePreset.temperature,
-              history_n: _activePreset.history_n || 12
-            } : {},
-            personas: typeof personaState !== "undefined" ? personaState : {},
-            time_context: getTimePerceptionContext(),
-            memory_context: getLongTermMemoryContext(),
-            tether_front: getTetherContext().front,
-            tether_middle: getTetherContext().middle,
-            tether_back: getTetherContext().back,
-            web_reader_enabled: (localStorage.getItem("companion_web_reader_enabled") !== "false"),
-            weather_context: getWeatherContext()
-          };
-
-          const resp = await fetch(`${API_BASE}/app/reroll`, {
-            method: "POST",
-            headers: { ...authHeaders(), "Content-Type": "application/json" },
-            body: JSON.stringify(bodyData)
-          });
-
-          // 若 /app/reroll 接口未就绪，降级兜底：先单独删除再触发回复
-          if (!resp.ok) {
-            if (aiIdsToDelete.length > 0) {
-              await Promise.all(aiIdsToDelete.map(id =>
-                fetch(`${API_BASE}/app/messages/${id}`, { method: "DELETE", headers: authHeaders() }).catch(() => {})
-              ));
-            }
-            await fetch(`${API_BASE}/app/trigger_reply`, {
-              method: "POST",
-              headers: { ...authHeaders(), "Content-Type": "application/json" },
-              body: JSON.stringify(bodyData)
-            });
-          }
-        } catch (err) {
-          console.error("reroll failed:", err);
-          showToast("重新生成请求失败");
-          hideTyping();
+        // 3. 寻找触发这轮回复的最后一条人类消息
+        const remaining = sortedMessages().filter(m => !aiKeysToRemove.includes(m._key));
+        const lastHuman = remaining.slice().reverse().find(m => m.from === "human");
+        if (!lastHuman) {
+          showToast("没有找到可供重试的消息");
+          return;
         }
+
+        // 4. 终极稳妥重试策略：
+        // 抹除旧的人类提问，将该内容重新交给 doSend() 原生通道发出
+        // 拥有全新的递增 ID，不论任何版本的 relay/bridge 都 100% 能触发大模型回复，绝不再卡死在 typing！
+        const retryText = lastHuman.text || "";
+        const oldHumanId = Number(lastHuman.id);
+
+        removeMessage(lastHuman._key, { render: true, cache: true });
+        if (Number.isInteger(oldHumanId) && oldHumanId > 0) {
+          fetch(`${API_BASE}/app/messages/${oldHumanId}`, { method: "DELETE", headers: authHeaders() }).catch(() => {});
+        }
+
+        inputEl.value = retryText;
+        doSend();
       }
 
       if (actionRerollBtn) {
@@ -11287,11 +11580,13 @@ textarea {
         initLlmSettings();
         initChatUiEnhancements();
         initStickerFeature();
+        initFontFeature();
       });
     } else {
       initLlmSettings();
       initChatUiEnhancements();
       initStickerFeature();
+      initFontFeature();
     }
 
 
