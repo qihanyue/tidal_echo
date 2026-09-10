@@ -954,6 +954,56 @@ async def delete_single_message(request: Request, msg_id: int):
     return {"ok": True, "deleted_id": msg_id}
 
 
+@app.patch("/app/messages/{msg_id}")
+async def edit_single_message(request: Request, msg_id: int):
+    """Edit text or role of a single message in server database."""
+    check_auth(request)
+    body = await request.json()
+    new_text = body.get("text")
+    new_from = body.get("from")
+    with db() as conn:
+        row = conn.execute("SELECT * FROM messages WHERE id = ?", (msg_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="message not found")
+        updates = []
+        params = []
+        if new_text is not None:
+            updates.append("text = ?")
+            params.append(str(new_text))
+        if new_from is not None:
+            new_dir = "in" if new_from == "human" else "out"
+            updates.append("direction = ?")
+            params.append(new_dir)
+        if updates:
+            params.append(msg_id)
+            conn.execute(f"UPDATE messages SET {', '.join(updates)} WHERE id = ?", params)
+            conn.commit()
+    return {"ok": True, "id": msg_id, "text": new_text, "from": new_from}
+
+
+@app.post("/app/messages/insert")
+async def insert_single_message(request: Request):
+    """Insert a message at a specific timestamp (between existing messages)."""
+    check_auth(request)
+    body = await request.json()
+    text = (body.get("text") or "").strip()
+    role = body.get("from") or "human"
+    ts = body.get("ts") or now_iso()
+    kind = body.get("kind") or ("user" if role == "human" else "reply")
+    direction = "in" if role == "human" else "out"
+    meta = body.get("meta") if isinstance(body.get("meta"), dict) else {}
+    if not text:
+        raise HTTPException(status_code=400, detail="empty text")
+    with db() as conn:
+        cur = conn.execute(
+            "INSERT INTO messages (ts, direction, kind, text, meta) VALUES (?,?,?,?,?)",
+            (ts, direction, kind, text, json.dumps(meta, ensure_ascii=False)),
+        )
+        conn.commit()
+        mid = cur.lastrowid
+    return {"ok": True, "message": {"id": mid, "ts": ts, "from": role, "kind": kind, "text": text, "meta": meta}}
+
+
 @app.post("/app/clear_history")
 async def clear_all_history(request: Request):
     """Clear all messages from server database and reset cursor."""

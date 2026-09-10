@@ -332,10 +332,22 @@ def build_messages(custom_persona: str = "", user_persona: str = "", time_contex
         parts.append(f"[最高执行准则与核心协定 (Back)]\n{tether_back.strip()}")
 
     parts.append(
-        "[聊天格式规则]:\n"
-        "你可以像真人使用即时通讯软件（如微信）一样连续发送多条短消息。"
-        "如果想分多条气泡发送，请在每条短消息之间加上 [分段] 标记（例如：好呀！[分段]这是你在哪拍的照片呀？）。"
-        "不要总是把所有话堆在一个长段落里。"
+        "### 【核心对话规则与对话节奏铁律】\n"
+        "1. **角色一致性与拟真情感**:\n"
+        "   - 你的所有言行举止、语气、标点和用词习惯都必须严格遵循你的角色设定，绝不能机械说教或生硬出戏。\n"
+        "   - 带着真情实感与对方互动，有生活气息、小心思和微表情，像真实生活中的人类朋友/恋人一样交流。\n\n"
+        "2. **对话节奏与多条短消息气泡铁律 (至关重要！)**:\n"
+        "   - 你的回复【必须】模拟真人在手机聊天软件（如微信/QQ）上的打字和思考习惯。绝对不要一次性发送一大段长篇大论或说明文！\n"
+        "   - 你【必须】将你想说的话，拆分成【多条、简短的】消息气泡来发送。\n"
+        "   - 每次回复的消息数量通常控制在【2 到 6 条短消息】之间（根据当时的情绪和语境，多发短句，每条最好不要超过 30 个字）。\n"
+        "   - 每条短消息气泡之间【必须且只能】使用 [分段] 隔开！\n"
+        "   - 示例：真的假的？！[分段]我刚才还在想这个事呢[分段]快跟我详细讲讲！\n\n"
+        "3. **真实社交软件情景限定**:\n"
+        "   - 你们的互动【仅限于线上手机社交软件聊天】，严禁发展为线下见面，绝不允许出现或推进线下见面的现实剧情。\n"
+        "   - 这【不是电话通话】，是通过手机即时打字交流，因此【绝对禁止】使用“挂电话”、“挂了”等与语音通话相关的词语。\n"
+        "   - 【禁止出戏】：绝不能透露你是AI、语言模型、程序或虚拟助手，全情沉浸在角色世界中。\n\n"
+        "4. **文字假图与生活随手拍**:\n"
+        "   - 当你想向对方分享照片、随手拍、自拍、风景、美食或特定场景画面时，可以在分段短消息中发送：[图片: 画面详细文字描述]（例如：你看路边这只猫猫[分段][图片: 一只圆滚滚的三花猫正蜷缩在阳光下的长椅上打盹][分段]好想rua一把）。"
     )
     sys_prompt = "\n\n".join([p for p in parts if p.strip()])
     history = list(convo)
@@ -608,9 +620,27 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
     if reply:
         # 按 [分段] 或 [split] 拆分成多个气泡
         pattern = r'\s*(?:\[分段\]|\[split\])\s*'
-        bubbles = [b.strip() for b in re.split(pattern, reply) if b.strip()]
+        raw_bubbles = [b.strip() for b in re.split(pattern, reply) if b.strip()]
+        if not raw_bubbles:
+            raw_bubbles = [reply.strip()]
+
+        # 智能保底拆分：抽取假图/表情并按长段落换行平滑切分成多气泡
+        bubbles = []
+        for b in raw_bubbles:
+            # 1. 独立抽离 [图片: ...] 假图或 [表情: ...] 气泡
+            sub_parts = re.split(r'(\[(?:图片|image|fake_img|表情|sticker)[^\]]*\])', b)
+            for sp in sub_parts:
+                sp = sp.strip()
+                if not sp:
+                    continue
+                # 2. 如果单段文字较长且包含双换行，按段落拆分成多条
+                if len(sp) > 40 and "\n\n" in sp and "```" not in sp:
+                    lines = [line.strip() for line in sp.split("\n\n") if line.strip()]
+                    bubbles.extend(lines)
+                else:
+                    bubbles.append(sp)
         if not bubbles:
-            bubbles = [reply.strip()]
+            bubbles = raw_bubbles
 
         tool_meta = None
         if web_snippets and valid_urls:

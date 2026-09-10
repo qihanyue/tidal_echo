@@ -4423,6 +4423,13 @@
       color: #e05a4d;
     }
 
+    .role-pill-btn.active {
+      background: var(--composer-bg, #fff) !important;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+      font-weight: 600;
+      color: var(--accent, #6366f1) !important;
+    }
+
     /* 删除(仅本地) */
 
     /* ── reaction chips (AI poke) ── */
@@ -6021,13 +6028,30 @@
     <div class="msg-menu-scrim" id="msgMenuScrim"></div>
     <!-- 抬起的气泡克隆由 JS 插在这里 -->
     <div class="msg-menu-actions" id="msgMenuActions" role="menu" aria-label="消息操作">
+      <button class="msg-act" type="button" data-act="edit" role="menuitem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+          stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+        </svg>
+        <span>编辑消息</span>
+      </button>
+      <button class="msg-act" type="button" data-act="insert" role="menuitem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+          stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          <line x1="12" y1="8" x2="12" y2="14" />
+          <line x1="9" y1="11" x2="15" y2="11" />
+        </svg>
+        <span>在此插入</span>
+      </button>
       <button class="msg-act" type="button" data-act="copy" role="menuitem">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
           stroke-linejoin="round" aria-hidden="true">
           <rect x="9" y="9" width="11" height="11" rx="2" />
           <path d="M5 15V5a2 2 0 0 1 2-2h10" />
         </svg>
-        <span>Copy</span>
+        <span>复制文本</span>
       </button>
       <button class="msg-act danger" type="button" data-act="delete" role="menuitem">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
@@ -6037,10 +6061,64 @@
           <path d="M5 7l1 13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-13" />
           <path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" />
         </svg>
-        <span>Delete</span>
+        <span>删除</span>
       </button>
     </div>
   </div>
+
+  <!-- ── 编辑消息弹窗 ── -->
+  <div class="sticker-modal-wrap hidden" id="msgEditModal" aria-hidden="true">
+    <div class="sticker-modal-scrim" id="msgEditScrim"></div>
+    <div class="sticker-modal-card" role="dialog" aria-modal="true" style="max-width: 360px;">
+      <div class="sticker-modal-title">编辑消息</div>
+      <div class="sticker-modal-body" style="padding: 12px 18px 8px;">
+        <div style="display: flex; background: var(--bg-subtle, rgba(0,0,0,0.05)); padding: 3px; border-radius: 10px; margin-bottom: 12px; gap: 4px;">
+          <button type="button" id="msgEditRoleHuman" class="role-pill-btn active" style="flex:1; border:0; background:transparent; padding:6px 0; border-radius:8px; font-size:13px; font-family:var(--font-main); cursor:pointer; color:var(--text); transition:all .2s;">我发送的</button>
+          <button type="button" id="msgEditRoleAi" class="role-pill-btn" style="flex:1; border:0; background:transparent; padding:6px 0; border-radius:8px; font-size:13px; font-family:var(--font-main); cursor:pointer; color:var(--text); transition:all .2s;">AI伴侣发送的</button>
+        </div>
+        <textarea class="sticker-batch-textarea" id="msgEditInput"
+          placeholder="消息文本内容..."
+          style="min-height: 110px; font-size: 14px; line-height: 1.55; box-sizing: border-box; width: 100%; border-radius: 12px; padding: 10px 12px;"></textarea>
+        <div style="margin-top: 8px; display: flex; justify-content: flex-start;">
+          <button type="button" id="msgEditJumpInsertBtn" style="appearance:none; border:0; background:transparent; font-size:12px; color:var(--accent, #6366f1); cursor:pointer; padding:4px 0; text-decoration:underline;">+ 在这条消息后插入新消息</button>
+        </div>
+      </div>
+      <div class="sticker-modal-footer">
+        <button type="button" class="sticker-modal-btn cancel" id="msgEditCancelBtn">取消</button>
+        <button type="button" class="sticker-modal-btn confirm" id="msgEditConfirmBtn">保存修改</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 在中间插入新消息弹窗 ── -->
+  <div class="sticker-modal-wrap hidden" id="msgInsertModal" aria-hidden="true">
+    <div class="sticker-modal-scrim" id="msgInsertScrim"></div>
+    <div class="sticker-modal-card" role="dialog" aria-modal="true" style="max-width: 360px;">
+      <div class="sticker-modal-title">插入新消息</div>
+      <div class="sticker-modal-body" style="padding: 12px 18px 8px;">
+        <div style="display: flex; background: var(--bg-subtle, rgba(0,0,0,0.05)); padding: 3px; border-radius: 10px; margin-bottom: 10px; gap: 4px;">
+          <button type="button" id="msgInsertRoleHuman" class="role-pill-btn active" style="flex:1; border:0; background:transparent; padding:6px 0; border-radius:8px; font-size:13px; font-family:var(--font-main); cursor:pointer; color:var(--text); transition:all .2s;">我 (人类)</button>
+          <button type="button" id="msgInsertRoleAi" class="role-pill-btn" style="flex:1; border:0; background:transparent; padding:6px 0; border-radius:8px; font-size:13px; font-family:var(--font-main); cursor:pointer; color:var(--text); transition:all .2s;">AI 伴侣</button>
+        </div>
+        <div style="display: flex; gap: 14px; margin-bottom: 10px; font-size: 12px; color: var(--text-faint);">
+          <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+            <input type="radio" name="msgInsertPos" value="after" checked style="accent-color:var(--accent);"> 在当前消息之后
+          </label>
+          <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+            <input type="radio" name="msgInsertPos" value="before" style="accent-color:var(--accent);"> 在当前消息之前
+          </label>
+        </div>
+        <textarea class="sticker-batch-textarea" id="msgInsertInput"
+          placeholder="输入要插入的内容，也可输入 [图片: 照片描述]..."
+          style="min-height: 100px; font-size: 14px; line-height: 1.55; box-sizing: border-box; width: 100%; border-radius: 12px; padding: 10px 12px;"></textarea>
+      </div>
+      <div class="sticker-modal-footer">
+        <button type="button" class="sticker-modal-btn cancel" id="msgInsertCancelBtn">取消</button>
+        <button type="button" class="sticker-modal-btn confirm" id="msgInsertConfirmBtn">确认插入</button>
+      </div>
+    </div>
+  </div>
+
 
   <!-- ── 表情包面板（抽屉半屏卡片） ── -->
   <div class="sticker-sheet-wrap hidden" id="stickerSheet" aria-hidden="true">
@@ -9587,7 +9665,13 @@ textarea {
       return n > 0 ? n : Number.MAX_SAFE_INTEGER;
     }
     function sortedMessages() {
-      return chatMessages.slice().sort((a, b) => (sortId(a) - sortId(b)) || (a._order - b._order));
+      return chatMessages.slice().sort((a, b) => {
+        const ta = tsMs(a), tb = tsMs(b);
+        if (Number.isFinite(ta) && Number.isFinite(tb) && Math.abs(ta - tb) >= 1) {
+          return ta - tb;
+        }
+        return (sortId(a) - sortId(b)) || (a._order - b._order);
+      });
     }
     function stripInlineThinkingText(text) {
       let s = String(text || "");
@@ -10890,6 +10974,226 @@ textarea {
         showToast("已删除");
       }
 
+      // ── 编辑消息与插入消息逻辑 ──
+      let currentEditingMsgKey = null;
+      let currentEditRole = "human";
+      const msgEditModal = document.getElementById("msgEditModal");
+      const msgEditScrim = document.getElementById("msgEditScrim");
+      const msgEditCancelBtn = document.getElementById("msgEditCancelBtn");
+      const msgEditConfirmBtn = document.getElementById("msgEditConfirmBtn");
+      const msgEditInput = document.getElementById("msgEditInput");
+      const msgEditRoleHuman = document.getElementById("msgEditRoleHuman");
+      const msgEditRoleAi = document.getElementById("msgEditRoleAi");
+      const msgEditJumpInsertBtn = document.getElementById("msgEditJumpInsertBtn");
+
+      let currentInsertBaseKey = null;
+      let currentInsertRole = "human";
+      const msgInsertModal = document.getElementById("msgInsertModal");
+      const msgInsertScrim = document.getElementById("msgInsertScrim");
+      const msgInsertCancelBtn = document.getElementById("msgInsertCancelBtn");
+      const msgInsertConfirmBtn = document.getElementById("msgInsertConfirmBtn");
+      const msgInsertInput = document.getElementById("msgInsertInput");
+      const msgInsertRoleHuman = document.getElementById("msgInsertRoleHuman");
+      const msgInsertRoleAi = document.getElementById("msgInsertRoleAi");
+
+      function updateEditRolePills(role) {
+        currentEditRole = role;
+        if (msgEditRoleHuman && msgEditRoleAi) {
+          msgEditRoleHuman.classList.toggle("active", role === "human");
+          msgEditRoleAi.classList.toggle("active", role === "ai");
+        }
+      }
+      if (msgEditRoleHuman) msgEditRoleHuman.addEventListener("click", () => updateEditRolePills("human"));
+      if (msgEditRoleAi) msgEditRoleAi.addEventListener("click", () => updateEditRolePills("ai"));
+
+      function closeEditModal() {
+        if (msgEditModal) msgEditModal.classList.add("hidden");
+        currentEditingMsgKey = null;
+      }
+      if (msgEditScrim) msgEditScrim.addEventListener("click", closeEditModal);
+      if (msgEditCancelBtn) msgEditCancelBtn.addEventListener("click", closeEditModal);
+
+      function doEdit() {
+        const key = openKey;
+        close();
+        if (key == null) return;
+        const msg = messageByKey.get(msgKey(key));
+        if (!msg) return;
+        currentEditingMsgKey = key;
+        if (msgEditInput) msgEditInput.value = msg.text || "";
+        updateEditRolePills(msg.from || "human");
+        if (msgEditModal) {
+          msgEditModal.classList.remove("hidden");
+          setTimeout(() => { if (msgEditInput) msgEditInput.focus(); }, 80);
+        }
+      }
+
+      function saveEditMessage() {
+        if (currentEditingMsgKey == null) return;
+        const msg = messageByKey.get(msgKey(currentEditingMsgKey));
+        if (!msg) return;
+        const newText = (msgEditInput ? msgEditInput.value : "").trim();
+        const newRole = currentEditRole || msg.from;
+        if (!newText) {
+          showToast("消息内容不能为空哦");
+          return;
+        }
+        closeEditModal();
+        msg.text = newText;
+        msg.from = newRole;
+        if (newRole === "human") {
+          msg.kind = "user";
+        } else if (msg.kind === "user") {
+          msg.kind = "reply";
+        }
+        nodeCache.delete(`m:${msg._key}`);
+        rowHeights.delete(`m:${msg._key}`);
+        invalidateRows();
+        scheduleRender({ preserveAnchor: true });
+        scheduleCacheSave();
+        scheduleTerminalRender();
+        if (typeof msg.id === "number" || (/^\d+$/.test(String(msg.id)))) {
+          try {
+            fetch(`${API_BASE}/app/messages/${msg.id}`, {
+              method: "PATCH",
+              headers: { ...authHeaders(), "Content-Type": "application/json" },
+              body: JSON.stringify({ text: newText, from: newRole })
+            }).catch(() => {});
+          } catch (_) {}
+        }
+        showToast("已保存修改");
+      }
+      if (msgEditConfirmBtn) msgEditConfirmBtn.addEventListener("click", saveEditMessage);
+
+      function updateInsertRolePills(role) {
+        currentInsertRole = role;
+        if (msgInsertRoleHuman && msgInsertRoleAi) {
+          msgInsertRoleHuman.classList.toggle("active", role === "human");
+          msgInsertRoleAi.classList.toggle("active", role === "ai");
+        }
+      }
+      if (msgInsertRoleHuman) msgInsertRoleHuman.addEventListener("click", () => updateInsertRolePills("human"));
+      if (msgInsertRoleAi) msgInsertRoleAi.addEventListener("click", () => updateInsertRolePills("ai"));
+
+      function closeInsertModal() {
+        if (msgInsertModal) msgInsertModal.classList.add("hidden");
+        currentInsertBaseKey = null;
+      }
+      if (msgInsertScrim) msgInsertScrim.addEventListener("click", closeInsertModal);
+      if (msgInsertCancelBtn) msgInsertCancelBtn.addEventListener("click", closeInsertModal);
+
+      function doInsert() {
+        const key = openKey;
+        close();
+        if (key == null) return;
+        currentInsertBaseKey = key;
+        const baseMsg = messageByKey.get(msgKey(key));
+        updateInsertRolePills((baseMsg && baseMsg.from === "human") ? "ai" : "human");
+        if (msgInsertInput) msgInsertInput.value = "";
+        const afterRadio = document.querySelector('input[name="msgInsertPos"][value="after"]');
+        if (afterRadio) afterRadio.checked = true;
+        if (msgInsertModal) {
+          msgInsertModal.classList.remove("hidden");
+          setTimeout(() => { if (msgInsertInput) msgInsertInput.focus(); }, 80);
+        }
+      }
+
+      if (msgEditJumpInsertBtn) {
+        msgEditJumpInsertBtn.addEventListener("click", () => {
+          const k = currentEditingMsgKey;
+          closeEditModal();
+          if (k != null) {
+            currentInsertBaseKey = k;
+            const baseMsg = messageByKey.get(msgKey(k));
+            updateInsertRolePills((baseMsg && baseMsg.from === "human") ? "ai" : "human");
+            if (msgInsertInput) msgInsertInput.value = "";
+            const afterRadio = document.querySelector('input[name="msgInsertPos"][value="after"]');
+            if (afterRadio) afterRadio.checked = true;
+            if (msgInsertModal) {
+              msgInsertModal.classList.remove("hidden");
+              setTimeout(() => { if (msgInsertInput) msgInsertInput.focus(); }, 80);
+            }
+          }
+        });
+      }
+
+      async function confirmInsertMessage() {
+        if (currentInsertBaseKey == null) return;
+        const baseMsg = messageByKey.get(msgKey(currentInsertBaseKey));
+        if (!baseMsg) return;
+        const text = (msgInsertInput ? msgInsertInput.value : "").trim();
+        if (!text) {
+          showToast("请输入要插入的消息内容");
+          return;
+        }
+        const posRadio = document.querySelector('input[name="msgInsertPos"]:checked');
+        const pos = posRadio ? posRadio.value : "after";
+        const role = currentInsertRole || "human";
+        closeInsertModal();
+
+        const sorted = sortedMessages();
+        const baseIdx = sorted.findIndex(m => m._key === baseMsg._key || m.id === baseMsg.id);
+        const baseTs = tsMs(baseMsg) || Date.now();
+        let targetTsMs = baseTs;
+
+        if (pos === "after") {
+          const nextMsg = (baseIdx >= 0 && baseIdx + 1 < sorted.length) ? sorted[baseIdx + 1] : null;
+          const nextTs = nextMsg ? tsMs(nextMsg) : null;
+          if (nextTs && nextTs > baseTs) {
+            targetTsMs = Math.round((baseTs + nextTs) / 2);
+          } else {
+            targetTsMs = baseTs + 1000;
+          }
+        } else {
+          const prevMsg = (baseIdx > 0) ? sorted[baseIdx - 1] : null;
+          const prevTs = prevMsg ? tsMs(prevMsg) : null;
+          if (prevTs && prevTs < baseTs) {
+            targetTsMs = Math.round((prevTs + baseTs) / 2);
+          } else {
+            targetTsMs = baseTs - 1000;
+          }
+        }
+
+        const targetIso = new Date(targetTsMs).toISOString();
+        const tempId = `ins_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        const newMsg = {
+          id: tempId,
+          ts: targetIso,
+          from: role,
+          kind: role === "human" ? "user" : "reply",
+          text: text,
+          meta: {},
+          status: "sent"
+        };
+
+        setMessage(newMsg, { render: true, cache: true });
+        invalidateRows();
+        scheduleRender({ preserveAnchor: true });
+        scheduleTerminalRender();
+        showToast("已插入新消息");
+
+        try {
+          const res = await fetch(`${API_BASE}/app/messages/insert`, {
+            method: "POST",
+            headers: { ...authHeaders(), "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: text,
+              from: role,
+              ts: targetIso,
+              kind: newMsg.kind,
+              meta: {}
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.message && data.message.id) {
+              confirmOptimistic(tempId, data.message.id, data.message);
+            }
+          }
+        } catch (_) {}
+      }
+      if (msgInsertConfirmBtn) msgInsertConfirmBtn.addEventListener("click", confirmInsertMessage);
+
       // 长按检测 —— 用 touch 事件自己计时。不用 pointer:iOS 一识别长按就给页面发 pointercancel,
       // 会把计时器掐掉、让原生选择/复制接管(就是"打架"的根因);touch 不会被这样取消。
       // 原生选择/callout 由 CSS 的 user-select:none / -webkit-touch-callout:none 压住。
@@ -10931,9 +11235,12 @@ textarea {
       actions.addEventListener("click", (e) => {
         const act = e.target.closest(".msg-act");
         if (!act) return;
-        if (act.dataset.act === "copy") doCopy();
+        if (act.dataset.act === "edit") doEdit();
+        else if (act.dataset.act === "insert") doInsert();
+        else if (act.dataset.act === "copy") doCopy();
         else if (act.dataset.act === "delete") doDelete();
       });
+
       window.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
       window.addEventListener("resize", close);
       scrollEl.addEventListener("scroll", () => { if (isOpen()) close(); }, { passive: true });
@@ -11013,7 +11320,11 @@ textarea {
         return await new Promise((resolve, reject) => {
           const tx = db.transaction(CACHE_STORE, "readonly");
           const req = tx.objectStore(CACHE_STORE).getAll();
-          req.onsuccess = () => resolve((req.result || []).sort((a, b) => msgNum(a.id) - msgNum(b.id)));
+          req.onsuccess = () => resolve((req.result || []).sort((a, b) => {
+            const ta = Date.parse(a.ts || 0), tb = Date.parse(b.ts || 0);
+            if (Number.isFinite(ta) && Number.isFinite(tb) && Math.abs(ta - tb) >= 1) return ta - tb;
+            return msgNum(a.id) - msgNum(b.id);
+          }));
           req.onerror = () => reject(req.error || new Error("indexedDB read"));
           tx.oncomplete = () => db.close();
         });
@@ -11021,10 +11332,11 @@ textarea {
     }
     function cacheableMessages() {
       return sortedMessages()
-        .filter((m) => msgNum(m.id) > 0 && m.status !== "sending" && m.status !== "failed")
+        .filter((m) => m && m.id != null && m.status !== "sending" && m.status !== "failed")
         .slice(-CACHE_KEEP)
         .map((m) => ({ id: msgKey(m.id), ts: m.ts, from: m.from, kind: m.kind, text: m.text, meta: m.meta || {} }));
     }
+
     async function writeMessageCache() {
       try {
         const db = await openMessageDb();
