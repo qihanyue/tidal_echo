@@ -186,14 +186,12 @@
       height: 100%;
       min-height: 100vh;
       min-height: 100dvh;
-      /* 用主题背景色兜底：iOS PWA home indicator 区域超出 .wall 图层时，
-         显示此颜色而非浏览器默认白色 */
-      background-color: var(--bg, #F4F2EF);
+      /* 诊断色：若底部由白变粉，说明 CSS 改动已到达设备，可再替换成正式颜色 */
+      background-color: #FFE4EF;
       background-image: var(--wall-default);
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
-      background-attachment: fixed;
       overflow: hidden;
       overscroll-behavior: none;
     }
@@ -205,12 +203,11 @@
       height: 100%;
       min-height: 100vh;
       min-height: 100dvh;
-      background-color: var(--bg, #F4F2EF);
+      background-color: #FFE4EF;
       background-image: var(--wall-default);
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
-      background-attachment: fixed;
       color: var(--text);
       font-family: var(--font-cn);
       font-size: clamp(14px, 1.45vw, 16px);
