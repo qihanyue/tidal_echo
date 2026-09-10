@@ -847,6 +847,103 @@ async def app_trigger_reply(request: Request):
     await broadcast(app_subs, {"type": "typing", "active": True})
     return {"ok": True, "triggered_ids": msg_ids}
 
+
+@app.post("/app/reroll")
+async def app_reroll(request: Request):
+    """自动清理最后一次 AI 回复的所有消息，并自动重新触发生成。"""
+    check_auth(request)
+    body = await request.json()
+    delete_ids = body.get("delete_ids") or []
+
+    # 1. 扫描末尾连续的所有 AI 消息 (direction = 'out')，彻底清除旧回复
+    tail_ai_ids = []
+    with db() as conn:
+        rows = conn.execute("SELECT id, direction FROM messages ORDER BY id DESC").fetchall()
+        for r in rows:
+            if r["direction"] == "out":
+                tail_ai_ids.append(r["id"])
+            else:
+                break
+
+    to_delete = list(set([int(x) for x in delete_ids if str(x).isdigit()] + tail_ai_ids))
+    if to_delete:
+        with db() as conn:
+            placeholders = ",".join("?" for _ in to_delete)
+            conn.execute(f"DELETE FROM messages WHERE id IN ({placeholders})", to_delete)
+            conn.commit()
+        # 通知所有前端窗口清理对应的 DOM 气泡与本地缓存
+        await broadcast(app_subs, {"type": "messages_deleted", "ids": to_delete})
+
+    # 2. 通知 bridge 重新对齐上下文记忆，把废弃的回复剔除
+    await broadcast(plugin_subs, {"type": "sync_history"})
+
+    # 3. 查找上一次 AI 回复之后的所有未回复人类消息 (即重试的目标问题)
+    with db() as conn:
+        last_ai_row = conn.execute(
+            "SELECT MAX(id) as max_id FROM messages WHERE direction = 'out' AND kind = 'reply'"
+        ).fetchone()
+        last_ai_id = last_ai_row["max_id"] if (last_ai_row and last_ai_row["max_id"]) else 0
+        rows = conn.execute(
+            "SELECT * FROM messages WHERE id > ? AND direction = 'in' ORDER BY id ASC",
+            (last_ai_id,)
+        ).fetchall()
+
+    pending_msgs = rows_to_messages(rows)
+
+    # 兜底：如果没找到，取最新一条人类消息
+    if not pending_msgs:
+        with db() as conn:
+            row = conn.execute(
+                "SELECT * FROM messages WHERE direction = 'in' ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+            if row:
+                pending_msgs = rows_to_messages([row])
+
+    if not pending_msgs:
+        await broadcast(app_subs, {"type": "typing", "active": False})
+        return {"ok": False, "detail": "没有可重新回复的人类消息"}
+
+    # 4. 标记 triggered = True
+    msg_ids = [m["id"] for m in pending_msgs]
+    with db() as conn:
+        for mid in msg_ids:
+            row = conn.execute("SELECT meta FROM messages WHERE id = ?", (mid,)).fetchone()
+            if row:
+                m_meta = json.loads(row["meta"] or "{}")
+                m_meta["triggered"] = True
+                conn.execute(
+                    "UPDATE messages SET meta = ? WHERE id = ?",
+                    (json.dumps(m_meta, ensure_ascii=False), mid)
+                )
+        conn.commit()
+
+    # 5. 组装 bundle 广播给 bridge (AI 侧)
+    bundle = {
+        "type": "bundle",
+        "id": pending_msgs[-1]["id"],
+        "content": "\n".join(m["text"] for m in pending_msgs if m.get("text")),
+        "items": [plugin_payload(m) for m in pending_msgs],
+    }
+    if body.get("llm_config"):
+        bundle["llm_config"] = body.get("llm_config")
+    if body.get("personas"):
+        bundle["personas"] = body.get("personas")
+    if body.get("time_context"):
+        bundle["time_context"] = body.get("time_context")
+    if body.get("memory_context"):
+        bundle["memory_context"] = body.get("memory_context")
+    for f in ("tether_front", "tether_middle", "tether_back", "tether_context", "web_reader_enabled", "weather_context"):
+        if body.get(f) is not None:
+            bundle[f] = body.get(f)
+
+    if brain_target() == "loop":
+        asyncio.create_task(forward_to_loop(pending_msgs[-1]))
+    else:
+        await broadcast(plugin_subs, bundle)
+    await broadcast(app_subs, {"type": "typing", "active": True})
+    return {"ok": True, "deleted_ids": to_delete, "triggered_ids": msg_ids}
+
+
 @app.delete("/app/messages/{msg_id}")
 async def delete_single_message(request: Request, msg_id: int):
     """Delete a single message from server database."""

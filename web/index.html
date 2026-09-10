@@ -841,25 +841,9 @@
       margin-top: clamp(12px, 1.8vw, 20px);
     }
 
+    /* 彻底移除新消息分割线，保持聊天背景纯净 */
     .new-divider {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: clamp(16px, 2.4vw, 24px);
-      margin: clamp(16px, 2.4vw, 28px) 0 clamp(12px, 1.8vw, 20px);
-      color: var(--text-faint);
-      font-family: var(--font-en), var(--font-cn);
-      font-size: clamp(12px, 1.6vw, 16px);
-      line-height: 1;
-      letter-spacing: 0;
-    }
-
-    .new-divider::before,
-    .new-divider::after {
-      content: "";
-      width: clamp(94px, 24vw, 226px);
-      height: 1px;
-      background: var(--hairline);
+      display: none !important;
     }
 
     .row.grouped {
@@ -3058,8 +3042,7 @@
       }
 
       .new-divider {
-        font-size: 12px;
-        margin: 14px 0 10px;
+        display: none !important;
       }
 
       .composer {
@@ -9274,10 +9257,7 @@ textarea {
           rows.push({ type: "day", key: `day:${k}:${m._key}`, text: fmtDay(m.ts) });
           prevBubble = null;
         }
-        if (newDividerBeforeKey && m._key === newDividerBeforeKey) {
-          rows.push({ type: "new", key: `new:${newDividerBeforeKey}` });
-          prevBubble = null;
-        }
+        // 用户不需要新消息分割线，保持聊天背景纯净连贯
         if (m.kind === "thinking") {
           rows.push({ type: "thinking", key: `m:${m._key}`, message: m });
           prevBubble = null;
@@ -9956,6 +9936,12 @@ textarea {
       }
       if (m.type === "thinking_delta" || m.type === "reply_delta") {
         queueStreamDelta(m);
+        return;
+      }
+      if (m.type === "messages_deleted" && Array.isArray(m.ids)) {
+        // 服务端通知批量删除消息（例如 reroll 撤回了上一轮 AI 回复）
+        m.ids.forEach((id) => removeMessage(id, { render: false, cache: true }));
+        scheduleRender({ stickToBottom: nearBottom() });
         return;
       }
       if (m.type === "typing") {
@@ -11161,15 +11147,94 @@ textarea {
       }
 
       // 4. 重新生成 (Reroll)
+      // 4. 重新生成 (Reroll) —— 自动清理末尾连续 AI 消息并重新触发
+      async function doReroll() {
+        if (actionPop) actionPop.classList.add("hidden");
+
+        // 1. 查找末尾连续属于 AI 的所有消息（含普通气泡、思考块、动作块等）
+        const allMsgs = sortedMessages();
+        const aiKeysToRemove = [];
+        const aiIdsToDelete = [];
+
+        for (let i = allMsgs.length - 1; i >= 0; i--) {
+          const m = allMsgs[i];
+          if (m.from === "ai") {
+            aiKeysToRemove.push(m._key);
+            const numId = Number(m.id);
+            if (Number.isInteger(numId) && numId > 0) {
+              aiIdsToDelete.push(numId);
+            }
+          } else {
+            // 遇到人类消息停止，锁定了本轮回复的范围
+            break;
+          }
+        }
+
+        // 2. 本地界面与缓存立即删除旧回复，让画面瞬间恢复到用户刚提问的状态
+        if (aiKeysToRemove.length > 0) {
+          aiKeysToRemove.forEach((k) => removeMessage(k, { render: false, cache: true }));
+          scheduleRender({ stickToBottom: true });
+        }
+
+        // 3. 顶栏立即呈现 typing 动画
+        showTyping();
+
+        if (USE_MOCK) {
+          Mock.reroll();
+          return;
+        }
+
+        // 4. 请求后端重试生成
+        try {
+          const _activePreset = getActivePreset ? getActivePreset() : null;
+          const bodyData = {
+            delete_ids: aiIdsToDelete,
+            llm_config: _activePreset ? {
+              base_url: _activePreset.baseUrl,
+              api_key: _activePreset.apiKey,
+              model: _activePreset.model,
+              temperature: _activePreset.temperature,
+              history_n: _activePreset.history_n || 12
+            } : {},
+            personas: typeof personaState !== "undefined" ? personaState : {},
+            time_context: getTimePerceptionContext(),
+            memory_context: getLongTermMemoryContext(),
+            tether_front: getTetherContext().front,
+            tether_middle: getTetherContext().middle,
+            tether_back: getTetherContext().back,
+            web_reader_enabled: (localStorage.getItem("companion_web_reader_enabled") !== "false"),
+            weather_context: getWeatherContext()
+          };
+
+          const resp = await fetch(`${API_BASE}/app/reroll`, {
+            method: "POST",
+            headers: { ...authHeaders(), "Content-Type": "application/json" },
+            body: JSON.stringify(bodyData)
+          });
+
+          // 若 /app/reroll 接口未就绪，降级兜底：先单独删除再触发回复
+          if (!resp.ok) {
+            if (aiIdsToDelete.length > 0) {
+              await Promise.all(aiIdsToDelete.map(id =>
+                fetch(`${API_BASE}/app/messages/${id}`, { method: "DELETE", headers: authHeaders() }).catch(() => {})
+              ));
+            }
+            await fetch(`${API_BASE}/app/trigger_reply`, {
+              method: "POST",
+              headers: { ...authHeaders(), "Content-Type": "application/json" },
+              body: JSON.stringify(bodyData)
+            });
+          }
+        } catch (err) {
+          console.error("reroll failed:", err);
+          showToast("重新生成请求失败");
+          hideTyping();
+        }
+      }
+
       if (actionRerollBtn) {
         actionRerollBtn.addEventListener("click", () => {
-          if (actionPop) actionPop.classList.add("hidden");
-          if (USE_MOCK) {
-            Mock.reroll();
-          } else {
-            if (manualBtn) manualBtn.click();
-            else showToast("正在重新生成...");
-          }
+          doReroll();
         });
       }
 

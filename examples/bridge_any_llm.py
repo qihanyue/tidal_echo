@@ -721,6 +721,14 @@ def stream_inbound(cursor: int) -> None:
                             write_cursor(0)
                             log("in", "收到清空历史指令，已重置记忆")
                             continue
+                        if m.get("type") == "sync_history":
+                            convo.clear()
+                            ctx, max_id = load_history()
+                            convo.extend(ctx)
+                            cursor = max_id
+                            write_cursor(cursor)
+                            log("in", f"收到历史同步指令(Reroll)，已重新对齐对话上下文 ({len(convo)} 条)")
+                            continue
                         if m.get("type") == "ping":
                             continue
 
