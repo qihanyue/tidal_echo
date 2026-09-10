@@ -7,6 +7,9 @@
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Gravity</title>
 
+  <!-- 防盗链与外部图床隐私兼容：禁止发送 Referer 请求头，彻底解决外部图床 403 导致的 iOS 蓝色问号裂图 -->
+  <meta name="referrer" content="no-referrer">
+
   <!-- PWA / iOS -->
   <link rel="manifest" href="manifest.webmanifest?v=3">
   <link rel="preload" href="chat_pink_bear.jpg" as="image" fetchpriority="high">
@@ -1514,8 +1517,9 @@
       margin-bottom: 3px !important;
     }
 
-    .row.act + .row.ai {
-      margin-top: 3px !important;    /* 紧贴工具条 */
+    .row.act+.row.ai {
+      margin-top: 3px !important;
+      /* 紧贴工具条 */
     }
 
     .act-block {
@@ -1594,7 +1598,7 @@
       animation: pop .2s cubic-bezier(.2, .8, .2, 1) both;
     }
 
-    .act-step + .act-step {
+    .act-step+.act-step {
       margin-top: 8px;
       padding-top: 8px;
       border-top: 1px dashed rgba(0, 0, 0, 0.08);
@@ -1894,13 +1898,83 @@
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
     }
 
+    .sticker-thumb-box {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fafafa;
+    }
+
     .sticker-card-thumb {
       width: 100%;
+      height: 100%;
       aspect-ratio: 1 / 1;
       object-fit: contain;
       border-radius: 8px;
       display: block;
-      background: #fafafa;
+      transition: opacity .15s ease;
+    }
+
+    /* 当图床加载失败时的优雅兜底卡片，坚决不显示 iOS 丑陋的蓝色问号 */
+    .sticker-fallback-card {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(243, 244, 246, 0.92);
+      border-radius: 8px;
+      padding: 6px 4px;
+      box-sizing: border-box;
+      text-align: center;
+      user-select: none;
+    }
+
+    .sticker-fallback-card.hidden {
+      display: none !important;
+    }
+
+    .sticker-fallback-icon {
+      font-size: 22px;
+      line-height: 1;
+      margin-bottom: 4px;
+      opacity: 0.85;
+    }
+
+    .sticker-fallback-name {
+      font-size: 11px;
+      color: #666;
+      line-height: 1.25;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* 聊天气泡中表情加载失败的优雅兜底标签 */
+    .sticker-chat-fallback {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 12px;
+      font-size: 13px;
+      color: #555;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border: 1px dashed rgba(0, 0, 0, 0.18);
+    }
+
+    .sticker-chat-fallback.hidden {
+      display: none !important;
     }
 
     .sticker-card-name {
@@ -2133,6 +2207,7 @@
       /* 按钮区域宽 */
       height: 30px !important;
       /* 按钮区域高 */
+      margin-left: 4px;
       flex-shrink: 0;
       display: flex !important;
       align-items: center;
@@ -2182,9 +2257,12 @@
       border: 1px solid rgba(0, 0, 0, 0.08);
       border-radius: 12px;
       padding: 5px 12px;
-      min-height: 32px !important;   /* 扁平胶囊最小高度 */
-      height: auto !important;       /* 打字增多时允许自动撑开 */
-      max-height: 120px !important;  /* 最多撑开到约 4-5 行，超出内部滑动 */
+      min-height: 32px !important;
+      /* 扁平胶囊最小高度 */
+      height: auto !important;
+      /* 打字增多时允许自动撑开 */
+      max-height: 120px !important;
+      /* 最多撑开到约 4-5 行，超出内部滑动 */
       box-shadow: none;
       box-sizing: border-box;
       transition: border-color .2s ease, background-color .2s ease;
@@ -5082,24 +5160,29 @@
         <section class="settings-card" style="margin-top: 14px; margin-bottom: 8px;">
           <div class="settings-label">聊天记录备份 (本地文件)</div>
           <div style="display:flex; gap:10px; margin-top:8px;">
-            <button class="llm-btn primary" id="exportHistoryBtn" type="button" style="flex:1; padding:9px 0; font-size:12px; display:flex; align-items:center; justify-content:center; gap:6px;">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
+            <button class="llm-btn primary" id="exportHistoryBtn" type="button"
+              style="flex:1; padding:9px 0; font-size:12px; display:flex; align-items:center; justify-content:center; gap:6px;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
               导出记录文件
             </button>
-            <button class="llm-btn" id="importHistoryBtn" type="button" style="flex:1; padding:9px 0; font-size:12px; display:flex; align-items:center; justify-content:center; gap:6px;">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
+            <button class="llm-btn" id="importHistoryBtn" type="button"
+              style="flex:1; padding:9px 0; font-size:12px; display:flex; align-items:center; justify-content:center; gap:6px;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
               导入记录文件
             </button>
           </div>
-          <input type="file" id="importHistoryFileInput" accept=".json,application/json" class="hidden" style="display:none;">
+          <input type="file" id="importHistoryFileInput" accept=".json,application/json" class="hidden"
+            style="display:none;">
           <div class="llm-hint" style="margin-top:6px;">直接在手机里生成或恢复 .json 备份文件，无需联网或上传 GitHub。</div>
         </section>
 
@@ -6070,15 +6153,19 @@
     <div class="sticker-modal-card" role="dialog" aria-modal="true" style="max-width: 360px;">
       <div class="sticker-modal-title">编辑消息</div>
       <div class="sticker-modal-body" style="padding: 12px 18px 8px;">
-        <div style="display: flex; background: var(--bg-subtle, rgba(0,0,0,0.05)); padding: 3px; border-radius: 10px; margin-bottom: 12px; gap: 4px;">
-          <button type="button" id="msgEditRoleHuman" class="role-pill-btn active" style="flex:1; border:0; background:transparent; padding:6px 0; border-radius:8px; font-size:13px; font-family:var(--font-main); cursor:pointer; color:var(--text); transition:all .2s;">我发送的</button>
-          <button type="button" id="msgEditRoleAi" class="role-pill-btn" style="flex:1; border:0; background:transparent; padding:6px 0; border-radius:8px; font-size:13px; font-family:var(--font-main); cursor:pointer; color:var(--text); transition:all .2s;">AI伴侣发送的</button>
+        <div
+          style="display: flex; background: var(--bg-subtle, rgba(0,0,0,0.05)); padding: 3px; border-radius: 10px; margin-bottom: 12px; gap: 4px;">
+          <button type="button" id="msgEditRoleHuman" class="role-pill-btn active"
+            style="flex:1; border:0; background:transparent; padding:6px 0; border-radius:8px; font-size:13px; font-family:var(--font-main); cursor:pointer; color:var(--text); transition:all .2s;">我发送的</button>
+          <button type="button" id="msgEditRoleAi" class="role-pill-btn"
+            style="flex:1; border:0; background:transparent; padding:6px 0; border-radius:8px; font-size:13px; font-family:var(--font-main); cursor:pointer; color:var(--text); transition:all .2s;">AI伴侣发送的</button>
         </div>
-        <textarea class="sticker-batch-textarea" id="msgEditInput"
-          placeholder="消息文本内容..."
+        <textarea class="sticker-batch-textarea" id="msgEditInput" placeholder="消息文本内容..."
           style="min-height: 110px; font-size: 14px; line-height: 1.55; box-sizing: border-box; width: 100%; border-radius: 12px; padding: 10px 12px;"></textarea>
         <div style="margin-top: 8px; display: flex; justify-content: flex-start;">
-          <button type="button" id="msgEditJumpInsertBtn" style="appearance:none; border:0; background:transparent; font-size:12px; color:var(--accent, #6366f1); cursor:pointer; padding:4px 0; text-decoration:underline;">+ 在这条消息后插入新消息</button>
+          <button type="button" id="msgEditJumpInsertBtn"
+            style="appearance:none; border:0; background:transparent; font-size:12px; color:var(--accent, #6366f1); cursor:pointer; padding:4px 0; text-decoration:underline;">+
+            在这条消息后插入新消息</button>
         </div>
       </div>
       <div class="sticker-modal-footer">
@@ -6094,9 +6181,14 @@
     <div class="sticker-modal-card" role="dialog" aria-modal="true" style="max-width: 360px;">
       <div class="sticker-modal-title">插入新消息</div>
       <div class="sticker-modal-body" style="padding: 12px 18px 8px;">
-        <div style="display: flex; background: var(--bg-subtle, rgba(0,0,0,0.05)); padding: 3px; border-radius: 10px; margin-bottom: 10px; gap: 4px;">
-          <button type="button" id="msgInsertRoleHuman" class="role-pill-btn active" style="flex:1; border:0; background:transparent; padding:6px 0; border-radius:8px; font-size:13px; font-family:var(--font-main); cursor:pointer; color:var(--text); transition:all .2s;">我 (人类)</button>
-          <button type="button" id="msgInsertRoleAi" class="role-pill-btn" style="flex:1; border:0; background:transparent; padding:6px 0; border-radius:8px; font-size:13px; font-family:var(--font-main); cursor:pointer; color:var(--text); transition:all .2s;">AI 伴侣</button>
+        <div
+          style="display: flex; background: var(--bg-subtle, rgba(0,0,0,0.05)); padding: 3px; border-radius: 10px; margin-bottom: 10px; gap: 4px;">
+          <button type="button" id="msgInsertRoleHuman" class="role-pill-btn active"
+            style="flex:1; border:0; background:transparent; padding:6px 0; border-radius:8px; font-size:13px; font-family:var(--font-main); cursor:pointer; color:var(--text); transition:all .2s;">我
+            (人类)</button>
+          <button type="button" id="msgInsertRoleAi" class="role-pill-btn"
+            style="flex:1; border:0; background:transparent; padding:6px 0; border-radius:8px; font-size:13px; font-family:var(--font-main); cursor:pointer; color:var(--text); transition:all .2s;">AI
+            伴侣</button>
         </div>
         <div style="display: flex; gap: 14px; margin-bottom: 10px; font-size: 12px; color: var(--text-faint);">
           <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
@@ -6106,8 +6198,7 @@
             <input type="radio" name="msgInsertPos" value="before" style="accent-color:var(--accent);"> 在当前消息之前
           </label>
         </div>
-        <textarea class="sticker-batch-textarea" id="msgInsertInput"
-          placeholder="输入要插入的内容，也可输入 [图片: 照片描述]..."
+        <textarea class="sticker-batch-textarea" id="msgInsertInput" placeholder="输入要插入的内容，也可输入 [图片: 照片描述]..."
           style="min-height: 100px; font-size: 14px; line-height: 1.55; box-sizing: border-box; width: 100%; border-radius: 12px; padding: 10px 12px;"></textarea>
       </div>
       <div class="sticker-modal-footer">
@@ -6185,8 +6276,7 @@
         <p style="font-size: 11px; color: var(--text-faint); margin: 0 0 10px; line-height: 1.45;">
           图片将显示为被兔兔咬坏的素材图，对方点击图片可阅读详细的文字画面描述。
         </p>
-        <textarea class="sticker-batch-textarea" id="fakeImgInput"
-          placeholder="请用文字详细描述照片里的画面、光线、动作、氛围等..."
+        <textarea class="sticker-batch-textarea" id="fakeImgInput" placeholder="请用文字详细描述照片里的画面、光线、动作、氛围等..."
           style="min-height: 105px; font-size: 13px; line-height: 1.55;"></textarea>
       </div>
       <div class="sticker-modal-footer">
@@ -6272,16 +6362,58 @@
     /* ════════════ 表情包管理系统 (Sticker System) ════════════ */
     const STICKER_KEY = "companion_stickers";
     const DEFAULT_STICKERS = [
-      { id: "stk_1", name: "睡着了说明天见", url: "https://i.ibb.co/Lhb8Z30/sleep.png" },
-      { id: "stk_2", name: "晚安", url: "https://i.ibb.co/y4L2q4T/goodnight.png" },
-      { id: "stk_3", name: "我要把你告到小狗法庭", url: "https://i.ibb.co/G0g1r6v/court.png" },
-      { id: "stk_4", name: "小狗逮捕你", url: "https://i.ibb.co/VMy4P3X/arrest.png" },
-      { id: "stk_5", name: "期待眼神", url: "https://i.ibb.co/x1mYh9B/expect.png" },
-      { id: "stk_6", name: "ok", url: "https://i.ibb.co/wL4xPqY/ok.png" }
+      { id: "stk_1", name: "睡着了说明天见", url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23fff1f2'/><text x='50%' y='52%' font-size='40' text-anchor='middle' dominant-baseline='middle'>😴</text><text x='50%' y='82%' font-size='11' fill='%23f43f5e' font-weight='bold' font-family='sans-serif' text-anchor='middle'>明天见~</text></svg>" },
+      { id: "stk_2", name: "晚安", url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23eef2ff'/><text x='50%' y='52%' font-size='40' text-anchor='middle' dominant-baseline='middle'>🌙</text><text x='50%' y='82%' font-size='11' fill='%236366f1' font-weight='bold' font-family='sans-serif' text-anchor='middle'>晚安安</text></svg>" },
+      { id: "stk_3", name: "我要把你告到小狗法庭", url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23fffbeb'/><text x='50%' y='52%' font-size='36' text-anchor='middle' dominant-baseline='middle'>⚖️🐶</text><text x='50%' y='82%' font-size='11' fill='%23d97706' font-weight='bold' font-family='sans-serif' text-anchor='middle'>小狗法庭</text></svg>" },
+      { id: "stk_4", name: "小狗逮捕你", url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23fdf2f8'/><text x='50%' y='52%' font-size='36' text-anchor='middle' dominant-baseline='middle'>🚨👮</text><text x='50%' y='82%' font-size='11' fill='%23db2777' font-weight='bold' font-family='sans-serif' text-anchor='middle'>逮捕你!</text></svg>" },
+      { id: "stk_5", name: "期待眼神", url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23fef3c7'/><text x='50%' y='52%' font-size='36' text-anchor='middle' dominant-baseline='middle'>🥺✨</text><text x='50%' y='82%' font-size='11' fill='%23b45309' font-weight='bold' font-family='sans-serif' text-anchor='middle'>好期待呀</text></svg>" },
+      { id: "stk_6", name: "ok", url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23ecfdf5'/><text x='50%' y='52%' font-size='36' text-anchor='middle' dominant-baseline='middle'>👌🐱</text><text x='50%' y='82%' font-size='11' fill='%23059669' font-weight='bold' font-family='sans-serif' text-anchor='middle'>好滴收到</text></svg>" }
     ];
 
     let cachedStickers = null;
     let isStickerEditing = false;
+
+    // 清洗并规范化表情包图片链接（防盗链/协议升级/脏字符清理）
+    function cleanStickerUrl(raw) {
+      if (!raw || typeof raw !== "string") return "";
+      let u = raw.trim();
+      if (u.startsWith("data:image/")) return u;
+      // 1. 去除首尾可能包含的多余引号、括号、尖括号、逗号等符号
+      u = u.replace(/^["'“”‘’<(\[{【\s]+/, "").replace(/["'“”‘’>)\]}】;,，；\s]+$/, "").trim();
+      // 2. 协议升级：将 http:// 自动升级为 https://，避免 HTTPS 站点下被当作混合内容拦截成蓝色问号
+      if (/^http:\/\//i.test(u)) {
+        u = "https://" + u.slice(7);
+      } else if (/^\/\//.test(u)) {
+        u = "https:" + u;
+      }
+      return u;
+    }
+
+    // 抽屉表情缩略图加载失败时的防裂兜底（彻底消灭蓝色问号）
+    function handleStickerThumbError(img, name) {
+      if (!img) return;
+      try {
+        img.style.display = "none";
+        const box = img.closest(".sticker-thumb-box");
+        if (box) {
+          const fb = box.querySelector(".sticker-fallback-card");
+          if (fb) fb.classList.remove("hidden");
+        }
+      } catch (_) { }
+    }
+
+    // 聊天气泡表情加载失败时的防裂兜底
+    function handleStickerChatError(img, name) {
+      if (!img) return;
+      try {
+        img.style.display = "none";
+        const wrap = img.closest(".sticker-chat-wrap");
+        if (wrap) {
+          const fb = wrap.querySelector(".sticker-chat-fallback");
+          if (fb) fb.classList.remove("hidden");
+        }
+      } catch (_) { }
+    }
 
     function getStickerList() {
       if (cachedStickers) return cachedStickers;
@@ -6290,7 +6422,26 @@
         if (raw) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed) && parsed.length) {
-            cachedStickers = parsed;
+            let changed = false;
+            // 自动自愈：清洗本地已有历史数据中的脏字符和 http 协议，并将已失效的老默认 ibb.co 迁移至内置 SVG
+            cachedStickers = parsed.map(item => {
+              if (!item || typeof item !== "object") return null;
+              let originalUrl = item.url || "";
+              if (originalUrl.includes("i.ibb.co")) {
+                const def = DEFAULT_STICKERS.find(d => d.name === item.name || (item.name && d.name && (item.name.includes(d.name) || d.name.includes(item.name))));
+                if (def) originalUrl = def.url;
+              }
+              const cleanedUrl = cleanStickerUrl(originalUrl);
+              if (cleanedUrl !== (item.url || "")) changed = true;
+              return {
+                id: item.id || ("stk_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6)),
+                name: (item.name || "").trim() || "表情",
+                url: cleanedUrl
+              };
+            }).filter(Boolean);
+            if (changed) {
+              saveStickerList(cachedStickers, false);
+            }
             return cachedStickers;
           }
         }
@@ -6374,7 +6525,13 @@
       grid.innerHTML = list.map((item, idx) => `
         <div class="sticker-card" data-idx="${idx}" data-id="${escapeHtml(item.id || "")}">
           <button type="button" class="sticker-del-badge" aria-label="删除表情" title="删除">×</button>
-          <img class="sticker-card-thumb" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.name)}" loading="lazy" onerror="this.style.opacity='0.4'">
+          <div class="sticker-thumb-box">
+            <img class="sticker-card-thumb" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.name)}" referrerpolicy="no-referrer" loading="lazy" onerror="handleStickerThumbError(this, '${escapeHtml(item.name)}')">
+            <div class="sticker-fallback-card hidden" title="图片无法直接加载">
+              <span class="sticker-fallback-icon">🏷️</span>
+              <span class="sticker-fallback-name">${escapeHtml(item.name)}</span>
+            </div>
+          </div>
           <div class="sticker-card-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</div>
         </div>
       `).join("");
@@ -6435,23 +6592,48 @@
     }
 
     function parseBatchStickers(text) {
-      const lines = String(text || "").split("\n");
+      const lines = String(text || "").split(/[\r\n]+/);
       const results = [];
       lines.forEach(line => {
         let clean = line.trim();
         if (!clean) return;
-        // 兼容外层包裹【...】或 [...]
-        clean = clean.replace(/^[【\[](.+)[】\]]$/, "$1").trim();
-        const urlMatch = clean.match(/https?:\/\/[^\s]+/i);
-        if (!urlMatch) return;
-        const url = urlMatch[0];
-        let name = clean.replace(url, "").replace(/[:：]/g, "").trim();
-        if (!name) name = "表情_" + (results.length + 1);
-        results.push({
-          id: "stk_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
-          name: name,
-          url: url
-        });
+        let url = "";
+        let name = "";
+
+        // 1. 兼容 HTML <img src="...">
+        const htmlMatch = clean.match(/<img[^>]+src=["'](https?:\/\/[^"'\s]+)["'][^>]*>/i);
+        if (htmlMatch) {
+          url = cleanStickerUrl(htmlMatch[1]);
+          const altMatch = clean.match(/alt=["']([^"']*)["']/i);
+          name = altMatch ? altMatch[1].trim() : "";
+        }
+
+        // 2. 兼容 Markdown 格式: ![名称](url) 或 [名称](url)
+        if (!url) {
+          const mdMatch = clean.match(/^!?\[([^\]]*)\]\((https?:\/\/[^)]+)\)$/i);
+          if (mdMatch) {
+            name = mdMatch[1].trim();
+            url = cleanStickerUrl(mdMatch[2]);
+          }
+        }
+
+        // 3. 通用提取 URL 与名称
+        if (!url) {
+          const urlMatch = clean.match(/(https?:\/\/[^\s"'<>()[\]{}]+)/i);
+          if (urlMatch) {
+            url = cleanStickerUrl(urlMatch[0]);
+            name = clean.replace(urlMatch[0], "").replace(/^[【\["'(<]+/, "").replace(/[】\]"')>:：,，；;\s]+$/, "").replace(/[:：]/g, "").trim();
+          }
+        }
+
+        if (url) {
+          if (!name) name = "表情_" + (results.length + 1);
+          results.push({
+            id: "stk_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+            name: name,
+            url: url
+          });
+        }
       });
       return results;
     }
@@ -9605,7 +9787,7 @@ textarea {
       s = s.replace(/\[(?:表情|sticker):\s*([^\s\]]+)\]/gi, (match, name) => {
         const st = (typeof findSticker === "function") ? findSticker(name) : null;
         if (st) {
-          return `<img class="inline-sticker-img" src="${escapeHtml(st.url)}" alt="${escapeHtml(st.name)}" title="${escapeHtml(st.name)}" loading="lazy">`;
+          return `<img class="inline-sticker-img" src="${escapeHtml(st.url)}" alt="${escapeHtml(st.name)}" title="${escapeHtml(st.name)}" referrerpolicy="no-referrer" loading="lazy">`;
         }
         return match;
       });
@@ -10338,7 +10520,7 @@ textarea {
 
       if (stkInfo) {
         bubble.classList.add("sticker-only");
-        _inner = `<div class="sticker-chat-wrap"><img class="sticker-chat-img" src="${escapeHtml(stkInfo.url)}" alt="${escapeHtml(stkInfo.name)}" loading="lazy"></div><span class="meta"></span>`;
+        _inner = `<div class="sticker-chat-wrap"><img class="sticker-chat-img" src="${escapeHtml(stkInfo.url)}" alt="${escapeHtml(stkInfo.name)}" referrerpolicy="no-referrer" loading="lazy" onerror="handleStickerChatError(this, '${escapeHtml(stkInfo.name)}')"><div class="sticker-chat-fallback hidden" title="图片无法直接加载">[表情: ${escapeHtml(stkInfo.name)}]</div></div><span class="meta"></span>`;
       } else if (fakeImgDesc) {
         bubble.classList.add("fake-img-only");
         _inner = `<div class="fake-img-chat-wrap" data-desc="${escapeHtml(fakeImgDesc)}" title="点击查看照片描述"><img class="fake-img-chat-img" src="broken_by_bunny.png" alt="图片已被兔兔咬坏" loading="lazy"></div><span class="meta"></span>`;
@@ -11063,8 +11245,8 @@ textarea {
               method: "PATCH",
               headers: { ...authHeaders(), "Content-Type": "application/json" },
               body: JSON.stringify({ text: newText, from: newRole })
-            }).catch(() => {});
-          } catch (_) {}
+            }).catch(() => { });
+          } catch (_) { }
         }
         showToast("已保存修改");
       }
@@ -11195,7 +11377,7 @@ textarea {
               confirmOptimistic(tempId, data.message.id, data.message);
             }
           }
-        } catch (_) {}
+        } catch (_) { }
       }
       if (msgInsertConfirmBtn) msgInsertConfirmBtn.addEventListener("click", confirmInsertMessage);
 
@@ -12062,7 +12244,7 @@ textarea {
                     const tx = db.transaction(CACHE_STORE, "readwrite");
                     tx.objectStore(CACHE_STORE).clear();
                   }
-                } catch (_) {}
+                } catch (_) { }
               }
 
               let importedCount = 0;
