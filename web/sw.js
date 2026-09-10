@@ -2,9 +2,11 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "Gemini";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v23-finetune";
+const CACHE = "companion-v24-theme";
 const PRECACHE = [
   "./index.html",
+  "./chat_pink_bear.jpg",
+  "./menu_pink_icecream.jpg",
   "./chat-light.webp", "./chat-harbor.webp",
   "./menu-light.webp", "./menu-harbor.webp",
   "./avatar-sea.png?v=2",

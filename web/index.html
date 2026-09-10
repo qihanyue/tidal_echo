@@ -8,7 +8,7 @@
 
   <!-- PWA / iOS -->
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="preload" href="chat-light.webp" as="image" fetchpriority="high">
+  <link rel="preload" href="chat_pink_bear.jpg" as="image" fetchpriority="high">
   <link rel="preload" href="avatar-sea.png?v=2" as="image">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link href="https://cdn.jsdelivr.net/npm/@fontsource/cormorant-garamond@5/400.min.css" rel="stylesheet">
@@ -16,8 +16,10 @@
   <link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/400.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/500.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@fontsource/pinyon-script@5/400.min.css" rel="stylesheet">
-  <meta name="theme-color" content="#F4F4F5">
-  <!-- iOS launch mode is manifest-only; legacy Apple fullscreen meta breaks bottom viewport. -->
+  <meta name="theme-color" content="#f5f5f5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
 
   <meta name="apple-mobile-web-app-title" content="Tidal Echo">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -40,14 +42,31 @@
       } catch (_) { }
     })();
 
-    /* Theme: two presets (light=Pearl / harbor). Persisted in localStorage companion_theme. Set data-theme early to avoid a first-paint flash. */
+    /* Theme: persisted wallpapers and live custom css */
     (function () {
-      var THEMES = ["light", "harbor"];
       try {
-        var t = localStorage.getItem("companion_theme");
-        if (THEMES.indexOf(t) < 0) t = "light";
+        var t = localStorage.getItem("companion_theme") || "light";
         document.documentElement.setAttribute("data-theme", t);
-      } catch (e) { document.documentElement.setAttribute("data-theme", "light"); }
+
+        // 自定义壁纸快速生效
+        var cw = localStorage.getItem("companion_chat_wall");
+        if (cw) {
+          var v = cw.startsWith("url(") ? cw : ('url("' + cw + '")');
+          document.documentElement.style.setProperty("--wall-default", v);
+        }
+        var mw = localStorage.getItem("companion_menu_wall");
+        if (mw) {
+          var mv = mw.startsWith("url(") ? mw : ('url("' + mw + '")');
+          document.documentElement.style.setProperty("--menu-wall-default", mv);
+        }
+
+        // 自定义 CSS 即时生效样式表
+        var customCss = localStorage.getItem("companion_custom_css");
+        var st = document.createElement("style");
+        st.id = "liveCustomCss";
+        if (customCss) st.textContent = customCss;
+        document.head.appendChild(st);
+      } catch (e) { }
     })();
   </script>
 
@@ -60,10 +79,10 @@
       --ref-height: 1672px;
       --font-en: "Cormorant Garamond", Georgia, serif;
       --font-cn: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
-      --wall-light: url("chat-light.webp");
+      --wall-light: url("chat_pink_bear.jpg");
       --wall-harbor: url("chat-harbor.webp");
       --wall-default: var(--wall-light);
-      --menu-wall-light: url("menu-light.webp");
+      --menu-wall-light: url("menu_pink_icecream.jpg");
       --menu-wall-harbor: url("menu-harbor.webp");
       --menu-wall-default: var(--menu-wall-light);
       --avatar-default: url("avatar-sea.png?v=2");
@@ -169,6 +188,7 @@
       height: 100%;
       overflow: hidden;
       overscroll-behavior: none;
+      background-color: #f5f5f5;
     }
 
     body {
@@ -409,16 +429,32 @@
 
     .topbtn.keep-alive.active {
       color: #000000 !important;
-      filter: drop-shadow(0 0 5px #ff5b79) drop-shadow(0 0 10px rgba(255, 91, 121, 0.75)) !important;
+      filter: drop-shadow(0 0 5px #ffecf3) drop-shadow(0 0 10px rgba(255, 91, 121, 0.75)) !important;
       animation: keepAliveHeartbeat 1.6s ease-in-out infinite;
     }
 
     @keyframes keepAliveHeartbeat {
-      0%, 100% { transform: scale(1); }
-      14% { transform: scale(1.18); }
-      28% { transform: scale(1); }
-      42% { transform: scale(1.1); }
-      70% { transform: scale(1); }
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      14% {
+        transform: scale(1.18);
+      }
+
+      28% {
+        transform: scale(1);
+      }
+
+      42% {
+        transform: scale(1.1);
+      }
+
+      70% {
+        transform: scale(1);
+      }
     }
 
     .session-pop {
@@ -1621,8 +1657,13 @@
 
     /* 发送键按压回弹动画 */
     @keyframes send-go {
-      from { transform: scale(.88); }
-      to { transform: scale(1); }
+      from {
+        transform: scale(.88);
+      }
+
+      to {
+        transform: scale(1);
+      }
     }
 
     .floatbtn.send.send-go {
@@ -1634,17 +1675,20 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      background: rgba(255, 255, 255, 0.55);
+      background: rgba(255, 255, 255, 0.42);
       border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 12px;
-      padding: 0 12px;
+      border-radius: 14px;
+      padding: 0 14px;
+      height: 36px;
       min-height: 36px;
       box-shadow: none;
-      transition: border-color .2s ease;
+      box-sizing: border-box;
+      transition: border-color .2s ease, background-color .2s ease;
     }
 
     .composer .field:focus-within {
-      border-color: rgba(0, 0, 0, 0.18);
+      background: rgba(255, 255, 255, 0.65);
+      border-color: rgba(0, 0, 0, 0.15);
     }
 
     .composer textarea:focus,
@@ -1663,11 +1707,13 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       font-size: 15px;
       line-height: 22px;
-      height: 34px;
-      min-height: 34px;
+      height: 22px;
+      min-height: 22px;
       max-height: 100px;
-      padding: 6px 0;
+      padding: 0;
       margin: 0;
+      display: block;
+      box-sizing: border-box;
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
@@ -4010,9 +4056,10 @@
   <div class="app hidden" id="app" data-conn="offline">
     <header class="topbar">
       <button class="backbtn" id="backBtn" aria-label="返回主菜单">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
       </button>
       <div class="peerpill">
@@ -4020,7 +4067,8 @@
         <span class="status" id="status">connecting…</span>
       </div>
       <div class="header-actions" aria-label="操作">
-        <button class="topbtn terminal hidden" id="terminalBtn" type="button" aria-label="终端视图" title="终端视图" style="display:none !important;">
+        <button class="topbtn terminal hidden" id="terminalBtn" type="button" aria-label="终端视图" title="终端视图"
+          style="display:none !important;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
             stroke-linejoin="round">
             <path d="m6 8 4 4-4 4" />
@@ -4029,8 +4077,10 @@
         </button>
         <button class="topbtn keep-alive" id="keepAliveBtn" type="button" aria-label="后台心跳保活" title="后台心跳保活">
           <svg viewBox="0 0 1228 1024" fill="currentColor">
-            <path d="M161.148343 97.982171c115.858286-115.887543 305.444571-116.092343 425.632914-2.633142l6.465829 6.290285 54.593828 54.096457 54.564572-53.950171c117.701486-117.730743 307.317029-121.709714 425.808457-10.005943l6.407314 6.202514c115.9168 115.887543 116.1216 305.444571 2.486857 425.808458L1059.401143 601.234286 671.744 986.346057a36.571429 36.571429 0 0 1-47.981714-0.087771l-262.056229-259.130515-49.590857-49.298285a36.571429 36.571429 0 1 1 51.6096-51.8144l283.969829 281.424457 431.425828-428.938972c91.516343-91.516343 93.008457-239.616 3.803429-328.791771-87.303314-87.303314-231.0144-87.771429-322.998857-1.813943l-5.9392 5.7344-80.427886 79.579429a36.571429 36.571429 0 0 1-48.508343 2.633143l-2.954971-2.633143-80.457143-79.725715c-91.487086-91.516343-239.586743-92.9792-328.762515-3.803428-72.323657 72.352914-86.367086 185.665829-35.986285 276.187428A36.571429 36.571429 0 0 1 112.932571 461.385143C46.928457 342.747429 65.389714 193.770057 161.148343 97.982171z" />
-            <path d="M610.596571 321.360457c9.947429-32.299886 53.891657-34.6112 67.847315-5.354057l1.521371 3.657143 69.632 192.950857h98.889143c18.929371 0 34.523429 14.394514 36.395886 32.855771l0.175543 3.715658a36.571429 36.571429 0 0 1-32.826515 36.395885l-3.744914 0.175543h-124.576914a36.571429 36.571429 0 0 1-32.914286-20.626286l-1.462857-3.510857-41.1648-114.044343-68.286172 222.500572c-9.362286 30.427429-49.737143 34.816-65.887085 8.835657l-1.901715-3.423086-77.970285-158.427428-38.619429 52.282514a36.571429 36.571429 0 0 1-25.541486 14.628571l-3.832685 0.2048H43.4176a36.571429 36.571429 0 0 1-3.715657-72.967314l3.715657-0.175543 304.449829-0.029257 63.370971-85.723428a36.571429 36.571429 0 0 1 60.269714 2.077257l1.960229 3.510857 63.722057 129.550628 73.435429-239.060114z" />
+            <path
+              d="M161.148343 97.982171c115.858286-115.887543 305.444571-116.092343 425.632914-2.633142l6.465829 6.290285 54.593828 54.096457 54.564572-53.950171c117.701486-117.730743 307.317029-121.709714 425.808457-10.005943l6.407314 6.202514c115.9168 115.887543 116.1216 305.444571 2.486857 425.808458L1059.401143 601.234286 671.744 986.346057a36.571429 36.571429 0 0 1-47.981714-0.087771l-262.056229-259.130515-49.590857-49.298285a36.571429 36.571429 0 1 1 51.6096-51.8144l283.969829 281.424457 431.425828-428.938972c91.516343-91.516343 93.008457-239.616 3.803429-328.791771-87.303314-87.303314-231.0144-87.771429-322.998857-1.813943l-5.9392 5.7344-80.427886 79.579429a36.571429 36.571429 0 0 1-48.508343 2.633143l-2.954971-2.633143-80.457143-79.725715c-91.487086-91.516343-239.586743-92.9792-328.762515-3.803428-72.323657 72.352914-86.367086 185.665829-35.986285 276.187428A36.571429 36.571429 0 0 1 112.932571 461.385143C46.928457 342.747429 65.389714 193.770057 161.148343 97.982171z" />
+            <path
+              d="M610.596571 321.360457c9.947429-32.299886 53.891657-34.6112 67.847315-5.354057l1.521371 3.657143 69.632 192.950857h98.889143c18.929371 0 34.523429 14.394514 36.395886 32.855771l0.175543 3.715658a36.571429 36.571429 0 0 1-32.826515 36.395885l-3.744914 0.175543h-124.576914a36.571429 36.571429 0 0 1-32.914286-20.626286l-1.462857-3.510857-41.1648-114.044343-68.286172 222.500572c-9.362286 30.427429-49.737143 34.816-65.887085 8.835657l-1.901715-3.423086-77.970285-158.427428-38.619429 52.282514a36.571429 36.571429 0 0 1-25.541486 14.628571l-3.832685 0.2048H43.4176a36.571429 36.571429 0 0 1-3.715657-72.967314l3.715657-0.175543 304.449829-0.029257 63.370971-85.723428a36.571429 36.571429 0 0 1 60.269714 2.077257l1.960229 3.510857 63.722057 129.550628 73.435429-239.060114z" />
           </svg>
         </button>
         <button class="topbtn more" id="moreBtn" type="button" aria-label="个人信息" title="个人信息">
@@ -4058,7 +4108,8 @@
     </main>
     <footer class="composer">
       <!-- 用户头像（兼加号菜单触发） -->
-      <button class="composer-user-avatar-btn" id="actionMenuBtn" type="button" aria-label="快捷操作菜单" title="快捷操作"></button>
+      <button class="composer-user-avatar-btn" id="actionMenuBtn" type="button" aria-label="快捷操作菜单"
+        title="快捷操作"></button>
       <div class="composer-action-pop hidden" id="composerActionPop">
         <button type="button" class="action-item" id="actionRerollBtn">
           <span class="action-icon">🔄</span>
@@ -4075,7 +4126,8 @@
       </div>
 
       <div class="field">
-        <button class="floatbtn clip-in-field hidden" id="clipBtn" aria-label="附件" title="附件" style="display:none !important;">
+        <button class="floatbtn clip-in-field hidden" id="clipBtn" aria-label="附件" title="附件"
+          style="display:none !important;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
             stroke-linejoin="round">
             <path
@@ -4097,7 +4149,8 @@
       <!-- 麦克风：接收消息 -->
       <button class="composer-wait-btn" id="waitReplyBtn" type="button" aria-label="接收消息" title="接收消息">
         <svg viewBox="0 0 1024 1024" width="27" height="27" fill="#000">
-          <path d="M544 768h96a32 32 0 0 1 0 64h-256a32 32 0 0 1 0-64h96v-66.24A224.064 224.064 0 0 1 288 480v-32a32 32 0 1 1 64 0v32a160 160 0 0 0 320 0v-32a32 32 0 0 1 64 0v32a224.064 224.064 0 0 1-192 221.76V768z m-32-192a96 96 0 0 1-96-96V288a96 96 0 1 1 192 0v192a96 96 0 0 1-96 96z m0-320a32 32 0 0 0-32 32v192a32 32 0 1 0 64 0V288a32 32 0 0 0-32-32z"/>
+          <path
+            d="M544 768h96a32 32 0 0 1 0 64h-256a32 32 0 0 1 0-64h96v-66.24A224.064 224.064 0 0 1 288 480v-32a32 32 0 1 1 64 0v32a160 160 0 0 0 320 0v-32a32 32 0 0 1 64 0v32a224.064 224.064 0 0 1-192 221.76V768z m-32-192a96 96 0 0 1-96-96V288a96 96 0 1 1 192 0v192a96 96 0 0 1-96 96z m0-320a32 32 0 0 0-32 32v192a32 32 0 1 0 64 0V288a32 32 0 0 0-32-32z" />
         </svg>
       </button>
       <button class="floatbtn hidden" id="micBtn" aria-label="语音" title="语音" style="display:none !important;">
@@ -4105,7 +4158,8 @@
       <!-- 发送按钮：纸飞机 -->
       <button class="floatbtn send" id="sendBtn" aria-label="发送" title="发送">
         <svg viewBox="0 0 1024 1024" width="23" height="23" fill="#040000">
-          <path d="M906.4448 28.859733L75.741867 284.3648c-57.8048 17.783467-68.317867 95.061333-17.3568 127.6416l245.435733 156.893867a70.980267 70.980267 0 0 0 84.002133-5.563734l306.3296-258.491733c16.605867-14.011733 39.0144 8.379733 25.002667 25.002667L460.680533 636.228267a70.946133 70.946133 0 0 0-5.546666 83.985066l156.859733 245.4016c32.5632 50.944 109.858133 40.430933 127.6416-17.3568L995.140267 117.572267c16.7424-54.459733-34.2528-105.454933-88.695467-88.712534z"/>
+          <path
+            d="M906.4448 28.859733L75.741867 284.3648c-57.8048 17.783467-68.317867 95.061333-17.3568 127.6416l245.435733 156.893867a70.980267 70.980267 0 0 0 84.002133-5.563734l306.3296-258.491733c16.605867-14.011733 39.0144 8.379733 25.002667 25.002667L460.680533 636.228267a70.946133 70.946133 0 0 0-5.546666 83.985066l156.859733 245.4016c32.5632 50.944 109.858133 40.430933 127.6416-17.3568L995.140267 117.572267c16.7424-54.459733-34.2528-105.454933-88.695467-88.712534z" />
         </svg>
       </button>
     </footer>
@@ -4169,7 +4223,8 @@
         <div class="profile-identity">
           <div style="display:flex; flex-direction:column; align-items:center;">
             <button class="profile-avatar" id="profileAvatarBtn" type="button" aria-label="更改头像"></button>
-            <button id="resetAvatarBtn" type="button" style="background:none; border:none; color:var(--text-faint); font-size:11px; margin-top:6px; cursor:pointer; text-decoration:underline;">恢复默认底图</button>
+            <button id="resetAvatarBtn" type="button"
+              style="background:none; border:none; color:var(--text-faint); font-size:11px; margin-top:6px; cursor:pointer; text-decoration:underline;">恢复默认底图</button>
           </div>
           <div class="profile-id-copy">
             <div class="profile-name-row">
@@ -4202,8 +4257,11 @@
         <section class="settings-card">
           <div class="settings-label">我的头像 (图床链接)</div>
           <div style="display:flex; gap:10px; align-items:center; margin-top:8px;">
-            <div id="userAvatarPreview" style="width:36px; height:36px; border-radius:50%; background-image:var(--user-avatar-url); background-size:cover; background-position:center; flex-shrink:0; border:1.5px solid rgba(0,0,0,0.08);"></div>
-            <input id="userAvatarInput" type="url" placeholder="粘贴图床图片直链" style="flex:1; height:36px; border-radius:10px; border:1px solid var(--field-line); padding:0 10px; font-size:13px; background:var(--field-bg); color:var(--text); outline:none;">
+            <div id="userAvatarPreview"
+              style="width:36px; height:36px; border-radius:50%; background-image:var(--user-avatar-url); background-size:cover; background-position:center; flex-shrink:0; border:1.5px solid rgba(0,0,0,0.08);">
+            </div>
+            <input id="userAvatarInput" type="url" placeholder="粘贴图床图片直链"
+              style="flex:1; height:36px; border-radius:10px; border:1px solid var(--field-line); padding:0 10px; font-size:13px; background:var(--field-bg); color:var(--text); outline:none;">
           </div>
           <div class="push-hint" style="margin-top:5px;">左下角快捷菜单将显示为你设置的头像</div>
         </section>
@@ -4415,16 +4473,20 @@
   <!-- ── Memory (full-screen) ── -->
   <div class="profile-panel hidden" id="memoryPanel" role="dialog" aria-modal="true" aria-labelledby="memoryTitle">
     <div class="profile-page">
-      <div class="profile-topbar" style="display:flex; justify-content:space-between; align-items:center; position:relative;">
+      <div class="profile-topbar"
+        style="display:flex; justify-content:space-between; align-items:center; position:relative;">
         <button class="profile-back" id="memoryClose" type="button" aria-label="返回">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
             stroke-linejoin="round">
             <path d="M15 5l-7 7 7 7" />
           </svg>
         </button>
-        <div style="position:absolute; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none; width:max-content; max-width:60vw;">
+        <div
+          style="position:absolute; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none; width:max-content; max-width:60vw;">
           <h2 id="memoryTitle" style="font-size:16px; font-weight:600; margin:0; color:var(--text);">Memory</h2>
-          <span style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic; display:block;">The echoes we keep</span>
+          <span
+            style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic; display:block;">The
+            echoes we keep</span>
         </div>
         <button class="llm-btn primary" id="addMemoryBtn" type="button"
           style="padding:4px 10px; font-size:12px;">新增记忆</button>
@@ -4603,16 +4665,20 @@
   <!-- ── Tether (full-screen 锚缰/引力场协定) ── -->
   <div class="profile-panel hidden" id="tetherPanel" role="dialog" aria-modal="true" aria-labelledby="tetherTitle">
     <div class="profile-page">
-      <div class="profile-topbar" style="display:flex; justify-content:space-between; align-items:center; position:relative;">
+      <div class="profile-topbar"
+        style="display:flex; justify-content:space-between; align-items:center; position:relative;">
         <button class="profile-back" id="tetherClose" type="button" aria-label="返回">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
             stroke-linejoin="round">
             <path d="M15 5l-7 7 7 7" />
           </svg>
         </button>
-        <div style="position:absolute; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none; width:max-content; max-width:60vw;">
+        <div
+          style="position:absolute; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none; width:max-content; max-width:60vw;">
           <h2 id="tetherTitle" style="font-size:16px; font-weight:600; margin:0; color:var(--text);">Tether</h2>
-          <span style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic; display:block;">Field Protocol · 引力场协定</span>
+          <span
+            style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic; display:block;">Field
+            Protocol · 引力场协定</span>
         </div>
         <button class="llm-btn primary" id="addTetherBtn" type="button"
           style="padding:4px 10px; font-size:12px;">新增书卷</button>
@@ -4742,7 +4808,8 @@
         </button>
         <div style="text-align:center;">
           <h2 id="tidesTitle" style="font-size:16px; font-weight:600; margin:0; color:var(--text);">Tides · 观测坞</h2>
-          <span style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic;">Tools & Radar · 超能力系统</span>
+          <span style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic;">Tools &
+            Radar · 超能力系统</span>
         </div>
         <div style="width:36px;"></div>
       </div>
@@ -4752,19 +4819,23 @@
         <section class="settings-card" style="margin-bottom:14px;">
           <div class="settings-label">当前已装备能力</div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
-            <div style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
+            <div
+              style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
               <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">网页透视眼</div>
               <div style="font-size:11px; color:var(--text-soft);" id="tidesWebReaderStatusBadge">已开启 · 自动解析</div>
             </div>
-            <div style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
+            <div
+              style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
               <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">城市天气雷达</div>
               <div style="font-size:11px; color:var(--text-soft);" id="tidesWeatherStatusBadge">未配置城市</div>
             </div>
-            <div style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
+            <div
+              style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
               <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">现实时钟</div>
               <div style="font-size:11px; color:var(--text-soft);">已开启 · 昼夜与时差</div>
             </div>
-            <div style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
+            <div
+              style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
               <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">Tether & Memory</div>
               <div style="font-size:11px; color:var(--text-soft);">协定与长期回忆录</div>
             </div>
@@ -4778,7 +4849,8 @@
               <div class="settings-label" style="margin-bottom:2px;">网页链接智能阅读 (Web Reader)</div>
               <div style="font-size:12px; color:var(--text-faint);">聊天发送链接时，AI 自动打开网页阅读正文后回复</div>
             </div>
-            <input type="checkbox" id="webReaderGlobalToggle" checked style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+            <input type="checkbox" id="webReaderGlobalToggle" checked
+              style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
           </div>
           <div class="llm-hint" style="margin-top:6px; line-height:1.6;">
             支持小红书、微信公众号、知乎、新闻资讯与博客链接。后台自动清洗广告代码，只将最纯净的正文喂给 AI，不依赖模型自身联网能力。
@@ -4792,26 +4864,33 @@
               <div class="settings-label" style="margin-bottom:2px;">城市天气雷达 (Weather Radar)</div>
               <div style="font-size:12px; color:var(--text-faint);">实时感知你所在城市的晴雨与温差，赋予 AI 真实气象时空感</div>
             </div>
-            <input type="checkbox" id="weatherRadarGlobalToggle" checked style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+            <input type="checkbox" id="weatherRadarGlobalToggle" checked
+              style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
           </div>
 
           <!-- 城市配置与定位 -->
           <div style="display:flex; gap:8px; margin-top:12px; align-items:center;">
-            <input class="llm-input" id="weatherCityInput" type="text" placeholder="输入所在城市，如: 成都 / 杭州 / 上海" style="flex:1;">
-            <button class="llm-btn secondary" id="weatherGeoBtn" type="button" style="padding:6px 12px; font-size:13px; white-space:nowrap;">当前定位</button>
-            <button class="llm-btn primary" id="weatherQueryBtn" type="button" style="padding:6px 14px; font-size:13px; white-space:nowrap;">锁定城市</button>
+            <input class="llm-input" id="weatherCityInput" type="text" placeholder="输入所在城市，如: 成都 / 杭州 / 上海"
+              style="flex:1;">
+            <button class="llm-btn secondary" id="weatherGeoBtn" type="button"
+              style="padding:6px 12px; font-size:13px; white-space:nowrap;">当前定位</button>
+            <button class="llm-btn primary" id="weatherQueryBtn" type="button"
+              style="padding:6px 14px; font-size:13px; white-space:nowrap;">锁定城市</button>
           </div>
 
           <!-- 气象看板展示 -->
-          <div id="weatherDisplayCard" style="margin-top:14px; padding:14px 16px; border-radius:14px; background:linear-gradient(135deg, rgba(150,168,182,.08), rgba(150,168,182,.03)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
+          <div id="weatherDisplayCard"
+            style="margin-top:14px; padding:14px 16px; border-radius:14px; background:linear-gradient(135deg, rgba(150,168,182,.08), rgba(150,168,182,.03)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div>
                 <div id="weatherBoardCity" style="font-size:15px; font-weight:600; color:var(--text);">正在连接气象雷达...</div>
                 <div id="weatherBoardCondition" style="font-size:13px; color:var(--tint); margin-top:3px;">等待设定城市</div>
               </div>
-              <div id="weatherBoardTemp" style="font-size:26px; font-weight:600; color:var(--text); letter-spacing:-0.5px;">--°C</div>
+              <div id="weatherBoardTemp"
+                style="font-size:26px; font-weight:600; color:var(--text); letter-spacing:-0.5px;">--°C</div>
             </div>
-            <div id="weatherBoardDetails" style="font-size:12px; color:var(--text-faint); margin-top:10px; line-height:1.5;">
+            <div id="weatherBoardDetails"
+              style="font-size:12px; color:var(--text-faint); margin-top:10px; line-height:1.5;">
               点击“当前定位”或输入城市名，系统将自动从全球气象站抓取实时温度、湿度与气象状态。
             </div>
           </div>
@@ -4821,20 +4900,129 @@
         <section class="settings-card">
           <div class="settings-label">更多观测雷达 (即将接入)</div>
           <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.15));">
+            <div
+              style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.15));">
               <div>
                 <div style="font-size:13px; font-weight:600; color:var(--text);">周边与地图探索 (Map Radar)</div>
                 <div style="font-size:11px; color:var(--text-faint);">与 AI 分享你漫步的街角、城市地标与出行距离</div>
               </div>
               <span class="tether-badge">准备就绪</span>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.15));">
+            <div
+              style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.15));">
               <div>
                 <div style="font-size:13px; font-weight:600; color:var(--text);">全网热点实时搜索 (Search Engine)</div>
                 <div style="font-size:11px; color:var(--text-faint);">主动探索当下新鲜事、热点词与冷知识</div>
               </div>
               <span class="tether-badge">设计中</span>
             </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Theme (full-screen 外观与美化面板) ── -->
+  <div class="profile-panel hidden" id="themePanel" role="dialog" aria-modal="true" aria-labelledby="themeTitle">
+    <div class="profile-page">
+      <div class="profile-topbar"
+        style="display:flex; justify-content:space-between; align-items:center; position:relative;">
+        <button class="profile-back" id="themeClose" type="button" aria-label="返回">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </button>
+        <div
+          style="position:absolute; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none; width:max-content; max-width:60vw;">
+          <h2 id="themeTitle" style="font-size:16px; font-weight:600; margin:0; color:var(--text);">Theme</h2>
+          <span
+            style="font-size:11px; color:var(--text-faint); font-family:var(--font-en); font-style:italic; display:block;">Appearance & CSS · 外观微调</span>
+        </div>
+        <button class="llm-btn primary" id="themeSavePresetBtn" type="button"
+          style="padding:4px 10px; font-size:12px;">+ 保存预设</button>
+      </div>
+
+      <div class="profile-scroll" style="padding-bottom:60px;">
+        <!-- 预设管理卡片 -->
+        <section class="settings-card" style="margin-bottom:14px;">
+          <div class="settings-label" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>美化预设方案 (Presets)</span>
+            <button class="llm-btn secondary" id="themeDeletePresetBtn" type="button" style="padding:2px 8px; font-size:11px; display:none; color:#e05252;">删除当前预设</button>
+          </div>
+          <div class="llm-hint" style="margin-top:-6px; margin-bottom:10px;">
+            切换整套美化风格，或将当前壁纸与自定义 CSS 另存为专属预设。
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <select class="llm-input" id="themePresetSelect" style="flex:1; cursor:pointer;">
+              <option value="default">默认 · 粉色草莓冰淇淋</option>
+              <option value="pearl">原版 · 珍珠白沙 (Pearl)</option>
+              <option value="harbor">深色 · 避风港湾 (Harbor)</option>
+            </select>
+          </div>
+        </section>
+
+        <!-- 壁纸切换卡片 -->
+        <section class="settings-card" style="margin-bottom:14px;">
+          <div class="settings-label">壁纸切换 (Wallpapers)</div>
+          <div class="llm-hint" style="margin-top:-6px; margin-bottom:14px;">
+            支持粘贴图床直链，或直接选择手机相册中的本地照片。
+          </div>
+
+          <!-- 聊天背景 -->
+          <div style="margin-bottom:16px; padding:12px; border-radius:14px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.18));">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-size:13px; font-weight:600; color:var(--text);">💬 聊天背景图</span>
+              <button class="llm-btn secondary" id="themeChatBgResetBtn" type="button" style="padding:2px 8px; font-size:11px;">恢复默认</button>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <div id="themeChatBgPreview" style="width:52px; height:52px; border-radius:10px; border:1px solid var(--hairline); background-size:cover; background-position:center; flex-shrink:0; background-color:rgba(0,0,0,0.04);"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <input class="llm-input" id="themeChatBgUrl" type="text" placeholder="粘贴图床图片直链 (https://...)" style="font-size:12px; padding:6px 10px;">
+                <div style="display:flex; gap:8px;">
+                  <label class="llm-btn secondary" style="flex:1; text-align:center; padding:5px 0; font-size:12px; cursor:pointer; margin:0; display:block;">
+                    📁 手机相册上传
+                    <input type="file" id="themeChatBgFile" accept="image/*" style="display:none;">
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 菜单背景 -->
+          <div style="padding:12px; border-radius:14px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.18));">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-size:13px; font-weight:600; color:var(--text);">📋 主菜单背景图</span>
+              <button class="llm-btn secondary" id="themeMenuBgResetBtn" type="button" style="padding:2px 8px; font-size:11px;">恢复默认</button>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <div id="themeMenuBgPreview" style="width:52px; height:52px; border-radius:10px; border:1px solid var(--hairline); background-size:cover; background-position:center; flex-shrink:0; background-color:rgba(0,0,0,0.04);"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <input class="llm-input" id="themeMenuBgUrl" type="text" placeholder="粘贴图床图片直链 (https://...)" style="font-size:12px; padding:6px 10px;">
+                <div style="display:flex; gap:8px;">
+                  <label class="llm-btn secondary" style="flex:1; text-align:center; padding:5px 0; font-size:12px; cursor:pointer; margin:0; display:block;">
+                    📁 手机相册上传
+                    <input type="file" id="themeMenuBgFile" accept="image/*" style="display:none;">
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 即时微调美化 (Live Custom CSS) -->
+        <section class="settings-card">
+          <div class="settings-label" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>即时微调美化 (Live Custom CSS)</span>
+            <button class="llm-btn secondary" id="themeResetCssBtn" type="button" style="padding:2px 8px; font-size:11px;">清空代码</button>
+          </div>
+          <div class="llm-hint" style="margin-top:-6px; margin-bottom:10px;">
+            在此输入或微调 CSS 代码，键盘输入瞬间<strong>即时生效</strong>！随时所见即所得。
+          </div>
+          <textarea class="llm-input" id="themeCustomCss" rows="8" placeholder="/* 在此输入自定义 CSS，输入后即时在全局生效 */" style="font-family:monospace; font-size:12px; line-height:1.5; resize:vertical; width:100%; box-sizing:border-box;"></textarea>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+            <div style="font-size:11px; color:var(--text-faint);" id="themeCssStatusText">改动将自动实时存入浏览器</div>
+            <button class="llm-btn primary" id="themeApplyCssBtn" type="button" style="padding:5px 14px; font-size:12px;">立即保存</button>
           </div>
         </section>
       </div>
@@ -4928,7 +5116,8 @@
                 <circle cx="12" cy="12" r="1.5" fill="currentColor" />
               </svg></span>
             <span class="menu-dot"></span>
-            <span class="menu-copy"><span class="menu-name">Tides</span><span class="menu-sub">Tools & Radar · 超能力坞</span></span>
+            <span class="menu-copy"><span class="menu-name">Tides</span><span class="menu-sub">Tools & Radar ·
+                超能力坞</span></span>
             <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 6l6 6-6 6" />
@@ -4944,6 +5133,22 @@
             <span class="menu-dot"></span>
             <span class="menu-copy"><span class="menu-name">Room</span><span class="menu-sub">Our quiet
                 place.</span></span>
+            <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 6l6 6-6 6" />
+              </svg></span>
+          </button>
+          <button class="menu-item" type="button" data-menu="theme">
+            <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 2-.5 2-1.5 0-.4-.2-.8-.4-1.1-.3-.4-.4-.8-.4-1.4 0-1.1.9-2 2-2h1.8c3.9 0 7-3.1 7-7 0-5-4.5-9-10-9z"/>
+                <circle cx="13.5" cy="6.5" r="1" fill="currentColor"/>
+                <circle cx="17.5" cy="10.5" r="1" fill="currentColor"/>
+                <circle cx="8.5" cy="7.5" r="1" fill="currentColor"/>
+                <circle cx="6.5" cy="12.5" r="1" fill="currentColor"/>
+              </svg></span>
+            <span class="menu-dot"></span>
+            <span class="menu-copy"><span class="menu-name">Theme</span><span class="menu-sub">Appearance & CSS · 外观美化</span></span>
             <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 6l6 6-6 6" />
@@ -5341,6 +5546,7 @@
         else if (item.dataset.menu === "memory") openMemory();
         else if (item.dataset.menu === "tether") openTether();
         else if (item.dataset.menu === "tides") openTides();
+        else if (item.dataset.menu === "theme") openTheme();
         else showToast("即将开放");                           // placeholder items
       });
     }
@@ -5401,6 +5607,330 @@
       tidesCloseTimer = setTimeout(() => tidesPanel.classList.add("hidden"), 360);
     }
     if (tidesClose) tidesClose.addEventListener("click", closeTides);
+
+    /* ── Theme & Appearance Panel ── */
+    const themePanel = document.getElementById("themePanel");
+    const themeClose = document.getElementById("themeClose");
+    let themeCloseTimer = null;
+
+    function openTheme() {
+      if (!themePanel) return;
+      closeMenu();
+      clearTimeout(themeCloseTimer);
+      themePanel.classList.remove("hidden");
+      requestAnimationFrame(() => requestAnimationFrame(() => themePanel.classList.add("open")));
+      syncThemeUi();
+    }
+    function closeTheme() {
+      if (!themePanel) return;
+      themePanel.classList.remove("open");
+      clearTimeout(themeCloseTimer);
+      themeCloseTimer = setTimeout(() => themePanel.classList.add("hidden"), 360);
+    }
+    if (themeClose) themeClose.addEventListener("click", closeTheme);
+
+    // DOM 元素
+    const themePresetSelect = document.getElementById("themePresetSelect");
+    const themeDeletePresetBtn = document.getElementById("themeDeletePresetBtn");
+    const themeSavePresetBtn = document.getElementById("themeSavePresetBtn");
+    const themeChatBgPreview = document.getElementById("themeChatBgPreview");
+    const themeChatBgUrl = document.getElementById("themeChatBgUrl");
+    const themeChatBgFile = document.getElementById("themeChatBgFile");
+    const themeChatBgResetBtn = document.getElementById("themeChatBgResetBtn");
+    const themeMenuBgPreview = document.getElementById("themeMenuBgPreview");
+    const themeMenuBgUrl = document.getElementById("themeMenuBgUrl");
+    const themeMenuBgFile = document.getElementById("themeMenuBgFile");
+    const themeMenuBgResetBtn = document.getElementById("themeMenuBgResetBtn");
+    const themeCustomCss = document.getElementById("themeCustomCss");
+    const themeResetCssBtn = document.getElementById("themeResetCssBtn");
+    const themeApplyCssBtn = document.getElementById("themeApplyCssBtn");
+    const themeCssStatusText = document.getElementById("themeCssStatusText");
+
+    // 壁纸生效函数
+    function applyChatWall(url) {
+      if (!url) {
+        document.documentElement.style.removeProperty("--wall-default");
+        localStorage.removeItem("companion_chat_wall");
+      } else {
+        const cssVal = url.startsWith("url(") ? url : `url("${url}")`;
+        document.documentElement.style.setProperty("--wall-default", cssVal);
+        localStorage.setItem("companion_chat_wall", url);
+      }
+      updateThemeWallPreviews();
+    }
+
+    function applyMenuWall(url) {
+      if (!url) {
+        document.documentElement.style.removeProperty("--menu-wall-default");
+        localStorage.removeItem("companion_menu_wall");
+      } else {
+        const cssVal = url.startsWith("url(") ? url : `url("${url}")`;
+        document.documentElement.style.setProperty("--menu-wall-default", cssVal);
+        localStorage.setItem("companion_menu_wall", url);
+      }
+      updateThemeWallPreviews();
+    }
+
+    function updateThemeWallPreviews() {
+      const cw = localStorage.getItem("companion_chat_wall") || "chat_pink_bear.jpg";
+      const mw = localStorage.getItem("companion_menu_wall") || "menu_pink_icecream.jpg";
+
+      if (themeChatBgPreview) {
+        themeChatBgPreview.style.backgroundImage = cw.startsWith("url(") ? cw : `url("${cw}")`;
+      }
+      if (themeChatBgUrl) {
+        themeChatBgUrl.value = cw.startsWith("data:") ? "[已设置本地相册照片]" : (cw === "chat_pink_bear.jpg" ? "" : cw);
+      }
+
+      if (themeMenuBgPreview) {
+        themeMenuBgPreview.style.backgroundImage = mw.startsWith("url(") ? mw : `url("${mw}")`;
+      }
+      if (themeMenuBgUrl) {
+        themeMenuBgUrl.value = mw.startsWith("data:") ? "[已设置本地相册照片]" : (mw === "menu_pink_icecream.jpg" ? "" : mw);
+      }
+    }
+
+    // 自定义 CSS 注入
+    let cssSaveTimer = null;
+    function applyLiveCss(css, save = true) {
+      let st = document.getElementById("liveCustomCss");
+      if (!st) {
+        st = document.createElement("style");
+        st.id = "liveCustomCss";
+        document.head.appendChild(st);
+      }
+      st.textContent = css || "";
+      if (save) {
+        clearTimeout(cssSaveTimer);
+        cssSaveTimer = setTimeout(() => {
+          if (css) localStorage.setItem("companion_custom_css", css);
+          else localStorage.removeItem("companion_custom_css");
+          if (themeCssStatusText) {
+            themeCssStatusText.textContent = "已自动实时保存";
+            setTimeout(() => { if (themeCssStatusText) themeCssStatusText.textContent = "改动将自动实时存入浏览器"; }, 2000);
+          }
+        }, 300);
+      }
+    }
+
+    // 预设列表存取
+    function getThemePresets() {
+      try {
+        const s = localStorage.getItem("companion_theme_presets");
+        return s ? JSON.parse(s) : [];
+      } catch (_) { return []; }
+    }
+    function saveThemePresets(arr) {
+      localStorage.setItem("companion_theme_presets", JSON.stringify(arr));
+    }
+
+    function renderPresetSelect() {
+      if (!themePresetSelect) return;
+      const presets = getThemePresets();
+      const current = localStorage.getItem("companion_current_preset") || "default";
+      
+      themePresetSelect.innerHTML = `
+        <option value="default">默认 · 粉色草莓冰淇淋</option>
+        <option value="pearl">原版 · 珍珠白沙 (Pearl)</option>
+        <option value="harbor">深色 · 避风港湾 (Harbor)</option>
+      `;
+
+      presets.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = `★ ${p.name}`;
+        themePresetSelect.appendChild(opt);
+      });
+
+      themePresetSelect.value = current;
+      if (themeDeletePresetBtn) {
+        themeDeletePresetBtn.style.display = (current === "default" || current === "pearl" || current === "harbor") ? "none" : "block";
+      }
+    }
+
+    function syncThemeUi() {
+      updateThemeWallPreviews();
+      renderPresetSelect();
+      if (themeCustomCss) {
+        themeCustomCss.value = localStorage.getItem("companion_custom_css") || "";
+      }
+    }
+
+    // 监听事件：聊天背景 URL
+    if (themeChatBgUrl) {
+      themeChatBgUrl.addEventListener("change", () => {
+        const v = themeChatBgUrl.value.trim();
+        if (v && !v.startsWith("[已设置")) {
+          applyChatWall(v);
+          showToast("聊天背景已更新");
+        }
+      });
+    }
+
+    // 监听事件：聊天背景 本地上传
+    if (themeChatBgFile) {
+      themeChatBgFile.addEventListener("change", (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          applyChatWall(evt.target.result);
+          showToast("相册图片已设置为聊天背景");
+        };
+        reader.readAsDataURL(f);
+      });
+    }
+
+    // 监听事件：聊天背景 恢复默认
+    if (themeChatBgResetBtn) {
+      themeChatBgResetBtn.addEventListener("click", () => {
+        applyChatWall("");
+        showToast("已恢复默认聊天背景");
+      });
+    }
+
+    // 监听事件：菜单背景 URL
+    if (themeMenuBgUrl) {
+      themeMenuBgUrl.addEventListener("change", () => {
+        const v = themeMenuBgUrl.value.trim();
+        if (v && !v.startsWith("[已设置")) {
+          applyMenuWall(v);
+          showToast("菜单背景已更新");
+        }
+      });
+    }
+
+    // 监听事件：菜单背景 本地上传
+    if (themeMenuBgFile) {
+      themeMenuBgFile.addEventListener("change", (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          applyMenuWall(evt.target.result);
+          showToast("相册图片已设置为菜单背景");
+        };
+        reader.readAsDataURL(f);
+      });
+    }
+
+    // 监听事件：菜单背景 恢复默认
+    if (themeMenuBgResetBtn) {
+      themeMenuBgResetBtn.addEventListener("click", () => {
+        applyMenuWall("");
+        showToast("已恢复默认菜单背景");
+      });
+    }
+
+    // 监听事件：即时微调 CSS (实时输入实时生效！)
+    if (themeCustomCss) {
+      themeCustomCss.addEventListener("input", () => {
+        applyLiveCss(themeCustomCss.value, true);
+      });
+    }
+
+    // 监听事件：清空 CSS
+    if (themeResetCssBtn) {
+      themeResetCssBtn.addEventListener("click", () => {
+        if (themeCustomCss) themeCustomCss.value = "";
+        applyLiveCss("", true);
+        showToast("自定义 CSS 已清空");
+      });
+    }
+
+    // 监听事件：立即保存 CSS
+    if (themeApplyCssBtn) {
+      themeApplyCssBtn.addEventListener("click", () => {
+        const v = themeCustomCss ? themeCustomCss.value : "";
+        applyLiveCss(v, true);
+        showToast("美化已保存并实时生效");
+      });
+    }
+
+    // 监听事件：切换预设
+    if (themePresetSelect) {
+      themePresetSelect.addEventListener("change", () => {
+        const val = themePresetSelect.value;
+        localStorage.setItem("companion_current_preset", val);
+        if (themeDeletePresetBtn) {
+          themeDeletePresetBtn.style.display = (val === "default" || val === "pearl" || val === "harbor") ? "none" : "block";
+        }
+
+        if (val === "default") {
+          applyChatWall("");
+          applyMenuWall("");
+          applyLiveCss("", true);
+          document.documentElement.setAttribute("data-theme", "light");
+          localStorage.setItem("companion_theme", "light");
+          showToast("已切换至：默认 · 粉色草莓冰淇淋");
+        } else if (val === "pearl") {
+          applyChatWall("chat-light.webp");
+          applyMenuWall("menu-light.webp");
+          applyLiveCss("", true);
+          document.documentElement.setAttribute("data-theme", "light");
+          localStorage.setItem("companion_theme", "light");
+          showToast("已切换至：原版 · 珍珠白沙");
+        } else if (val === "harbor") {
+          applyChatWall("chat-harbor.webp");
+          applyMenuWall("menu-harbor.webp");
+          applyLiveCss("", true);
+          document.documentElement.setAttribute("data-theme", "harbor");
+          localStorage.setItem("companion_theme", "harbor");
+          showToast("已切换至：深色 · 避风港湾");
+        } else {
+          const presets = getThemePresets();
+          const target = presets.find(p => p.id === val);
+          if (target) {
+            applyChatWall(target.chatWall || "");
+            applyMenuWall(target.menuWall || "");
+            applyLiveCss(target.customCss || "", true);
+            showToast(`已应用预设：${target.name}`);
+          }
+        }
+        syncThemeUi();
+      });
+    }
+
+    // 监听事件：保存新预设
+    if (themeSavePresetBtn) {
+      themeSavePresetBtn.addEventListener("click", () => {
+        const name = prompt("请输入新美化预设方案名称：", "我的专属美化");
+        if (!name || !name.trim()) return;
+        const id = "preset_" + Date.now();
+        const curChatWall = localStorage.getItem("companion_chat_wall") || "";
+        const curMenuWall = localStorage.getItem("companion_menu_wall") || "";
+        const curCss = localStorage.getItem("companion_custom_css") || "";
+
+        const presets = getThemePresets();
+        presets.push({
+          id,
+          name: name.trim(),
+          chatWall: curChatWall,
+          menuWall: curMenuWall,
+          customCss: curCss
+        });
+        saveThemePresets(presets);
+        localStorage.setItem("companion_current_preset", id);
+        renderPresetSelect();
+        showToast("新预设方案已成功保存！");
+      });
+    }
+
+    // 监听事件：删除当前预设
+    if (themeDeletePresetBtn) {
+      themeDeletePresetBtn.addEventListener("click", () => {
+        const cur = themePresetSelect.value;
+        if (cur === "default" || cur === "pearl" || cur === "harbor") return;
+        if (!confirm("确定删除此美化预设吗？")) return;
+        let presets = getThemePresets();
+        presets = presets.filter(p => p.id !== cur);
+        saveThemePresets(presets);
+        localStorage.setItem("companion_current_preset", "default");
+        themePresetSelect.value = "default";
+        showToast("预设已删除，恢复默认");
+        syncThemeUi();
+      });
+    }
 
     const webReaderGlobalToggle = document.getElementById("webReaderGlobalToggle");
     const tidesWebReaderStatusBadge = document.getElementById("tidesWebReaderStatusBadge");
@@ -6432,7 +6962,7 @@
           audio.play().then(() => {
             const btn = document.getElementById('keepAliveBtn');
             if (btn) btn.classList.add('active');
-          }).catch(() => {});
+          }).catch(() => { });
         }
       }
       window.removeEventListener('touchstart', resumeKeepAliveOnTouch);
