@@ -519,6 +519,8 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
 
     # ── 网页链接检测与智能阅读 (Web Reader) ──
     web_ctx = ""
+    valid_urls = []
+    web_snippets = []
     web_reader_enabled = (bundle_meta or {}).get("web_reader_enabled")
     if web_reader_enabled is None:
         web_reader_enabled = latest_item.get("web_reader_enabled")
