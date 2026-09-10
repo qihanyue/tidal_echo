@@ -138,12 +138,15 @@ def relay_post_json(path: str, body: dict):
         return json.loads(txt) if txt else {}
 
 
-def send_reply(text: str) -> None:
+def send_reply(text: str, meta: dict = None) -> None:
     """AI 的回复 → 落库 + 扇出到 PWA。"""
-    out = relay_post_json("/channel/out", {
+    payload = {
         "type": "reply", "chat_id": CHAT_ID, "text": text,
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-    })
+    }
+    if meta and isinstance(meta, dict):
+        payload.update(meta)
+    out = relay_post_json("/channel/out", payload)
     log("out", f"replied (id={out.get('id')})")
 
 
@@ -607,9 +610,21 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
         if not bubbles:
             bubbles = [reply.strip()]
 
+        tool_meta = None
+        if web_snippets and valid_urls:
+            tool_meta = {
+                "tools": [
+                    {
+                        "tool": "看了看网页",
+                        "cmd": f"读取链接: {', '.join(valid_urls[:2])}",
+                        "result": f"已成功抓取并解析 {len(valid_urls)} 个网页的正文内容"
+                    }
+                ]
+            }
+
         for i, bubble in enumerate(bubbles):
             convo.append({"role": "assistant", "content": bubble})
-            send_reply(bubble)
+            send_reply(bubble, meta=tool_meta if i == 0 else None)
             if i < len(bubbles) - 1:
                 time.sleep(0.6)  # 气泡之间停顿 0.6 秒，模拟真人发送节奏
         return True

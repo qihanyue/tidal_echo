@@ -2204,9 +2204,10 @@
       background: rgba(255, 255, 255, 0.42);
       border: 1px solid rgba(0, 0, 0, 0.08);
       border-radius: 12px;
-      padding: 0 12px;
-      height: 32px !important;       /* 变扁的高度，加了 !important 保证刷新绝对生效 */
-      min-height: 32px !important;   /* 最小高度，保持和上面 height 一致 */
+      padding: 5px 12px;
+      min-height: 32px !important;   /* 扁平胶囊最小高度 */
+      height: auto !important;       /* 打字增多时允许自动撑开 */
+      max-height: 120px !important;  /* 最多撑开到约 4-5 行，超出内部滑动 */
       box-shadow: none;
       box-sizing: border-box;
       transition: border-color .2s ease, background-color .2s ease;
@@ -6911,6 +6912,13 @@
       clearTimeout(tidesCloseTimer);
       tidesCloseTimer = setTimeout(() => tidesPanel.classList.add("hidden"), 360);
     }
+    if (tidesClose) {
+      tidesClose.addEventListener("click", closeTides);
+      tidesClose.addEventListener("touchend", (e) => {
+        e.preventDefault();
+        closeTides();
+      });
+    }
     /* ── Font & Typography Panel ── */
     const fontPanel = document.getElementById("fontPanel");
     const fontClose = document.getElementById("fontClose");
@@ -7564,39 +7572,93 @@ textarea {
     async function fetchWeatherByCoords(lat, lon) {
       if (weatherBoardCity) weatherBoardCity.textContent = "定位成功，读取天气中...";
       try {
-        const wResp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`);
-        if (!wResp.ok) throw new Error("经纬度气象查询失败");
-        const wData = await wResp.json();
-        const cur = wData.current || {};
-        const daily = wData.daily || {};
-        const code = cur.weather_code != null ? cur.weather_code : 1;
-        const cond = WMO_CODE_MAP[code] || "晴朗";
-
-        // 尝试从 openstreetmap 或 timezone 猜城市名
+        let cur = null;
+        let daily = null;
+        let code = 1;
+        let cond = "晴朗";
+        let temp = 20;
+        let apparentTemp = 20;
+        let humidity = 50;
         let cityName = "当前位置";
         let provName = "";
+
+        // 尝试主气象线路 open-meteo (带 4.5s 超时)
+        let mainSuccess = false;
         try {
-          const revResp = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=zh`);
+          const controller = new AbortController();
+          const tid = setTimeout(() => controller.abort(), 4500);
+          const wResp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`, { signal: controller.signal });
+          clearTimeout(tid);
+          if (wResp.ok) {
+            const wData = await wResp.json();
+            cur = wData.current || {};
+            daily = wData.daily || {};
+            code = cur.weather_code != null ? cur.weather_code : 1;
+            cond = WMO_CODE_MAP[code] || "晴朗";
+            temp = cur.temperature_2m;
+            apparentTemp = cur.apparent_temperature != null ? cur.apparent_temperature : cur.temperature_2m;
+            humidity = cur.relative_humidity_2m;
+            mainSuccess = true;
+          }
+        } catch (e) {
+          console.warn("主气象源 open-meteo 超时或异常:", e);
+        }
+
+        // 若主线路受阻，走备用线路 wttr.in 经纬度查询 (带 4.5s 超时)
+        if (!mainSuccess) {
+          try {
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), 4500);
+            const wResp2 = await fetch(`https://wttr.in/${lat.toFixed(3)},${lon.toFixed(3)}?format=j1&lang=zh`, { signal: controller.signal });
+            clearTimeout(tid);
+            if (wResp2.ok) {
+              const data2 = await wResp2.json();
+              const c2 = (data2.current_condition && data2.current_condition[0]) || {};
+              cond = (c2.lang_zh && c2.lang_zh[0] && c2.lang_zh[0].value) || "晴朗";
+              temp = parseFloat(c2.temp_C || 20);
+              apparentTemp = parseFloat(c2.FeelsLikeC || temp);
+              humidity = parseInt(c2.humidity || 50, 10);
+              const nearest = (data2.nearest_area && data2.nearest_area[0]) || {};
+              const areaName = (nearest.areaName && nearest.areaName[0] && nearest.areaName[0].value) || "";
+              if (areaName) cityName = areaName;
+              mainSuccess = true;
+            }
+          } catch (e2) {
+            console.warn("备用气象源 wttr.in 超时或异常:", e2);
+          }
+        }
+
+        if (!mainSuccess) {
+          throw new Error("气象接口请求超时，请检查网络或直接输入城市名");
+        }
+
+        // 尝试快速反查城市名 (带 2.5s 超时，绝不阻塞)
+        try {
+          const controller2 = new AbortController();
+          const tid2 = setTimeout(() => controller2.abort(), 2500);
+          const revResp = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=zh`, { signal: controller2.signal });
+          clearTimeout(tid2);
           if (revResp.ok) {
             const revData = await revResp.json();
             const addr = revData.address || {};
-            cityName = addr.city || addr.town || addr.county || addr.state || "当前位置";
+            const guessed = addr.city || addr.town || addr.county || addr.state || "";
+            if (guessed) cityName = guessed;
             provName = (addr.state && addr.state !== cityName) ? addr.state : "";
           }
-        } catch (re) { }
+        } catch (_) { }
 
         const weatherObj = {
           city: cityName,
           province: provName,
           lat: lat,
           lon: lon,
-          temp: cur.temperature_2m,
-          apparentTemp: cur.apparent_temperature != null ? cur.apparent_temperature : cur.temperature_2m,
-          humidity: cur.relative_humidity_2m,
+          temp: temp,
+          apparentTemp: apparentTemp,
+          humidity: humidity,
           weatherCode: code,
           condition: cond,
-          tempMin: (daily.temperature_2m_min && daily.temperature_2m_min[0]) != null ? daily.temperature_2m_min[0] : null,
-          tempMax: (daily.temperature_2m_max && daily.temperature_2m_max[0]) != null ? daily.temperature_2m_max[0] : null,
+          tempMin: daily && (daily.temperature_2m_min && daily.temperature_2m_min[0]) != null ? daily.temperature_2m_min[0] : null,
+          tempMax: daily && (daily.temperature_2m_max && daily.temperature_2m_max[0]) != null ? daily.temperature_2m_max[0] : null,
           updateTime: Date.now()
         };
 
@@ -7606,7 +7668,8 @@ textarea {
         renderWeatherUi();
         showToast(`已定位至 ${cityName} 并更新天气`);
       } catch (err) {
-        showToast("定位气象解析失败: " + err.message);
+        showToast(err.message || "定位气象解析超时，可直接输入城市名");
+        renderWeatherUi();
       }
     }
 
@@ -10066,6 +10129,40 @@ textarea {
       } else if (m.kind === "act" && m.text) {
         rawList = [{ tool: m.text, cmd: a.cmd || "", result: a.result || "" }];
       }
+
+      // 兜底双保险：如果开启了网页阅读超能力，且上一条人类消息发了链接，AI当前气泡没有显式tool_calls
+      if (!rawList.length && m.from === "ai" && typeof chatMessages !== "undefined") {
+        try {
+          const isEnReader = localStorage.getItem("companion_web_reader_enabled") !== "false";
+          if (isEnReader) {
+            const sorted = sortedMessages();
+            const currIdx = sorted.findIndex(item => item._key === m._key || (m.id != null && item.id === m.id));
+            if (currIdx > 0) {
+              // 找到紧邻的前一条人类消息
+              let prevHuman = null;
+              for (let i = currIdx - 1; i >= 0; i--) {
+                if (sorted[i].from === "human") {
+                  prevHuman = sorted[i];
+                  break;
+                }
+                // 如果中间隔了别的 AI 气泡，说明当前不是第一个气泡，不重复打标
+                if (sorted[i].from === "ai") break;
+              }
+              if (prevHuman && prevHuman.text) {
+                const foundUrls = prevHuman.text.match(/https?:\/\/[^\s<>"]+/g);
+                if (foundUrls && foundUrls.length) {
+                  rawList = [{
+                    tool: "看了看网页",
+                    cmd: "读取链接: " + foundUrls.slice(0, 2).join(", "),
+                    result: "已自动抓取并解析网页正文提供给 AI 阅读"
+                  }];
+                }
+              }
+            }
+          }
+        } catch (_) { }
+      }
+
       return rawList;
     }
 
@@ -11030,9 +11127,14 @@ textarea {
 
     inputEl.addEventListener("compositionstart", () => composing = true);
     inputEl.addEventListener("compositionend", () => composing = false);
+    function autoResizeInput() {
+      if (!inputEl) return;
+      inputEl.style.height = "22px";
+      const targetH = Math.min(Math.max(inputEl.scrollHeight, 22), 100);
+      inputEl.style.height = targetH + "px";
+    }
     inputEl.addEventListener("input", () => {
-      inputEl.style.height = "auto";
-      inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + "px";
+      autoResizeInput();
       sendBtn.classList.remove("hidden");
       micBtn.classList.add("hidden");
     });
@@ -11059,7 +11161,7 @@ textarea {
       triggerSendPress();            // 发送键:轻按回弹的小反馈
       ensureAudio();                 // 手势内解锁/预热音频
       inputEl.value = "";
-      inputEl.style.height = "auto";
+      autoResizeInput();
       sendBtn.classList.remove("hidden");
       micBtn.classList.add("hidden");
 
