@@ -126,7 +126,7 @@
       --motion-normal: 260ms;
       --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
       /* composer 占据的底部区域(含安全区/键盘):scroll 底 padding 与边缘渐隐共用同一来源,保持对齐 */
-      --composer-zone: calc(var(--composer-h) + 16px + env(safe-area-inset-bottom) + var(--keyboard-offset));
+      --composer-zone: calc(var(--composer-h) + 32px + env(safe-area-inset-bottom) + var(--keyboard-offset));
       --edge-fade-top: clamp(24px, 5vw, 52px);
       --edge-fade-tail: clamp(16px, 3vw, 30px);
       /* profile / settings — frosted glass, blends into the wallpaper */
@@ -281,12 +281,14 @@
       justify-content: center;
       height: calc(var(--header-h) + env(safe-area-inset-top));
       padding: calc(env(safe-area-inset-top) + 8px) var(--side-pad) 10px;
-      background: rgba(245, 245, 245, 0.65) !important;
-      backdrop-filter: blur(15px) !important;
-      -webkit-backdrop-filter: blur(15px) !important;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.03) !important;
+      background: transparent !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      border-bottom: none !important;
+      box-shadow: none !important;
       pointer-events: none;
     }
+
 
     .topbar>* {
       pointer-events: auto;
@@ -822,12 +824,8 @@
       display: flex;
       flex-direction: column;
       transition: padding-bottom .28s cubic-bezier(.2, .8, .2, 1);
-      /* 边缘渐隐:顶部一段、底部对齐 composer 上沿一段,消息滚到边缘自然淡出 */
-      -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--edge-fade-top), #000 calc(100% - var(--composer-zone)), transparent calc(100% - var(--composer-zone) + var(--edge-fade-tail)));
-      mask-image: linear-gradient(to bottom, transparent 0, #000 var(--edge-fade-top), #000 calc(100% - var(--composer-zone)), transparent calc(100% - var(--composer-zone) + var(--edge-fade-tail)));
-      -webkit-mask-repeat: no-repeat;
-      mask-repeat: no-repeat;
     }
+
 
     .scroll::-webkit-scrollbar {
       width: 0;
@@ -7040,13 +7038,15 @@
    仿独白(简粉) · 专属美化
    ========================================= */
 
-/* 1. 顶栏：轻盈磨砂与居中排版 */
+/* 1. 顶栏：轻盈纯净透明与居中排版 */
 .topbar {
-  background: rgba(245, 245, 245, 0.65) !important;
-  backdrop-filter: blur(15px) !important;
-  -webkit-backdrop-filter: blur(15px) !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.03) !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
 }
+
 .peerpill .name {
   font-family: var(--font-main) !important;
   font-size: 17px !important;
@@ -10821,8 +10821,8 @@ textarea {
       if (!msgInActiveSession(m)) return;
       removeStreamDraftForMessage(m, { render: false });
       if (m.from === "ai") hideTyping();
-      const key = msgKey(m.id);
-      const stick = nearBottom();
+      const stick = (typeof isUserEngagedAtBottom !== "undefined" ? isUserEngagedAtBottom : true) || nearBottom();
+      if (stick && typeof isUserEngagedAtBottom !== "undefined") isUserEngagedAtBottom = true;
       if (seen.has(key)) {
         setMessage({ ...m, status: "sent" }, { render: true });
         if (stick) scrollToBottom();
@@ -10840,7 +10840,12 @@ textarea {
       }
       setMessage({ ...m, status: "sent" }, { render: false });
       scheduleRender({ stickToBottom: stick });
+      if (stick) {
+        scrollToBottom({ smooth: false });
+        setTimeout(() => scrollToBottom({ smooth: false }), 60);
+      }
       if (!stick && m.from === "ai" && m.kind !== "thinking" && m.kind !== "act") showNewMsgPill();  // user is reading history: don't yank them down, just show "↓ new message" at the bottom
+
     }
 
     function backfill() {
@@ -11247,8 +11252,13 @@ textarea {
     })();
 
     /* ════════════ 滚动 ════════════ */
-    function nearBottom() { return scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 160; }
+    let isUserEngagedAtBottom = true;
+    function nearBottom() {
+      const dist = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight;
+      return dist < 480;
+    }
     function scrollToBottom({ smooth = false } = {}) {
+      isUserEngagedAtBottom = true;
       hideNewMsgPill();              // 任何"回到底部"都顺手收起胶囊
       // 回收态:若窗口没贴底(最新行在 bottomSpacer 里没物化),直接 scrollTop=scrollHeight 会落进空白 → 先做贴底渲染物化最新一批
       const bottomMaterialized = virtualRows.length <= DOM_WINDOW || domEnd === virtualRows.length;
@@ -11288,6 +11298,11 @@ textarea {
       scrollDir = top < lastScrollTop ? -1 : (top > lastScrollTop ? 1 : scrollDir);
       lastScrollTop = top;
       scrolling = true;
+      if (nearBottom()) {
+        isUserEngagedAtBottom = true;
+      } else if (scrollDir < 0 && (scrollEl.scrollHeight - top - scrollEl.clientHeight > 480)) {
+        isUserEngagedAtBottom = false;
+      }
       if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
       scrollIdleTimer = setTimeout(onScrollIdle, SCROLL_IDLE_MS);
       // 只在「物化顶部已到 virtualRows[0]」时才从服务器取更早(否则上方还有内存里的行,recenter 物化即可,不必联网)
@@ -11295,6 +11310,7 @@ textarea {
       if (nearBottom()) hideNewMsgPill();
       // 滚动期间不 render、不写 scrollTop,完全交给原生滚动 → 不抖;窗口调整推迟到 onScrollIdle
     }, { passive: true });
+
 
     /* ════════════ 回到最新 · 新消息胶囊 ════════════ */
     function showNewMsgPill() { if (newMsgBtn) newMsgBtn.classList.add("show"); }
