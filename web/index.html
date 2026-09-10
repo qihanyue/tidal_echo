@@ -67,6 +67,7 @@
       --menu-wall-harbor: url("menu-harbor.webp");
       --menu-wall-default: var(--menu-wall-light);
       --avatar-default: url("avatar-sea.png?v=2");
+      --user-avatar-url: url('https://qihanyue0416.neocities.org/IMG_5554.jpeg');
       /* ── PEARL TIDE · 珍珠潮汐(default) ── */
       --bg: #F7FAFC;
       --header-bg: #F7FAFC;
@@ -237,7 +238,10 @@
       justify-content: center;
       height: calc(var(--header-h) + env(safe-area-inset-top));
       padding: calc(env(safe-area-inset-top) + 8px) var(--side-pad) 10px;
-      border-bottom: 1px solid var(--hairline);
+      background: rgba(245, 245, 245, 0.65) !important;
+      backdrop-filter: blur(15px) !important;
+      -webkit-backdrop-filter: blur(15px) !important;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.03) !important;
       pointer-events: none;
     }
 
@@ -257,19 +261,19 @@
     }
 
     .peerpill .name {
-      font-family: "Songti SC", "Noto Serif SC", "STSong", "SimSun", serif;
-      font-size: clamp(18px, 3vw, 28px);
-      font-weight: 500;
-      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+      font-size: 17px !important;
+      font-weight: 600 !important;
+      color: #000000 !important;
       letter-spacing: 0;
-      text-shadow: 0 1px 18px rgba(255, 255, 255, 0.3);
+      text-shadow: none !important;
     }
 
     .peerpill .status {
-      font-family: var(--font-en), var(--font-cn);
-      font-size: clamp(12px, 1.8vw, 16px);
-      color: var(--text-soft);
-      margin-top: 4px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+      font-size: 12px !important;
+      color: #b5b5b5 !important;
+      margin-top: 1px;
       letter-spacing: 0;
     }
 
@@ -349,7 +353,7 @@
       width: 22px;
       height: 22px;
       display: block;
-      margin-left: -2px;
+      color: #000;
     }
 
     .header-actions {
@@ -359,7 +363,7 @@
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: clamp(24px, 4vw, 42px);
+      gap: clamp(16px, 3vw, 24px);
       height: 36px;
     }
 
@@ -391,10 +395,11 @@
     .topbtn.more svg {
       width: 22px;
       height: 22px;
+      color: #000;
     }
 
-    .topbtn.terminal.active {
-      color: var(--accent);
+    .topbtn.terminal {
+      display: none !important;
     }
 
     .topbtn.keep-alive {
@@ -811,40 +816,47 @@
     }
 
     .row.grouped {
-      margin-top: clamp(4px, 0.8vw, 8px);
+      margin-top: 3px !important;
     }
 
     .row.human {
       justify-content: flex-end;
+      position: relative;
     }
 
     .row.ai {
       justify-content: flex-start;
-      padding-left: calc(var(--avatar-size) + clamp(10px, 1.6vw, 16px));
+      padding-left: 46px !important;
+      position: relative;
     }
 
-    .row.ai::before {
+    .row.ai:not(.tail)::before {
+      display: none !important;
+    }
+
+    .row.ai.tail::before {
       content: "";
       position: absolute;
       left: 0;
-      top: clamp(5px, 1vw, 9px);
-      width: var(--avatar-size);
-      height: var(--avatar-size);
+      bottom: 2px;
+      top: auto;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
+      border: 1.5px solid #fff;
       background-image: var(--avatar-default);
       background-size: cover;
       background-position: center;
-      box-shadow: 0 12px 24px rgba(24, 46, 67, 0.14);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     }
 
     .bubble {
-      max-width: min(61vw, 506px);
-      padding: clamp(8px, 1.05vw, 12px) clamp(13px, 1.65vw, 18px) clamp(8px, 1.1vw, 13px);
-      border-radius: var(--bubble-radius);
+      max-width: min(78vw, 520px);
+      border-radius: 18px !important;
       position: relative;
-      font-family: var(--font-cn);
-      font-size: clamp(14px, 1.55vw, 16px);
-      line-height: 1.58;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
       word-wrap: break-word;
       overflow-wrap: break-word;
       animation: pop .24s cubic-bezier(.2, .8, .2, 1) both;
@@ -879,7 +891,6 @@
     @keyframes enterHuman {
       from {
         transform: translate(6px, 9px) scale(.95);
-        opacity: 0;
       }
 
       55% {
@@ -895,7 +906,6 @@
     @keyframes enterAi {
       from {
         transform: translate(-6px, 9px) scale(.95);
-        opacity: 0;
       }
 
       55% {
@@ -909,26 +919,27 @@
     }
 
     .row.ai .bubble {
-      background: var(--bubble-ai-bg);
-      color: var(--bubble-ai-fg);
-      border: 0;
-      box-shadow: 0 10px 28px rgba(78, 94, 108, 0.08);
+      background: #F4F4F4 !important;
+      color: #000000 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      padding: 7px 42px 7px 16px !important;
+      border-radius: 18px !important;
     }
 
     .row.human .bubble {
-      background: var(--bubble-human-bg);
-      color: var(--bubble-human-fg);
-      border: 0;
-      box-shadow: 0 10px 28px rgba(78, 94, 108, 0.08);
+      background: #ffecf3 !important;
+      color: #000000 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      padding: 7px 46px 7px 15px !important;
+      border-radius: 18px !important;
     }
 
-    /* 每段最后一条:外下角收一个小尖 */
-    .row.ai.tail .bubble {
-      border-bottom-left-radius: 2px;
-    }
-
+    /* 气泡统一样式，无尖角 */
+    .row.ai.tail .bubble,
     .row.human.tail .bubble {
-      border-bottom-right-radius: 2px;
+      border-radius: 18px !important;
     }
 
     .row .bubble.error-bubble {
@@ -1064,20 +1075,20 @@
     }
 
     .meta {
-      display: inline;
-      margin-left: clamp(10px, 1.4vw, 16px);
-      white-space: nowrap;
-      font-family: var(--font-en), var(--font-cn);
-      font-size: clamp(11px, 1.3vw, 14px);
-      color: var(--text-faint);
-      user-select: none;
-      vertical-align: baseline;
+      position: absolute !important;
+      white-space: nowrap !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+      font-size: 9.5px !important;
+      user-select: none !important;
+      pointer-events: none !important;
+      line-height: 1 !important;
     }
 
     .meta .tick {
-      color: var(--tick);
-      margin-left: 7px;
+      margin-left: 2px;
       letter-spacing: 0;
+      display: inline-flex;
+      align-items: center;
     }
 
     .meta .state {
@@ -1089,14 +1100,23 @@
       cursor: pointer;
     }
 
-    .row.human .meta,
-    .row.ai .meta {
-      color: var(--text-faint);
+    .row.human .meta {
+      right: 7px !important;
+      bottom: 5px !important;
+      color: #893a49 !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 2px !important;
     }
 
-    .row.human .meta .tick,
-    .row.ai .meta .tick {
-      color: var(--tick);
+    .row.human .meta .tick {
+      color: #893a49 !important;
+    }
+
+    .row.ai .meta {
+      right: 9px !important;
+      bottom: 5px !important;
+      color: rgba(156, 156, 156, 0.9) !important;
     }
 
     /* 发送中:小时钟,转完即送达 → 同位换成 ✓✓ */
@@ -1437,6 +1457,7 @@
 
 
     /* ── Composer ── */
+    /* ── Composer ── */
     .composer {
       position: fixed;
       left: 0;
@@ -1447,20 +1468,107 @@
       margin: 0 auto;
       display: flex;
       align-items: center;
-      gap: clamp(6px, 1vw, 12px);
-      background: transparent;
-      border: none;
-      padding: 0 var(--side-pad) clamp(10px, 1.6vw, 18px);
-      padding-bottom: calc(clamp(10px, 1.6vw, 18px) + env(safe-area-inset-bottom));
+      gap: 8px;
+      background: rgba(245, 245, 245, 0.65) !important;
+      backdrop-filter: blur(15px) !important;
+      -webkit-backdrop-filter: blur(15px) !important;
+      border-top: 1px solid rgba(0, 0, 0, 0.03) !important;
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom)) 12px;
       transform: translate3d(0, calc(-1 * var(--keyboard-offset)), 0);
       -webkit-transform: translate3d(0, calc(-1 * var(--keyboard-offset)), 0);
       transition: transform .28s cubic-bezier(.2, .8, .2, 1);
     }
 
+    .composer-user-avatar-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1.5px solid #fff;
+      background-image: var(--user-avatar-url, url('https://qihanyue0416.neocities.org/IMG_5554.jpeg'));
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      transition: transform .15s ease;
+    }
+
+    .composer-user-avatar-btn:active {
+      transform: scale(0.92);
+    }
+
+    .composer-action-pop {
+      position: absolute;
+      left: 12px;
+      bottom: calc(100% + 8px);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 140px;
+      z-index: 1000;
+      animation: pop .18s cubic-bezier(.2, .8, .2, 1) both;
+    }
+
+    .composer-action-pop.hidden {
+      display: none !important;
+    }
+
+    .action-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+      color: #222;
+      transition: background .15s ease;
+      width: 100%;
+      text-align: left;
+    }
+
+    .action-item:hover,
+    .action-item:active {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .action-icon {
+      font-size: 16px;
+    }
+
+    .composer-wait-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000000;
+      flex-shrink: 0;
+      padding: 0;
+      transition: transform .15s ease;
+    }
+
+    .composer-wait-btn:active {
+      transform: scale(0.9);
+    }
+
     .floatbtn {
       flex: none;
-      width: clamp(36px, 5vw, 48px);
-      height: clamp(36px, 5vw, 48px);
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       border: none;
       background: transparent;
@@ -1477,67 +1585,57 @@
       color: var(--text);
     }
 
-    .floatbtn:hover {
-      color: var(--text);
-    }
-
-    .floatbtn svg {
-      width: clamp(20px, 2.8vw, 28px);
-      height: clamp(20px, 2.8vw, 28px);
-      display: block;
-    }
-
     .floatbtn.send {
-      background: var(--send-bg);
-      color: #ffffff;
-      box-shadow: 0 16px 32px rgba(41, 60, 78, 0.22);
-    }
-
-    .floatbtn.send:hover {
-      color: #ffffff;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      color: #040000 !important;
+      width: 30px !important;
+      height: 30px !important;
+      flex-shrink: 0;
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      padding: 0 !important;
+      cursor: pointer;
+      transition: transform .15s ease;
     }
 
     .floatbtn.send:active {
-      transform: scale(.97);
+      transform: scale(.9);
     }
 
-    /* 发送键按压:轻收 3%(比通用 .floatbtn 的 .9 克制) */
-    @keyframes send-go {
-      from {
-        transform: scale(.96);
-      }
+    .floatbtn.send svg {
+      width: 22px !important;
+      height: 22px !important;
+    }
 
-      to {
-        transform: scale(1);
-      }
+    /* 发送键按压回弹动画 */
+    @keyframes send-go {
+      from { transform: scale(.88); }
+      to { transform: scale(1); }
     }
 
     .floatbtn.send.send-go {
       animation: send-go .22s cubic-bezier(.2, .8, .2, 1);
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      .floatbtn.send.send-go {
-        animation: none;
-      }
-    }
-
     .composer .field {
       flex: 1 1 auto;
       display: flex;
       align-items: center;
-      gap: clamp(4px, 0.8vw, 10px);
-      background: var(--field-bg);
-      border: 1px solid var(--field-line);
-      border-radius: 999px;
-      padding: clamp(4px, 0.6vw, 8px) clamp(8px, 1.2vw, 14px) clamp(4px, 0.6vw, 8px) clamp(10px, 1.5vw, 16px);
-      min-height: clamp(42px, 5.5vw, 56px);
-      box-shadow: var(--shadow);
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 12px;
+      padding: 0 12px;
+      min-height: 36px;
+      box-shadow: none;
       transition: border-color .2s ease;
     }
 
     .composer .field:focus-within {
-      border-color: var(--field-line);
+      border-color: rgba(0, 0, 0, 0.18);
     }
 
     .composer textarea:focus,
@@ -1551,48 +1649,32 @@
       border: none;
       outline: none;
       resize: none;
-      background: transparent;
-      color: var(--text);
-      font-family: var(--font-en), var(--font-cn);
-      font-size: clamp(15px, 2vw, 18px);
-      line-height: 1.35;
-      max-height: 110px;
+      background: transparent !important;
+      color: #000000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 15px;
+      line-height: 22px;
+      height: 34px;
+      min-height: 34px;
+      max-height: 100px;
       padding: 6px 0;
       margin: 0;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    textarea::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
     }
 
     textarea::placeholder {
-      color: var(--text-faint);
-      opacity: 1;
+      color: transparent !important;
     }
 
     .emojibtn {
-      flex: none;
-      width: clamp(28px, 3.8vw, 38px);
-      height: clamp(28px, 3.8vw, 38px);
-      border: none;
-      background: transparent;
-      color: var(--accent);
-      display: grid;
-      place-items: center;
-      cursor: pointer;
-      padding: 0;
-      transition: transform .15s ease, color .2s ease;
-    }
-
-    .emojibtn:active {
-      transform: scale(.85);
-      color: var(--text);
-    }
-
-    .emojibtn:hover {
-      color: var(--text);
-    }
-
-    .emojibtn svg {
-      width: clamp(22px, 3vw, 30px);
-      height: clamp(22px, 3vw, 30px);
-      display: block;
+      display: none !important;
     }
 
     /* ── 回到最新 · 翻历史时来新消息,底部悬浮一枚安静的半透明胶囊 ── */
@@ -3919,17 +4001,17 @@
   <div class="app hidden" id="app" data-conn="offline">
     <header class="topbar">
       <button class="backbtn" id="backBtn" aria-label="返回主菜单">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
-          stroke-linejoin="round">
-          <path d="M15 5l-7 7 7 7" />
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
       </button>
       <div class="peerpill">
         <span class="name" id="peerName">Gemini</span>
         <span class="status" id="status">connecting…</span>
       </div>
-      <div class="header-actions" aria-label="通话和更多操作">
-        <button class="topbtn terminal" id="terminalBtn" type="button" aria-label="终端视图" title="终端视图">
+      <div class="header-actions" aria-label="操作">
+        <button class="topbtn terminal hidden" id="terminalBtn" type="button" aria-label="终端视图" title="终端视图" style="display:none !important;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
             stroke-linejoin="round">
             <path d="m6 8 4 4-4 4" />
@@ -3943,10 +4025,10 @@
           </svg>
         </button>
         <button class="topbtn more" id="moreBtn" type="button" aria-label="个人信息" title="个人信息">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <circle cx="12" cy="5" r="2" />
+          <svg viewBox="0 0 24 24" fill="#000" width="22" height="22">
+            <circle cx="5" cy="12" r="2" />
             <circle cx="12" cy="12" r="2" />
-            <circle cx="12" cy="19" r="2" />
+            <circle cx="19" cy="12" r="2" />
           </svg>
         </button>
       </div>
@@ -3966,8 +4048,25 @@
       </div>
     </main>
     <footer class="composer">
+      <!-- 用户头像（兼加号菜单触发） -->
+      <button class="composer-user-avatar-btn" id="actionMenuBtn" type="button" aria-label="快捷操作菜单" title="快捷操作"></button>
+      <div class="composer-action-pop hidden" id="composerActionPop">
+        <button type="button" class="action-item" id="actionRerollBtn">
+          <span class="action-icon">🔄</span>
+          <span class="action-text">重新生成</span>
+        </button>
+        <button type="button" class="action-item" id="actionUploadBtn">
+          <span class="action-icon">📷</span>
+          <span class="action-text">发送图片</span>
+        </button>
+        <button type="button" class="action-item" id="actionClearBtn">
+          <span class="action-icon">🗑️</span>
+          <span class="action-text">清空记录</span>
+        </button>
+      </div>
+
       <div class="field">
-        <button class="floatbtn clip-in-field" id="clipBtn" aria-label="附件" title="附件">
+        <button class="floatbtn clip-in-field hidden" id="clipBtn" aria-label="附件" title="附件" style="display:none !important;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
             stroke-linejoin="round">
             <path
@@ -3975,8 +4074,8 @@
           </svg>
         </button>
         <input type="file" id="clipInput" multiple class="hidden" aria-hidden="true">
-        <textarea id="input" rows="1" placeholder="Write a letter..." enterkeyhint="send"></textarea>
-        <button class="emojibtn" id="emojiBtn" aria-label="表情" title="表情">
+        <textarea id="input" rows="1" placeholder="" enterkeyhint="send"></textarea>
+        <button class="emojibtn hidden" id="emojiBtn" aria-label="表情" title="表情" style="display:none !important;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
             stroke-linejoin="round">
             <circle cx="12" cy="12" r="9" />
@@ -3986,19 +4085,18 @@
           </svg>
         </button>
       </div>
-      <button class="floatbtn hidden" id="micBtn" aria-label="语音" title="语音">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-          stroke-linejoin="round">
-          <rect x="9" y="3" width="6" height="11" rx="3" />
-          <path d="M5 11a7 7 0 0 0 14 0" />
-          <line x1="12" y1="18" x2="12" y2="21.5" />
+      <!-- 麦克风：接收消息 -->
+      <button class="composer-wait-btn" id="waitReplyBtn" type="button" aria-label="接收消息" title="接收消息">
+        <svg viewBox="0 0 1024 1024" width="22" height="22" fill="#000">
+          <path d="M544 768h96a32 32 0 0 1 0 64h-256a32 32 0 0 1 0-64h96v-66.24A224.064 224.064 0 0 1 288 480v-32a32 32 0 1 1 64 0v32a160 160 0 0 0 320 0v-32a32 32 0 0 1 64 0v32a224.064 224.064 0 0 1-192 221.76V768z m-32-192a96 96 0 0 1-96-96V288a96 96 0 1 1 192 0v192a96 96 0 0 1-96 96z m0-320a32 32 0 0 0-32 32v192a32 32 0 1 0 64 0V288a32 32 0 0 0-32-32z"/>
         </svg>
       </button>
-      <button class="floatbtn send" id="sendBtn" aria-label="发送">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"
-          stroke-linejoin="round">
-          <path d="M12 19V5" />
-          <path d="M6.5 10.5L12 5l5.5 5.5" />
+      <button class="floatbtn hidden" id="micBtn" aria-label="语音" title="语音" style="display:none !important;">
+      </button>
+      <!-- 发送按钮：纸飞机 -->
+      <button class="floatbtn send" id="sendBtn" aria-label="发送" title="发送">
+        <svg viewBox="0 0 1024 1024" width="20" height="20" fill="#040000">
+          <path d="M906.4448 28.859733L75.741867 284.3648c-57.8048 17.783467-68.317867 95.061333-17.3568 127.6416l245.435733 156.893867a70.980267 70.980267 0 0 0 84.002133-5.563734l306.3296-258.491733c16.605867-14.011733 39.0144 8.379733 25.002667 25.002667L460.680533 636.228267a70.946133 70.946133 0 0 0-5.546666 83.985066l156.859733 245.4016c32.5632 50.944 109.858133 40.430933 127.6416-17.3568L995.140267 117.572267c16.7424-54.459733-34.2528-105.454933-88.695467-88.712534z"/>
         </svg>
       </button>
     </footer>
@@ -4090,6 +4188,16 @@
             <button type="button" data-val="light">珍珠</button>
             <button type="button" data-val="harbor">海港</button>
           </div>
+        </section>
+
+        <!-- 我的头像设置 -->
+        <section class="settings-card">
+          <div class="settings-label">我的头像 (图床链接)</div>
+          <div style="display:flex; gap:10px; align-items:center; margin-top:8px;">
+            <div id="userAvatarPreview" style="width:36px; height:36px; border-radius:50%; background-image:var(--user-avatar-url); background-size:cover; background-position:center; flex-shrink:0; border:1.5px solid rgba(0,0,0,0.08);"></div>
+            <input id="userAvatarInput" type="url" placeholder="粘贴图床图片直链" style="flex:1; height:36px; border-radius:10px; border:1px solid var(--field-line); padding:0 10px; font-size:13px; background:var(--field-bg); color:var(--text); outline:none;">
+          </div>
+          <div class="push-hint" style="margin-top:5px;">左下角快捷菜单将显示为你设置的头像</div>
         </section>
 
         <!-- 锁屏通知 -->
@@ -5015,7 +5123,8 @@
     const AI_NAME = CONFIG.AI_NAME, HUMAN_NAME = CONFIG.HUMAN_NAME, APP_NAME = CONFIG.APP_NAME;
 
     const API_BASE = "/relay";       // same-origin; nginx mounts the relay here (RELAY_PUBLIC_PREFIX)
-    const USE_MOCK = false;          // true = self-contained demo with fake data (no backend needed)
+    // 本地开发/预览环境自动开启 Mock 模式，无需后端；线上环境则正常连接后端
+    const USE_MOCK = (location.hostname !== "rabi.qzz.io");
     const LS_KEY = "companion_secret";
 
     /* ── 状态 ── */
@@ -6642,6 +6751,29 @@
           }
           return { id: m.id };
         },
+        triggerReply: () => {
+          const r = {
+            id: nextId++, ts: new Date().toISOString(), from: "ai", kind: "reply",
+            text: replies[Math.floor(Math.random() * replies.length)], meta: {}
+          };
+          messages.push(r); emit(r);
+          return r;
+        },
+        reroll: () => {
+          for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i].from === "ai") {
+              const removed = messages.splice(i, 1)[0];
+              if (typeof removeMessage === "function") removeMessage(removed.id, { render: true, cache: false });
+              break;
+            }
+          }
+          const r = {
+            id: nextId++, ts: new Date().toISOString(), from: "ai", kind: "reply",
+            text: replies[Math.floor(Math.random() * replies.length)], meta: {}
+          };
+          messages.push(r); emit(r);
+          return r;
+        },
         subscribe: (s) => { subs.push(s); setTimeout(() => s._open(), 220); },
         unsubscribe: (s) => { subs = subs.filter(x => x !== s); }
       };
@@ -7722,7 +7854,8 @@
     }
 
     function fillMeta(metaEl, ts, isAn) {
-      metaEl.innerHTML = `<span>${fmtTime(ts)}</span>` + (isAn ? `<span class="tick">✓✓</span>` : "");
+      const tickSvg = '<svg viewBox="0 0 1024 1024" width="13" height="13" fill="#893a49" style="display:inline-block; vertical-align:-1px; margin-left:2px;"><path d="M666.56 256l58.304 60.224L287.808 768 25.6 496.96l58.24-60.224 203.968 210.816L666.56 256z m273.536 0l58.304 60.224L561.344 768l-98.944-102.208 58.304-60.288 40.64 42.048L940.096 256z"/></svg>';
+      metaEl.innerHTML = `<span>${fmtTime(ts)}</span>` + (isAn ? `<span class="tick">${tickSvg}</span>` : "");
     }
     // 发送中的小时钟:两根指针绕表心转(SMIL,旋转中心写死(12,12),不依赖 transform-box,iOS 稳)。
     // reduce-motion 时给一只静止的钟。状态转 sent 后此节点按签名重建 → 同位换成 ✓✓。
@@ -9056,7 +9189,14 @@
     }
 
     async function init() {
-      if (!secret) { showLogin(); return; }
+      if (!secret) {
+        if (USE_MOCK) {
+          secret = "mock_secret";
+        } else {
+          showLogin();
+          return;
+        }
+      }
       await loadSessions();
       loadBrain();
       let showedCache = false;
@@ -9590,7 +9730,100 @@
       }
     }
 
-    document.addEventListener("DOMContentLoaded", initLlmSettings);
+    function initChatUiEnhancements() {
+      // 1. 用户头像初始化与配置联动
+      const userAvatarInput = document.getElementById("userAvatarInput");
+      const userAvatarPreview = document.getElementById("userAvatarPreview");
+      const actionMenuBtn = document.getElementById("actionMenuBtn");
+      const actionPop = document.getElementById("composerActionPop");
+      const waitReplyBtn = document.getElementById("waitReplyBtn");
+      const actionRerollBtn = document.getElementById("actionRerollBtn");
+      const actionUploadBtn = document.getElementById("actionUploadBtn");
+      const actionClearBtn = document.getElementById("actionClearBtn");
+      const clipInput = document.getElementById("clipInput");
+      const clearAllRow = document.getElementById("clearAllHistoryRow");
+      const manualBtn = document.getElementById("manualTriggerBtn");
+
+      const savedUserAvatar = localStorage.getItem("companion_user_avatar") || "https://qihanyue0416.neocities.org/IMG_5554.jpeg";
+      function applyUserAvatar(url) {
+        if (!url) return;
+        document.documentElement.style.setProperty("--user-avatar-url", `url('${url}')`);
+        if (userAvatarPreview) userAvatarPreview.style.backgroundImage = `url('${url}')`;
+        if (actionMenuBtn) actionMenuBtn.style.backgroundImage = `url('${url}')`;
+      }
+      applyUserAvatar(savedUserAvatar);
+      if (userAvatarInput) {
+        userAvatarInput.value = savedUserAvatar;
+        userAvatarInput.addEventListener("input", () => {
+          const val = userAvatarInput.value.trim() || "https://qihanyue0416.neocities.org/IMG_5554.jpeg";
+          localStorage.setItem("companion_user_avatar", val);
+          applyUserAvatar(val);
+        });
+      }
+
+      // 2. 左下角快捷操作菜单
+      if (actionMenuBtn && actionPop) {
+        actionMenuBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          actionPop.classList.toggle("hidden");
+        });
+        document.addEventListener("click", (e) => {
+          if (!actionPop.contains(e.target) && e.target !== actionMenuBtn) {
+            actionPop.classList.add("hidden");
+          }
+        });
+      }
+
+      // 3. 重新生成 (Reroll)
+      if (actionRerollBtn) {
+        actionRerollBtn.addEventListener("click", () => {
+          if (actionPop) actionPop.classList.add("hidden");
+          if (USE_MOCK) {
+            Mock.reroll();
+          } else {
+            if (manualBtn) manualBtn.click();
+            else showToast("正在重新生成...");
+          }
+        });
+      }
+
+      // 4. 发送图片 (Upload)
+      if (actionUploadBtn && clipInput) {
+        actionUploadBtn.addEventListener("click", () => {
+          if (actionPop) actionPop.classList.add("hidden");
+          clipInput.click();
+        });
+      }
+
+      // 5. 清空记录
+      if (actionClearBtn && clearAllRow) {
+        actionClearBtn.addEventListener("click", () => {
+          if (actionPop) actionPop.classList.add("hidden");
+          clearAllRow.click();
+        });
+      }
+
+      // 6. 麦克风按钮 (接收消息)
+      if (waitReplyBtn) {
+        waitReplyBtn.addEventListener("click", () => {
+          if (USE_MOCK) {
+            Mock.triggerReply();
+          } else if (manualBtn) {
+            manualBtn.click();
+          }
+        });
+      }
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () => {
+        initLlmSettings();
+        initChatUiEnhancements();
+      });
+    } else {
+      initLlmSettings();
+      initChatUiEnhancements();
+    }
 
 
 
