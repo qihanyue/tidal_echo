@@ -403,12 +403,13 @@
     }
 
     .topbtn.keep-alive {
+      color: #000000 !important;
       transition: color .2s, filter .2s, transform .2s;
     }
 
     .topbtn.keep-alive.active {
-      color: #ff5b79 !important;
-      filter: drop-shadow(0 0 6px rgba(255, 91, 121, 0.6));
+      color: #000000 !important;
+      filter: drop-shadow(0 0 5px #ff5b79) drop-shadow(0 0 10px rgba(255, 91, 121, 0.75)) !important;
       animation: keepAliveHeartbeat 1.6s ease-in-out infinite;
     }
 
@@ -851,7 +852,7 @@
     }
 
     .bubble {
-      max-width: min(78vw, 520px);
+      max-width: min(86vw, 640px) !important;
       border-radius: 18px !important;
       position: relative;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -919,20 +920,24 @@
     }
 
     .row.ai .bubble {
+      max-width: min(86vw, 640px) !important;
+      min-width: 76px !important;
       background: #F4F4F4 !important;
       color: #000000 !important;
       border: 0 !important;
       box-shadow: none !important;
-      padding: 7px 42px 7px 16px !important;
+      padding: 7px 48px 8px 16px !important;
       border-radius: 18px !important;
     }
 
     .row.human .bubble {
+      max-width: min(86vw, 640px) !important;
+      min-width: 88px !important;
       background: #ffecf3 !important;
       color: #000000 !important;
       border: 0 !important;
       box-shadow: none !important;
-      padding: 7px 46px 7px 15px !important;
+      padding: 7px 56px 8px 15px !important;
       border-radius: 18px !important;
     }
 
@@ -1550,8 +1555,8 @@
       background: transparent;
       border: none;
       cursor: pointer;
-      width: 30px;
-      height: 30px;
+      width: 34px;
+      height: 34px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1563,6 +1568,10 @@
 
     .composer-wait-btn:active {
       transform: scale(0.9);
+    }
+
+    #manualTriggerBtn {
+      display: none !important;
     }
 
     .floatbtn {
@@ -4087,7 +4096,7 @@
       </div>
       <!-- 麦克风：接收消息 -->
       <button class="composer-wait-btn" id="waitReplyBtn" type="button" aria-label="接收消息" title="接收消息">
-        <svg viewBox="0 0 1024 1024" width="22" height="22" fill="#000">
+        <svg viewBox="0 0 1024 1024" width="27" height="27" fill="#000">
           <path d="M544 768h96a32 32 0 0 1 0 64h-256a32 32 0 0 1 0-64h96v-66.24A224.064 224.064 0 0 1 288 480v-32a32 32 0 1 1 64 0v32a160 160 0 0 0 320 0v-32a32 32 0 0 1 64 0v32a224.064 224.064 0 0 1-192 221.76V768z m-32-192a96 96 0 0 1-96-96V288a96 96 0 1 1 192 0v192a96 96 0 0 1-96 96z m0-320a32 32 0 0 0-32 32v192a32 32 0 1 0 64 0V288a32 32 0 0 0-32-32z"/>
         </svg>
       </button>
@@ -4095,14 +4104,13 @@
       </button>
       <!-- 发送按钮：纸飞机 -->
       <button class="floatbtn send" id="sendBtn" aria-label="发送" title="发送">
-        <svg viewBox="0 0 1024 1024" width="20" height="20" fill="#040000">
+        <svg viewBox="0 0 1024 1024" width="23" height="23" fill="#040000">
           <path d="M906.4448 28.859733L75.741867 284.3648c-57.8048 17.783467-68.317867 95.061333-17.3568 127.6416l245.435733 156.893867a70.980267 70.980267 0 0 0 84.002133-5.563734l306.3296-258.491733c16.605867-14.011733 39.0144 8.379733 25.002667 25.002667L460.680533 636.228267a70.946133 70.946133 0 0 0-5.546666 83.985066l156.859733 245.4016c32.5632 50.944 109.858133 40.430933 127.6416-17.3568L995.140267 117.572267c16.7424-54.459733-34.2528-105.454933-88.695467-88.712534z"/>
         </svg>
       </button>
     </footer>
-    <!-- 手动模式：接收回复悬浮按钮 -->
-    <button id="manualTriggerBtn" type="button" class="hidden"
-      style="position:fixed; right:16px; bottom:82px; z-index:99; background:var(--accent, #3b82f6); color:#fff; border:0; border-radius:24px; padding:8px 16px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; box-shadow:0 4px 16px rgba(0,0,0,.2); cursor:pointer; transition:transform .18s, opacity .18s;">
+    <!-- 手动模式：接收回复隐藏桩（通过麦克风触发） -->
+    <button id="manualTriggerBtn" type="button" class="hidden" style="display:none !important;">
       <span>接收回复</span>
     </button>
     <button class="newmsg-pill" id="newMsgBtn" type="button" aria-label="回到最新消息">
@@ -7915,7 +7923,7 @@
     let _estCpl = 0;
     function estCharsPerLine() {
       if (_estCpl) return _estCpl;
-      const w = Math.min(window.innerWidth * 0.61, 506) - 24;   // .bubble max-width: min(61vw,506px) 减内边距
+      const w = Math.min(window.innerWidth * 0.86, 640) - 36;   // .bubble max-width: min(86vw,640px) 减内边距
       return (_estCpl = Math.max(8, w / 16));        // 每行≈「全宽字」单位数;半角在 estTextHeight 里按 0.5 计
     }
     window.addEventListener("resize", () => {                    // 转屏/缩放重算一次(不是每行)
@@ -9410,11 +9418,8 @@
     function updateManualTriggerBtnVisibility() {
       const btn = document.getElementById("manualTriggerBtn");
       if (!btn) return;
-      if (currentTriggerMode === "manual") {
-        btn.classList.remove("hidden");
-      } else {
-        btn.classList.add("hidden");
-      }
+      btn.classList.add("hidden");
+      btn.style.display = "none";
     }
 
     function applyCustomNames() {
