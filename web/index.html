@@ -2511,8 +2511,8 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      background: rgba(255, 255, 255, 0.4);
-      border: 1px solid rgba(0, 0, 0, 0.08);
+      background: rgba(245, 245, 245, 0.5) !important;
+      border-top: 1px solid rgba(0, 0, 0, 0.03) !important;
       border-radius: 10px !important;
       -webkit-backdrop-filter: blur(15px) !important;
       padding: 5px 12px;
@@ -7975,79 +7975,50 @@ ${fieldPrompts}
     const themeResetBtn = document.getElementById("themeResetBtn");
 
     const DEFAULT_DUOBAI_CSS = `/* =========================================
-   仿独白(简粉) · 专属美化
+   仿独白(简粉) · 专属美化模版
+   提示：修改后点击下方「保存」即可长久生效
    ========================================= */
 
-/* 1. 顶栏：轻盈纯净透明与居中排版 */
+/* ── 1. 顶栏与顶部按钮 ── */
+
+/* 顶栏背景与毛玻璃效果 */
 .topbar {
-  background: rgba(245, 245, 245, 0.65) !important; /* 独白同款浅灰半透明底色 */
+  background: rgba(245, 245, 245, 0.65) !important; /* 浅灰半透明底色 */
   backdrop-filter: blur(15px) !important;           /* 安卓/电脑端磨砂模糊 */
-  -webkit-backdrop-filter: blur(15px) !important;   /* 【修改这里】苹果手机专属磨砂模糊，不能写 none */
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important; /* 微弱底边线，勾勒玻璃边缘 */
-  box-shadow: none !important;                      /* 去掉多余阴影 */
+  -webkit-backdrop-filter: blur(15px) !important;   /* 苹果手机专属磨砂模糊 */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important; /* 极淡下边线 */
+  box-shadow: none !important;                      /* 顶栏阴影 */
 }
 
+/* 左上角返回按钮 */
+.backbtn {
+  color: #000000 !important;                        /* 返回图标颜色 */
+  background: transparent !important;               /* 按钮背景色 */
+  width: 36px !important;                           /* 按钮点击宽度 */
+  height: 36px !important;                          /* 按钮点击高度 */
+}
+.backbtn svg {
+  width: 22px !important;                           /* 返回图标大小 */
+  height: 22px !important;
+  stroke: #000000 !important;                       /* 图标线条颜色 */
+}
 
+/* 顶栏中心：AI 名字与在线状态 */
 .peerpill .name {
   font-family: var(--font-main) !important;
-  font-size: 17px !important;
+  font-size: 17px !important;                       /* 名字字号 */
   font-weight: 600 !important;
-  color: #000000 !important;
+  color: #000000 !important;                        /* 名字颜色 */
   text-align: center;
 }
 .peerpill .status {
-  font-size: 11px !important;
-  color: #a8a8a8 !important;
+  font-size: 11px !important;                       /* 状态字号 */
+  color: #a8a8a8 !important;                        /* 状态字色 */
 }
 
-/* 2. 底栏输入区与胶囊造型 */
-.composer {
-  background: rgba(245, 245, 245, 0.65) !important;
-  backdrop-filter: blur(15px) !important;
-  -webkit-backdrop-filter: blur(15px) !important;
-  border-top: 1px solid rgba(0, 0, 0, 0.03) !important;
-}
-.composer .field {
-  background: rgba(255, 255, 255, 0.42) !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  border-radius: 14px !important;
-  min-height: 32px !important;
-  height: auto !important;
-  max-height: 120px !important;
-}
-textarea {
-  font-size: 15px !important;
-  line-height: 22px !important;
-  color: #000000 !important;
-}
-
-/* 3. 消息气泡美化 */
-.row.human .bubble,
-.msg.human .bubble {
-  background: #fce7f3 !important; /* 甜美柔粉 */
-  color: #374151 !important;
-  border-radius: 18px !important;
-  padding: 6px 68px 7px 15px !important; /* 右侧留足68px，使文字与双对勾时间戳距离与AI一致舒展 */
-  box-shadow: 0 2px 10px rgba(244, 114, 182, 0.12) !important;
-}
-.row.ai .bubble,
-.msg.ai .bubble {
-  background: rgba(255, 255, 255, 0.88) !important;
-  color: #1f2937 !important;
-  border-radius: 18px !important;
-  padding: 6px 46px 7px 19px !important;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04) !important;
-}
-.meta,
-.msg .time {
-  font-family: var(--font-main) !important;
-  font-size: 10px !important;
-  color: rgba(120, 120, 120, 0.65) !important;
-}
-
-/* 4. 心跳保活按钮：黑心+粉色荧光脉冲 */
+/* 右上角心跳保活按钮：黑心 + 粉色脉冲 */
 .topbtn.keep-alive {
-  color: #222222 !important;
+  color: #222222 !important;                        /* 爱心颜色 */
   filter: drop-shadow(0 0 5px rgba(255, 105, 180, 0.55)) !important;
 }
 .topbtn.keep-alive.active {
@@ -8056,6 +8027,128 @@ textarea {
 @keyframes pink-pulse {
   0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 105, 180, 0.6)); }
   50% { filter: drop-shadow(0 0 10px rgba(255, 105, 180, 0.9)); transform: scale(1.06); }
+}
+
+/* 右上角更多/设置按钮（三点图标） */
+.topbtn.more {
+  color: #000000 !important;                        /* 设置按钮颜色 */
+  width: 36px !important;
+  height: 36px !important;
+}
+.topbtn.more svg {
+  fill: #000000 !important;                         /* 三点图标颜色 */
+  width: 22px !important;                           /* 三点图标大小 */
+  height: 22px !important;
+}
+
+
+/* ── 2. 底栏与输入框 ── */
+
+/* 底栏整体容器（背景与磨砂） */
+.composer {
+  background: rgba(245, 245, 245, 0.65) !important; /* 底栏浅灰半透明 */
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.03) !important; /* 顶部分割线 */
+}
+
+/* 输入框外层胶囊 */
+.composer .field {
+  background: rgba(245, 245, 245, 0.5) !important;  /* 胶囊底色 */
+  border-top: 1px solid rgba(0, 0, 0, 0.03) !important; /* 胶囊上边线 */
+  border-radius: 10px !important;                   /* 胶囊圆角 */
+  min-height: 35px !important;                      /* 扁平最小高度 */
+  height: auto !important;
+  max-height: 120px !important;                     /* 多行最高拉伸 */
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+}
+
+/* 输入框打字文字 */
+.composer textarea,
+textarea {
+  font-family: var(--font-main) !important;
+  font-size: 15px !important;                       /* 打字字号 */
+  line-height: 22px !important;
+  color: #000000 !important;                        /* 打字字体颜色 */
+}
+
+/* 输入框未打字时的提示占位文字 */
+.composer textarea::placeholder,
+textarea::placeholder {
+  color: rgba(0, 0, 0, 0.35) !important;            /* 提示词浅灰颜色 */
+  font-size: 14px !important;
+}
+
+
+/* ── 3. 底栏各功能按钮 ── */
+
+/* 左下角用户头像 / 快捷菜单按钮 */
+.composer-user-avatar-btn {
+  width: 32px !important;                           /* 头像宽度 */
+  height: 32px !important;                          /* 头像高度 */
+  border-radius: 50% !important;                    /* 50% 为圆形，可改 8px 变圆角方框 */
+  border: 1.5px solid #ffffff !important;           /* 头像外圈描边 */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 麦克风（接收消息）按钮 */
+.composer-wait-btn {
+  width: 40px !important;                           /* 按钮点击宽度 */
+  height: 40px !important;                          /* 按钮点击高度 */
+  margin-left: -10px !important;                    /* 贴近输入框的距离 */
+  color: #000000 !important;                        /* 麦克风颜色 */
+}
+.composer-wait-btn svg {
+  width: 30px !important;                           /* 麦克风图标大小 */
+  height: 30px !important;
+  fill: #000000 !important;                         /* 图标填充色 */
+}
+
+/* 纸飞机（发送）按钮 */
+.floatbtn.send {
+  background: transparent !important;               /* 发送键背景，如填 #fce7f3 可变实体按键 */
+  color: #040000 !important;                        /* 发送键图标颜色 */
+  width: 30px !important;                           /* 按钮点击宽度 */
+  height: 30px !important;                          /* 按钮点击高度 */
+  margin-left: 4px !important;                      /* 离麦克风的间隔 */
+}
+.floatbtn.send svg {
+  width: 18px !important;                           /* 纸飞机图标大小 */
+  height: 18px !important;
+  fill: #040000 !important;                         /* 纸飞机填充色 */
+  margin-right: 8px !important;                     /* 纸飞机在框内居中微调 */
+}
+
+
+/* ── 4. 消息气泡与时间戳 ── */
+
+/* 用户（右侧）消息气泡 */
+.row.human .bubble,
+.msg.human .bubble {
+  background: #fce7f3 !important;                   /* 甜美柔粉背景 */
+  color: #374151 !important;                        /* 文字深灰 */
+  border-radius: 18px !important;                   /* 气泡大圆角 */
+  padding: 6px 68px 7px 15px !important;            /* 右侧留足68px，与双对勾时间戳呼吸留白 */
+  box-shadow: 0 2px 10px rgba(244, 114, 182, 0.12) !important;
+}
+
+/* AI（左侧）消息气泡 */
+.row.ai .bubble,
+.msg.ai .bubble {
+  background: rgba(255, 255, 255, 0.88) !important; /* 晶莹半透白 */
+  color: #1f2937 !important;
+  border-radius: 18px !important;
+  padding: 6px 46px 7px 19px !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* 气泡内时间戳与已读对勾 */
+.meta,
+.msg .time {
+  font-family: var(--font-main) !important;
+  font-size: 10px !important;
+  color: rgba(120, 120, 120, 0.65) !important;      /* 时间戳颜色 */
 }`;
 
     // 壁纸生效函数：同时驱动主聊天背景与各面板壁纸
@@ -8163,8 +8256,10 @@ textarea {
       renderPresetSelect();
       if (themeCustomCss) {
         const curCss = localStorage.getItem("companion_custom_css");
-        // 如果用户从未修改过，默认把仿独白(简粉)的代码完整显示在输入框里
-        if (curCss === null || curCss === undefined || curCss.trim() === "") {
+        const current = localStorage.getItem("companion_current_preset") || "duobai";
+        const isOldDuobai = (current === "duobai") && curCss && (!curCss.includes(".backbtn") || !curCss.includes(".floatbtn.send"));
+        // 如果用户从未修改过，或者当前是默认独白模版且尚未包含新按钮配置，自动升级为完整模版
+        if (curCss === null || curCss === undefined || curCss.trim() === "" || isOldDuobai) {
           themeCustomCss.value = DEFAULT_DUOBAI_CSS;
           applyLiveCss(DEFAULT_DUOBAI_CSS, true);
         } else {
