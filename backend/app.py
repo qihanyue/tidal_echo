@@ -358,7 +358,7 @@ def plugin_payload(msg: dict) -> dict:
         p["time_context"] = meta.get("time_context")
     if meta.get("memory_context"):
         p["memory_context"] = meta.get("memory_context")
-    for f in ("tether_front", "tether_middle", "tether_back", "tether_context", "web_reader_enabled", "weather_context"):
+    for f in ("tether_front", "tether_middle", "tether_back", "tether_context", "web_reader_enabled", "weather_context", "inner_voice_prompt"):
         if meta.get(f) is not None:
             p[f] = meta.get(f)
     return p

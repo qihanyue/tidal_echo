@@ -605,6 +605,8 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
 
     # 提取心声 (Inner Voice) 提示词
     iv_prompt = (bundle_meta or {}).get("inner_voice_prompt") or latest_item.get("inner_voice_prompt") or (latest_item.get("meta") or {}).get("inner_voice_prompt") or ""
+    if iv_prompt:
+        log("voice", f"已接收到心声生成指令 (长度 {len(iv_prompt)} 字符)")
 
     try:
         limit = max(history_n * 2, 8)
@@ -637,6 +639,7 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
         if m_iv:
             inner_voice_text = m_iv.group(1).strip()
             reply = re.sub(r'<inner_voice>[\s\S]*?</inner_voice>', '', reply, flags=re.I).strip()
+            log("voice", f"已成功抽取心声: {inner_voice_text[:35]}...")
         else:
             # 容错：如果模型未输出闭合标签 </inner_voice>
             m_iv2 = re.search(r'<inner_voice>([\s\S]*)$', reply, flags=re.I)
@@ -644,6 +647,9 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
                 parts_iv = re.split(r'\s*(?:\[分段\]|\[split\])\s*', m_iv2.group(1), maxsplit=1)
                 inner_voice_text = parts_iv[0].strip()
                 reply = parts_iv[1].strip() if len(parts_iv) > 1 else ""
+                log("voice", f"容错捕获未闭合心声: {inner_voice_text[:35]}...")
+            elif iv_prompt:
+                log("voice", "提示词已发送，但模型未输出 <inner_voice> 标记")
 
         # 按 [分段] 或 [split] 拆分成多个气泡
         pattern = r'\s*(?:\[分段\]|\[split\])\s*'

@@ -6695,23 +6695,21 @@
     let cachedStickers = null;
     let isStickerEditing = false;
 
-    // 清洗并规范化表情包图片链接（防盗链/协议升级/脏字符清理）
+    // 清洗并规范化表情包图片链接
     function cleanStickerUrl(raw) {
       if (!raw || typeof raw !== "string") return "";
       let u = raw.trim();
       if (u.startsWith("data:image/")) return u;
       // 1. 去除首尾可能包含的多余引号、括号、尖括号、逗号等符号
       u = u.replace(/^["'“”‘’<(\[{【\s]+/, "").replace(/["'“”‘’>)\]}】;,，；\s]+$/, "").trim();
-      // 2. 协议升级：将 http:// 自动升级为 https://，避免 HTTPS 站点下被当作混合内容拦截成蓝色问号
-      if (/^http:\/\//i.test(u)) {
-        u = "https://" + u.slice(7);
-      } else if (/^\/\//.test(u)) {
+      // 2. 协议补全：以 // 开头的补充 https:
+      if (/^\/\//.test(u)) {
         u = "https:" + u;
       }
       return u;
     }
 
-    // 抽屉表情缩略图加载失败时的防裂兜底（彻底消灭蓝色问号）
+    // 抽屉表情缩略图加载失败时的防裂兜底（挂载到 window，彻底消灭蓝色问号）
     function handleStickerThumbError(img, name) {
       if (!img) return;
       try {
@@ -6723,19 +6721,18 @@
         }
       } catch (_) { }
     }
+    window.handleStickerThumbError = handleStickerThumbError;
 
-    // 聊天气泡表情加载失败时的防裂兜底
-    function handleStickerChatError(img, name) {
+    // 聊天气泡内联表情加载失败时的防裂兜底（挂载到 window，彻底消灭蓝色问号）
+    function handleStickerInlineError(img, name) {
       if (!img) return;
       try {
         img.style.display = "none";
-        const wrap = img.closest(".sticker-chat-wrap");
-        if (wrap) {
-          const fb = wrap.querySelector(".sticker-chat-fallback");
-          if (fb) fb.classList.remove("hidden");
-        }
+        const fb = img.nextElementSibling;
+        if (fb) fb.classList.remove("hidden");
       } catch (_) { }
     }
+    window.handleStickerInlineError = handleStickerInlineError;
 
     function getStickerList() {
       if (cachedStickers) return cachedStickers;
@@ -7114,10 +7111,12 @@
       if (!fields || !fields.length) return "";
 
       const fieldPrompts = fields.map(f => `- 【${f.name}】：${f.prompt}`).join("\n");
-      const fieldNamesExample = fields.map(f => `【${f.name}】具体内容`).join("\n");
+      const fieldNamesExample = fields.map(f => `【${f.name}】具体简短内容`).join("\n");
 
       return `【心声与内心独白生成指令】
-每次回复用户之前，你必须且只能在输出的最开头输出一个用 <inner_voice> ... </inner_voice> 标签包裹的内心独白块，严格按照以下标签格式：
+本次回复你必须按以下两阶段输出：
+【阶段一：在回复的最开始第一行，输出内心独白块】
+严格使用 <inner_voice> ... </inner_voice> 包裹，格式如下：
 <inner_voice>
 ${fieldNamesExample}
 </inner_voice>
@@ -7125,9 +7124,11 @@ ${fieldNamesExample}
 各标签的具体要求如下：
 ${fieldPrompts}
 
-【铁律】
-1. <inner_voice> 块是你的真实内心潜台词与心理活动，仅供系统读取，绝不能出现角色扮演之外的解释。
-2. <inner_voice> 闭合标签之后，必须换行，然后正常输出你对用户的实际回复。`;
+【阶段二：闭合 </inner_voice> 之后换行，再正常输出模拟手机聊天的 [分段] 消息气泡】
+
+【绝对铁律】
+1. <inner_voice> 块是你的真实内心心理活动，系统会自动提取并对用户隐藏，绝不能省略此标签。
+2. </inner_voice> 闭合之后，再输出正常聊天的 [分段] 短消息气泡。`;
     }
 
     function escapeIvRegex(str) {
@@ -10470,11 +10471,11 @@ textarea {
       s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
       s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
       s = s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
-      // 内联表情渲染
+      // 内联表情渲染（带防盗链与优雅加载失败兜底）
       s = s.replace(/\[(?:表情|sticker):\s*([^\s\]]+)\]/gi, (match, name) => {
         const st = (typeof findSticker === "function") ? findSticker(name) : null;
         if (st) {
-          return `<img class="inline-sticker-img" src="${escapeHtml(st.url)}" alt="${escapeHtml(st.name)}" title="${escapeHtml(st.name)}" referrerpolicy="no-referrer" loading="lazy">`;
+          return `<span class="inline-sticker-wrap"><img class="inline-sticker-img" src="${escapeHtml(st.url)}" alt="${escapeHtml(st.name)}" title="${escapeHtml(st.name)}" referrerpolicy="no-referrer" loading="lazy" onerror="window.handleStickerInlineError && window.handleStickerInlineError(this, '${escapeHtml(st.name)}')"><span class="inline-sticker-fallback hidden" style="font-size:12px; background:rgba(0,0,0,0.06); padding:2px 6px; border-radius:6px; color:inherit;">🏷️ [${escapeHtml(st.name)}]</span></span>`;
         }
         return match;
       });
