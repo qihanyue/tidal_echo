@@ -331,6 +331,11 @@ def build_messages(custom_persona: str = "", user_persona: str = "", time_contex
     if tether_back and tether_back.strip():
         parts.append(f"[最高执行准则与核心协定 (Back)]\n{tether_back.strip()}")
 
+    # 7. 心声与内心独白生成指令 (Inner Voice)
+    iv_prompt = (bundle_meta or {}).get("inner_voice_prompt") or latest_item.get("inner_voice_prompt") or (latest_item.get("meta") or {}).get("inner_voice_prompt") or ""
+    if iv_prompt and iv_prompt.strip():
+        parts.append(f"### 【心声/内心独白生成指令】\n{iv_prompt.strip()}")
+
     parts.append(
         "### 【核心对话规则与对话节奏铁律】\n"
         "1. **角色一致性与拟真情感**:\n"
@@ -623,6 +628,13 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
         return False
 
     if reply:
+        # 0. 抽取心声 (Inner Voice)，并将其彻底从发给用户的气泡和历史记忆中剔除
+        inner_voice_text = ""
+        m_iv = re.search(r'<inner_voice>([\s\S]*?)</inner_voice>', reply, flags=re.I)
+        if m_iv:
+            inner_voice_text = m_iv.group(1).strip()
+            reply = re.sub(r'<inner_voice>[\s\S]*?</inner_voice>', '', reply, flags=re.I).strip()
+
         # 按 [分段] 或 [split] 拆分成多个气泡
         pattern = r'\s*(?:\[分段\]|\[split\])\s*'
         raw_bubbles = [b.strip() for b in re.split(pattern, reply) if b.strip()]
@@ -647,17 +659,19 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
         if not bubbles:
             bubbles = raw_bubbles
 
-        tool_meta = None
+        tool_meta = {}
+        if inner_voice_text:
+            tool_meta["inner_voice"] = inner_voice_text
         if web_snippets and valid_urls:
-            tool_meta = {
-                "tools": [
-                    {
-                        "tool": "看了看网页",
-                        "cmd": f"读取链接: {', '.join(valid_urls[:2])}",
-                        "result": f"已成功抓取并解析 {len(valid_urls)} 个网页的正文内容"
-                    }
-                ]
-            }
+            tool_meta["tools"] = [
+                {
+                    "tool": "看了看网页",
+                    "cmd": f"读取链接: {', '.join(valid_urls[:2])}",
+                    "result": f"已成功抓取并解析 {len(valid_urls)} 个网页的正文内容"
+                }
+            ]
+        if not tool_meta:
+            tool_meta = None
 
         for i, bubble in enumerate(bubbles):
             convo.append({"role": "assistant", "content": bubble})

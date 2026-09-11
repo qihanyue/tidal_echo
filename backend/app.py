@@ -836,7 +836,7 @@ async def app_trigger_reply(request: Request):
         bundle["time_context"] = body.get("time_context")
     if body.get("memory_context"):
         bundle["memory_context"] = body.get("memory_context")
-    for f in ("tether_front", "tether_middle", "tether_back", "tether_context", "web_reader_enabled", "weather_context"):
+    for f in ("tether_front", "tether_middle", "tether_back", "tether_context", "web_reader_enabled", "weather_context", "inner_voice_prompt"):
         if body.get(f) is not None:
             bundle[f] = body.get(f)
 
@@ -932,7 +932,7 @@ async def app_reroll(request: Request):
         bundle["time_context"] = body.get("time_context")
     if body.get("memory_context"):
         bundle["memory_context"] = body.get("memory_context")
-    for f in ("tether_front", "tether_middle", "tether_back", "tether_context", "web_reader_enabled", "weather_context"):
+    for f in ("tether_front", "tether_middle", "tether_back", "tether_context", "web_reader_enabled", "weather_context", "inner_voice_prompt"):
         if body.get(f) is not None:
             bundle[f] = body.get(f)
 
@@ -1045,7 +1045,7 @@ async def app_send(request: Request):
         meta["time_context"] = body.get("time_context")
     if body.get("memory_context"):
         meta["memory_context"] = body.get("memory_context")
-    for f in ("tether_front", "tether_middle", "tether_back", "tether_context", "web_reader_enabled", "weather_context"):
+    for f in ("tether_front", "tether_middle", "tether_back", "tether_context", "web_reader_enabled", "weather_context", "inner_voice_prompt"):
         if body.get(f) is not None:
             meta[f] = body.get(f)
     msg = save_message("in", "user", text, meta)

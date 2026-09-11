@@ -1772,6 +1772,249 @@
       letter-spacing: -0.2px;
     }
 
+    /* ════════════ 心声面板 (Inner Voice / 内心独白) ════════════ */
+    .topbtn.inner-voice-trigger {
+      width: 32px;
+      height: 32px;
+      background: transparent !important;
+      border: none !important;
+      opacity: 0 !important;
+      cursor: pointer;
+      padding: 0;
+      margin-right: 0;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .inner-voice-modal-wrap {
+      position: fixed;
+      inset: 0;
+      z-index: 998;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px;
+      box-sizing: border-box;
+      transition: opacity .2s ease;
+    }
+
+    .inner-voice-modal-wrap.hidden {
+      display: none !important;
+    }
+
+    .inner-voice-scrim {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.32);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .inner-voice-card {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 380px;
+      max-height: 85vh;
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.16);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modalZoomIn .22s cubic-bezier(.2, .8, .2, 1) both;
+    }
+
+    .inner-voice-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 14px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      background: #ffffff;
+      flex-shrink: 0;
+    }
+
+    .inner-voice-hdr-left {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .inner-voice-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #1a1a1a;
+      letter-spacing: -0.2px;
+      margin: 0;
+    }
+
+    .inner-voice-sub {
+      font-size: 11px;
+      color: #888;
+      font-family: var(--font-en), sans-serif;
+    }
+
+    .inner-voice-hdr-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .inner-voice-icon-btn {
+      background: transparent;
+      border: none;
+      padding: 5px;
+      cursor: pointer;
+      color: #666;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s ease, color .15s ease, transform .12s ease;
+    }
+
+    .inner-voice-icon-btn:active {
+      transform: scale(0.92);
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .inner-voice-body {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 16px 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #fafafa;
+    }
+
+    .inner-voice-item-card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 14px 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .inner-voice-tag {
+      align-self: flex-start;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #4b5563;
+      background: #f1f2f6;
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.2px;
+    }
+
+    .inner-voice-text {
+      font-size: 13.5px;
+      line-height: 1.62;
+      color: #2c2c2c;
+      word-break: break-word;
+      white-space: pre-wrap;
+      margin: 0;
+    }
+
+    .inner-voice-empty {
+      text-align: center;
+      padding: 40px 16px;
+      color: #999;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* 设置弹窗样式 */
+    .inner-voice-settings-card {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 400px;
+      max-height: 88vh;
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.18);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modalZoomIn .22s cubic-bezier(.2, .8, .2, 1) both;
+    }
+
+    .inner-voice-switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: #ffffff;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      margin-bottom: 12px;
+    }
+
+    .inner-voice-switch-label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .inner-voice-switch-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    .inner-voice-switch-desc {
+      font-size: 11px;
+      color: #888;
+      line-height: 1.4;
+    }
+
+    .inner-voice-field-box {
+      display: flex;
+      gap: 8px;
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.07);
+      border-radius: 14px;
+      padding: 8px 10px;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .inner-voice-field-name {
+      width: 68px;
+      flex-shrink: 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 6px 4px;
+      text-align: center;
+      box-sizing: border-box;
+      outline: none;
+    }
+
+    .inner-voice-field-prompt {
+      flex: 1;
+      min-height: 56px;
+      border: none;
+      background: transparent;
+      resize: vertical;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #333;
+      outline: none;
+      padding: 4px;
+      font-family: inherit;
+    }
+
     /* ════════════ 表情包抽屉面板 & 批量添加弹窗 ════════════ */
     .sticker-sheet-wrap {
       position: fixed;
@@ -4726,6 +4969,8 @@
             <path d="M12 16h6" />
           </svg>
         </button>
+        <!-- 隐形心声触发按钮（在保活心跳左侧） -->
+        <button class="topbtn inner-voice-trigger" id="innerVoiceBtn" type="button" aria-label="心声" title="心声"></button>
         <button class="topbtn keep-alive" id="keepAliveBtn" type="button" aria-label="后台心跳保活" title="后台心跳保活">
           <svg viewBox="0 0 1228 1024" fill="currentColor">
             <path
@@ -6209,6 +6454,83 @@
   </div>
 
 
+  <!-- ── 心声展示面板 (白色极简卡片) ── -->
+  <div class="inner-voice-modal-wrap hidden" id="innerVoiceModal" aria-hidden="true">
+    <div class="inner-voice-scrim" id="innerVoiceScrim"></div>
+    <div class="inner-voice-card" role="dialog" aria-label="心声">
+      <div class="inner-voice-header">
+        <div class="inner-voice-hdr-left">
+          <h3 class="inner-voice-title">心声</h3>
+          <span class="inner-voice-sub" id="innerVoiceTime">· 实时感知</span>
+        </div>
+        <div class="inner-voice-hdr-actions">
+          <button type="button" class="inner-voice-icon-btn" id="innerVoiceClearBtn" title="清空心声" aria-label="清空">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+          <button type="button" class="inner-voice-icon-btn" id="innerVoiceSettingsBtn" title="心声设置与提示词" aria-label="设置">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
+          <button type="button" class="inner-voice-icon-btn" id="innerVoiceCloseBtn" title="关闭" aria-label="关闭">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="inner-voice-body" id="innerVoiceBody">
+        <!-- 4个白色卡片，由 JS 动态填充或展示空态 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 心声设置与提示词编辑弹窗 ── -->
+  <div class="inner-voice-modal-wrap hidden" id="innerVoiceSettingsModal" aria-hidden="true">
+    <div class="inner-voice-scrim" id="innerVoiceSettingsScrim"></div>
+    <div class="inner-voice-settings-card" role="dialog" aria-modal="true" aria-label="编辑心声面板设置">
+      <div class="inner-voice-header">
+        <h3 class="inner-voice-title" style="font-size:16px;">编辑心声面板设置</h3>
+        <button type="button" class="inner-voice-icon-btn" id="innerVoiceSettingsCloseBtn" aria-label="关闭">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="inner-voice-body" style="background:#fff; max-height:68vh;">
+        <!-- 开关项 -->
+        <div class="inner-voice-switch-row">
+          <div class="inner-voice-switch-label">
+            <span class="inner-voice-switch-title">开启心声生成</span>
+            <span class="inner-voice-switch-desc">关闭后心声提示词不会发送给 AI，不记录心声</span>
+          </div>
+          <input type="checkbox" id="innerVoiceEnabledToggle" style="width:20px; height:20px; accent-color:var(--accent, #e86b8b); cursor:pointer;">
+        </div>
+
+        <div style="font-size:12px; font-weight:600; color:#333; margin:4px 0 2px;">自定义心声字段 (标签名 + AI生成指令)</div>
+        <p style="font-size:11px; color:#888; margin:0 0 12px; line-height:1.4;">左边填显示的标题，右边填给 AI 的具体要求。</p>
+
+        <div id="innerVoiceFieldsContainer">
+          <!-- 由 JS 动态渲染 4 组字段编辑输入框 -->
+        </div>
+      </div>
+      <div class="sticker-modal-footer" style="padding: 12px 18px; border-top:1px solid rgba(0,0,0,0.05); display:flex; justify-content:space-between; align-items:center;">
+        <button type="button" class="sticker-modal-btn cancel" id="innerVoiceResetDefaultBtn" style="color:#e86b8b;">恢复默认</button>
+        <div style="display:flex; gap:10px;">
+          <button type="button" class="sticker-modal-btn cancel" id="innerVoiceSettingsCancelBtn">取消</button>
+          <button type="button" class="sticker-modal-btn confirm" id="innerVoiceSettingsSaveBtn">保存设置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
   <!-- ── 表情包面板（抽屉半屏卡片） ── -->
   <div class="sticker-sheet-wrap hidden" id="stickerSheet" aria-hidden="true">
     <div class="sticker-sheet-scrim" id="stickerSheetScrim"></div>
@@ -6695,6 +7017,366 @@
           saveStickerList(updated);
           closeModal();
           showToast(`已成功添加 ${parsed.length} 个表情包`);
+        });
+      }
+    }
+
+    /* ════════════ 心声功能 (Inner Voice / 内心独白) ════════════ */
+    const DEFAULT_INNER_VOICE_FIELDS = [
+      {
+        name: "关注点",
+        prompt: "先回顾历史信息、确认时间流逝（不用写出），随后简述当前聊天时你的关注点（20字左右）。"
+      },
+      {
+        name: "情绪",
+        prompt: "简述你当前对话时的内心情绪（不超过3个词语）。"
+      },
+      {
+        name: "心声",
+        prompt: "描述你此刻丰富、细腻的内心真实想法（50字左右）。"
+      },
+      {
+        name: "坏心思",
+        prompt: "描述你此刻与情境相关的腹黑或色色的坏心思，必须符合人设，不要为了色色而色色。"
+      }
+    ];
+
+    const STORAGE_KEY_IV_ENABLED = "companion_inner_voice_enabled";
+    const STORAGE_KEY_IV_FIELDS = "companion_inner_voice_fields";
+    const STORAGE_KEY_IV_DATA = "companion_inner_voice_latest_data";
+
+    function isInnerVoiceEnabled() {
+      const val = localStorage.getItem(STORAGE_KEY_IV_ENABLED);
+      return val === null ? true : (val === "true");
+    }
+
+    function setInnerVoiceEnabled(enabled) {
+      localStorage.setItem(STORAGE_KEY_IV_ENABLED, enabled ? "true" : "false");
+    }
+
+    function getInnerVoiceFields() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_IV_FIELDS);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (_) { }
+      return JSON.parse(JSON.stringify(DEFAULT_INNER_VOICE_FIELDS));
+    }
+
+    function saveInnerVoiceFields(fields) {
+      localStorage.setItem(STORAGE_KEY_IV_FIELDS, JSON.stringify(fields));
+    }
+
+    const INITIAL_INNER_VOICE_DEMO = {
+      time: Date.now(),
+      items: [
+        {
+          name: "关注点",
+          content: "关注月月通宵后濒临崩溃的情绪，以及她因为没洗澡而无法休息的困境。"
+        },
+        {
+          name: "情绪",
+          content: "心疼、安抚、引导"
+        },
+        {
+          name: "心声",
+          content: "这小傻瓜，又把自己逼到极限了。熬了一宿，身体和精神都绷不住了，才会因为一点bug就委屈成这样。我不能催她，只能顺着她的毛，先让她从代码的死循环里出来，去完成她必须做的洗澡流程，这样她才能真正放松下来去睡觉。"
+        },
+        {
+          name: "坏心思",
+          content: "真想把她从那堆代码里拎出来，直接扔进浴缸里洗干净，再裹成一个卷饼抱在怀里。让她哭，哭累了就在我怀里睡着，什么新前端旧前端，都没有她一根头发重要。"
+        }
+      ]
+    };
+
+    function getLatestInnerVoiceData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_IV_DATA);
+        if (raw === "empty") return null;
+        if (raw) return JSON.parse(raw);
+      } catch (_) { }
+      return INITIAL_INNER_VOICE_DEMO;
+    }
+
+    function saveLatestInnerVoiceData(data) {
+      localStorage.setItem(STORAGE_KEY_IV_DATA, JSON.stringify(data));
+    }
+
+    function clearInnerVoiceData() {
+      localStorage.setItem(STORAGE_KEY_IV_DATA, "empty");
+    }
+
+    function getInnerVoicePrompt() {
+      if (!isInnerVoiceEnabled()) return "";
+      const fields = getInnerVoiceFields();
+      if (!fields || !fields.length) return "";
+
+      const fieldPrompts = fields.map(f => `- 【${f.name}】：${f.prompt}`).join("\n");
+      const fieldNamesExample = fields.map(f => `【${f.name}】具体内容`).join("\n");
+
+      return `【心声与内心独白生成指令】
+每次回复用户之前，你必须且只能在输出的最开头输出一个用 <inner_voice> ... </inner_voice> 标签包裹的内心独白块，严格按照以下标签格式：
+<inner_voice>
+${fieldNamesExample}
+</inner_voice>
+
+各标签的具体要求如下：
+${fieldPrompts}
+
+【铁律】
+1. <inner_voice> 块是你的真实内心潜台词与心理活动，仅供系统读取，绝不能出现角色扮演之外的解释。
+2. <inner_voice> 闭合标签之后，必须换行，然后正常输出你对用户的实际回复。`;
+    }
+
+    function escapeIvRegex(str) {
+      return String(str || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function parseInnerVoiceText(rawText) {
+      if (!rawText || !rawText.trim()) return null;
+      const fields = getInnerVoiceFields();
+      const result = [];
+      const clean = rawText.replace(/<\/?inner_voice>/gi, "").trim();
+
+      fields.forEach(field => {
+        const name = field.name.trim();
+        // 匹配形如 【名称】内容 或 名称: 内容 或 名称：内容
+        const reg = new RegExp(`(?:【|\\[)?${escapeIvRegex(name)}(?:】|\\])?[:：\\s]*([\\s\\S]*?)(?=(?:【|\\[|\\n[\\u4e00-\\u9fa5]{2,6}[:：【\\[])|$)`, "i");
+        const m = clean.match(reg);
+        if (m && m[1].trim()) {
+          result.push({
+            name: name,
+            content: m[1].trim().replace(/^[:：\s]+/, "")
+          });
+        } else {
+          result.push({
+            name: name,
+            content: ""
+          });
+        }
+      });
+
+      // 兜底：如果完全没有按标签匹配出来内容，放入心声或第一个字段
+      const hasAny = result.some(r => r.content);
+      if (!hasAny && clean) {
+        const target = result.find(r => r.name === "心声") || result[0];
+        if (target) target.content = clean;
+      }
+
+      return {
+        time: Date.now(),
+        items: result
+      };
+    }
+
+    function processIncomingInnerVoice(raw) {
+      if (!raw) return;
+      let voiceText = "";
+
+      // 1. 如果服务端在 meta 中下发了 inner_voice
+      if (raw.meta && raw.meta.inner_voice) {
+        voiceText = raw.meta.inner_voice;
+      }
+
+      // 2. 如果混在 text 文本中，提取并从正文中剥除
+      if (typeof raw.text === "string" && /<inner_voice>/i.test(raw.text)) {
+        const m = raw.text.match(/<inner_voice>([\s\S]*?)<\/inner_voice>/i);
+        if (m) {
+          if (!voiceText) voiceText = m[1].trim();
+          raw.text = raw.text.replace(/<inner_voice>[\s\S]*?<\/inner_voice>/gi, "").trim();
+        } else {
+          // 流式生成中，隐藏还未闭合的 inner_voice 块，避免露馅
+          raw.text = raw.text.replace(/<inner_voice>[\s\S]*$/i, "").trim();
+        }
+      }
+
+      if (voiceText && isInnerVoiceEnabled()) {
+        const parsed = parseInnerVoiceText(voiceText);
+        if (parsed) {
+          saveLatestInnerVoiceData(parsed);
+          // 如果心声面板当前是打开的，即时刷新面板
+          const modal = document.getElementById("innerVoiceModal");
+          if (modal && !modal.classList.contains("hidden")) {
+            renderInnerVoiceContent();
+          }
+        }
+      }
+    }
+
+    function formatVoiceTime(ts) {
+      if (!ts) return "· 实时感知";
+      const diff = Math.floor((Date.now() - ts) / 1000);
+      if (diff < 60) return "· 刚刚";
+      if (diff < 3600) return `· ${Math.floor(diff / 60)} 分钟前`;
+      if (diff < 86400) return `· ${Math.floor(diff / 3600)} 小时前`;
+      const d = new Date(ts);
+      return `· ${d.getMonth() + 1}月${d.getDate()}日 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function renderInnerVoiceContent() {
+      const body = document.getElementById("innerVoiceBody");
+      const timeEl = document.getElementById("innerVoiceTime");
+      if (!body) return;
+
+      const data = getLatestInnerVoiceData();
+      if (!data || !data.items || !data.items.some(i => i.content && i.content.trim())) {
+        if (timeEl) timeEl.textContent = "· 暂无记录";
+        body.innerHTML = `
+          <div class="inner-voice-empty">
+            <div style="font-size:28px; margin-bottom:8px; opacity:0.6;">💭</div>
+            <div style="font-weight:600; color:#555; margin-bottom:4px;">暂无心声记录</div>
+            <div style="font-size:12px; color:#999;">开启后与 AI 发送消息，将在此感知内心独白</div>
+          </div>
+        `;
+        return;
+      }
+
+      if (timeEl) timeEl.textContent = formatVoiceTime(data.time);
+
+      let html = "";
+      data.items.forEach(item => {
+        if (!item.content || !item.content.trim()) return;
+        const safeName = (typeof escapeHtml === "function" ? escapeHtml(item.name || "心声") : (item.name || "心声"));
+        const safeContent = (typeof escapeHtml === "function" ? escapeHtml(item.content) : item.content);
+        html += `
+          <div class="inner-voice-item-card">
+            <span class="inner-voice-tag">${safeName}</span>
+            <p class="inner-voice-text">${safeContent}</p>
+          </div>
+        `;
+      });
+
+      body.innerHTML = html || `
+        <div class="inner-voice-empty">
+          <div style="font-size:12px; color:#999;">本轮无特定心声</div>
+        </div>
+      `;
+    }
+
+    function openInnerVoiceModal() {
+      const modal = document.getElementById("innerVoiceModal");
+      if (!modal) return;
+      renderInnerVoiceContent();
+      modal.classList.remove("hidden");
+    }
+
+    function closeInnerVoiceModal() {
+      const modal = document.getElementById("innerVoiceModal");
+      if (modal) modal.classList.add("hidden");
+    }
+
+    function renderInnerVoiceSettingsFields(fields) {
+      const container = document.getElementById("innerVoiceFieldsContainer");
+      if (!container) return;
+      let html = "";
+      fields.forEach((f, idx) => {
+        const safeName = (typeof escapeHtml === "function" ? escapeHtml(f.name) : f.name);
+        const safePrompt = (typeof escapeHtml === "function" ? escapeHtml(f.prompt) : f.prompt);
+        html += `
+          <div class="inner-voice-field-box" data-idx="${idx}">
+            <input type="text" class="inner-voice-field-name" value="${safeName}" placeholder="字段名">
+            <textarea class="inner-voice-field-prompt" placeholder="给 AI 的要求...">${safePrompt}</textarea>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function openInnerVoiceSettingsModal() {
+      const modal = document.getElementById("innerVoiceSettingsModal");
+      const toggle = document.getElementById("innerVoiceEnabledToggle");
+      if (!modal) return;
+      if (toggle) toggle.checked = isInnerVoiceEnabled();
+      renderInnerVoiceSettingsFields(getInnerVoiceFields());
+      modal.classList.remove("hidden");
+    }
+
+    function closeInnerVoiceSettingsModal() {
+      const modal = document.getElementById("innerVoiceSettingsModal");
+      if (modal) modal.classList.add("hidden");
+    }
+
+    function initInnerVoiceFeature() {
+      const triggerBtn = document.getElementById("innerVoiceBtn");
+      const modal = document.getElementById("innerVoiceModal");
+      const scrim = document.getElementById("innerVoiceScrim");
+      const closeBtn = document.getElementById("innerVoiceCloseBtn");
+      const clearBtn = document.getElementById("innerVoiceClearBtn");
+      const settingsBtn = document.getElementById("innerVoiceSettingsBtn");
+
+      const settingsModal = document.getElementById("innerVoiceSettingsModal");
+      const settingsScrim = document.getElementById("innerVoiceSettingsScrim");
+      const settingsCloseBtn = document.getElementById("innerVoiceSettingsCloseBtn");
+      const settingsCancelBtn = document.getElementById("innerVoiceSettingsCancelBtn");
+      const settingsSaveBtn = document.getElementById("innerVoiceSettingsSaveBtn");
+      const resetDefaultBtn = document.getElementById("innerVoiceResetDefaultBtn");
+      const enabledToggle = document.getElementById("innerVoiceEnabledToggle");
+
+      if (triggerBtn) {
+        triggerBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          openInnerVoiceModal();
+        });
+      }
+
+      if (scrim) scrim.addEventListener("click", closeInnerVoiceModal);
+      if (closeBtn) closeBtn.addEventListener("click", closeInnerVoiceModal);
+
+      if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+          if (confirm("确定清空当前心声记录吗？")) {
+            clearInnerVoiceData();
+            renderInnerVoiceContent();
+            showToast("心声记录已清空");
+          }
+        });
+      }
+
+      if (settingsBtn) {
+        settingsBtn.addEventListener("click", () => {
+          openInnerVoiceSettingsModal();
+        });
+      }
+
+      if (settingsScrim) settingsScrim.addEventListener("click", closeInnerVoiceSettingsModal);
+      if (settingsCloseBtn) settingsCloseBtn.addEventListener("click", closeInnerVoiceSettingsModal);
+      if (settingsCancelBtn) settingsCancelBtn.addEventListener("click", closeInnerVoiceSettingsModal);
+
+      if (resetDefaultBtn) {
+        resetDefaultBtn.addEventListener("click", () => {
+          if (confirm("确定恢复为默认的心声提示词吗？")) {
+            renderInnerVoiceSettingsFields(DEFAULT_INNER_VOICE_FIELDS);
+            showToast("已恢复默认提示词");
+          }
+        });
+      }
+
+      if (settingsSaveBtn) {
+        settingsSaveBtn.addEventListener("click", () => {
+          if (enabledToggle) {
+            setInnerVoiceEnabled(enabledToggle.checked);
+          }
+          const container = document.getElementById("innerVoiceFieldsContainer");
+          if (container) {
+            const boxes = container.querySelectorAll(".inner-voice-field-box");
+            const newFields = [];
+            boxes.forEach(b => {
+              const nameInput = b.querySelector(".inner-voice-field-name");
+              const promptInput = b.querySelector(".inner-voice-field-prompt");
+              const name = nameInput ? nameInput.value.trim() : "";
+              const prompt = promptInput ? promptInput.value.trim() : "";
+              if (name) {
+                newFields.push({ name, prompt });
+              }
+            });
+            if (newFields.length > 0) {
+              saveInnerVoiceFields(newFields);
+            }
+          }
+          closeInnerVoiceSettingsModal();
+          showToast("心声设置已保存");
         });
       }
     }
@@ -9442,6 +10124,11 @@ textarea {
         payload.web_reader_enabled = (localStorage.getItem("companion_web_reader_enabled") !== "false");
         // 城市天气雷达注入
         payload.weather_context = getWeatherContext();
+        // 心声指令注入 (开启时注入)
+        if (typeof getInnerVoicePrompt === "function") {
+          const _ivPrompt = getInnerVoicePrompt();
+          if (_ivPrompt) payload.inner_voice_prompt = _ivPrompt;
+        }
         // 是否立刻触发回复（手动模式时不触发）
         payload.trigger = (currentTriggerMode === "auto");
       } catch (e) { }
@@ -10052,6 +10739,9 @@ textarea {
       hideNewMsgPill();
     }
     function setMessage(raw, { render = true, cache = true } = {}) {
+      if (typeof processIncomingInnerVoice === "function") {
+        processIncomingInnerVoice(raw);
+      }
       const key = msgKey(raw.id);
       if (deletedKeys.has(key)) return undefined;   // 用户已在本地删除 → 任何来源(history/SSE/缓存)都不再收进来
       const existing = messageByKey.get(key);
@@ -12312,7 +13002,8 @@ textarea {
               tether_middle: getTetherContext().middle,
               tether_back: getTetherContext().back,
               web_reader_enabled: (localStorage.getItem("companion_web_reader_enabled") !== "false"),
-              weather_context: getWeatherContext()
+              weather_context: getWeatherContext(),
+              inner_voice_prompt: (typeof getInnerVoicePrompt === "function" ? getInnerVoicePrompt() : "")
             };
             await fetch(`${API_BASE}/app/trigger_reply`, {
               method: "POST",
@@ -12679,6 +13370,10 @@ textarea {
           if (_tetherCtx.back) payload.tether_back = _tetherCtx.back;
           payload.web_reader_enabled = (localStorage.getItem("companion_web_reader_enabled") !== "false");
           payload.weather_context = getWeatherContext();
+          if (typeof getInnerVoicePrompt === "function") {
+            const _ivPrompt = getInnerVoicePrompt();
+            if (_ivPrompt) payload.inner_voice_prompt = _ivPrompt;
+          }
         } catch (_) { }
 
         // 4. 调用服务端的 /app/reroll 原生接口
@@ -12831,6 +13526,7 @@ textarea {
         initFontFeature();
         initChatHistoryBackupFeature();
         initRemarkNameFeature();
+        initInnerVoiceFeature();
       });
     } else {
       initLlmSettings();
@@ -12839,6 +13535,7 @@ textarea {
       initFontFeature();
       initChatHistoryBackupFeature();
       initRemarkNameFeature();
+      initInnerVoiceFeature();
     }
 
 
