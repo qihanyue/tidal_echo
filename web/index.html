@@ -5529,9 +5529,9 @@
 
             <div class="llm-field hidden" id="summaryCustomRangeRow">
               <div style="display:flex; gap:10px; align-items:center;">
-                <input class="llm-input" id="summaryStartIdx" type="number" placeholder="起始消息序号 (如 1)" style="flex:1;">
+                <input class="llm-input" id="summaryStartIdx" type="number" min="1" placeholder="起始楼层 (第 1 条)" style="flex:1;">
                 <span style="color:var(--text-faint);">至</span>
-                <input class="llm-input" id="summaryEndIdx" type="number" placeholder="截止消息序号 (如 100)" style="flex:1;">
+                <input class="llm-input" id="summaryEndIdx" type="number" min="1" placeholder="截止楼层 (如第 50 条)" style="flex:1;">
               </div>
             </div>
 
@@ -7480,6 +7480,12 @@ ${fieldPrompts}
             font-family: var(--font-main) !important;
           }
         `;
+        // 静默向 Service Worker 发起一次字体预热，确保第一时间持久化缓存到手机本地
+        try {
+          if (typeof fetch === "function") {
+            fetch(scheme.url, { mode: "no-cors" }).catch(() => {});
+          }
+        } catch (_) {}
       } else {
         styleEl.textContent = `
           :root {
@@ -12902,14 +12908,24 @@ textarea {
             exportedAt: new Date().toISOString(),
             totalMessages: msgs.length,
             companionName: localStorage.getItem("companion_custom_ai_name") || (typeof CONFIG !== "undefined" && CONFIG.AI_NAME) || "AI",
-            messages: msgs.map(m => ({
-              id: m.id,
-              from: m.from,
-              kind: m.kind || "reply",
-              text: m.text || "",
-              ts: m.ts || new Date().toISOString(),
-              meta: m.meta || {}
-            }))
+            messages: msgs.map(m => {
+              // 保证导出格式严格包含标准时间戳
+              let timeIso = "";
+              if (m.ts) {
+                const d = new Date(m.ts);
+                timeIso = !isNaN(d.getTime()) ? d.toISOString() : String(m.ts);
+              } else {
+                timeIso = new Date().toISOString();
+              }
+              return {
+                id: m.id,
+                from: m.from,
+                kind: m.kind || "reply",
+                text: m.text || "",
+                ts: timeIso,
+                meta: m.meta || {}
+              };
+            })
           };
 
           const jsonStr = JSON.stringify(exportPayload, null, 2);
@@ -12974,12 +12990,21 @@ textarea {
               let importedCount = 0;
               for (const item of list) {
                 if (item && (item.text != null || item.kind)) {
+                  // 智能兼容多种时间戳格式（ts, timestamp, created_at, time）
+                  let rawTs = item.ts != null ? item.ts : (item.timestamp != null ? item.timestamp : (item.created_at != null ? item.created_at : item.time));
+                  let finalTs = "";
+                  if (rawTs) {
+                    const parsed = new Date(rawTs);
+                    finalTs = !isNaN(parsed.getTime()) ? parsed.toISOString() : String(rawTs);
+                  } else {
+                    finalTs = new Date().toISOString();
+                  }
                   setMessage({
                     id: item.id || ("imp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7)),
                     from: item.from === "human" ? "human" : "ai",
                     kind: item.kind || "reply",
                     text: item.text || "",
-                    ts: item.ts || new Date().toISOString(),
+                    ts: finalTs,
                     meta: item.meta || {},
                     status: "sent"
                   }, { render: false, cache: false });
@@ -13900,12 +13925,26 @@ textarea {
         } else if (currentSummaryMode === "recent60") {
           return valid.slice(-60);
         } else if (currentSummaryMode === "custom") {
-          const s = parseInt(summaryStartIdx ? summaryStartIdx.value : 0, 10) || 0;
-          const e = parseInt(summaryEndIdx ? summaryEndIdx.value : valid.length, 10) || valid.length;
-          return valid.filter(m => {
-            const num = msgNum(m.id);
-            return num >= s && num <= e;
-          });
+          const total = valid.length;
+          if (total === 0) return [];
+          const sVal = summaryStartIdx ? summaryStartIdx.value.trim() : "";
+          const eVal = summaryEndIdx ? summaryEndIdx.value.trim() : "";
+          const rawS = sVal ? parseInt(sVal, 10) : 1;
+          const rawE = eVal ? parseInt(eVal, 10) : total;
+
+          // 兼容：如果填写的数字远大于有效消息总数，且能在消息底层 ID 里找到匹配，则按底层 ID 检索
+          if (rawS > total && valid.some(m => msgNum(m.id) >= rawS)) {
+            return valid.filter(m => {
+              const num = msgNum(m.id);
+              return num >= rawS && num <= rawE;
+            });
+          }
+
+          // 绝大多数情况：自然直觉的楼层序号（第 1 条到第 N 条）
+          const s = Math.max(1, isNaN(rawS) ? 1 : rawS);
+          const e = Math.min(total, isNaN(rawE) ? total : rawE);
+          if (s > e) return [];
+          return valid.slice(s - 1, e);
         } else {
           const lastSumId = parseInt(localStorage.getItem(STORAGE_LAST_ID) || "0", 10);
           const unsummarized = valid.filter(m => msgNum(m.id) > lastSumId);
@@ -13927,6 +13966,15 @@ textarea {
             currentSummaryMode = btn.dataset.val;
             if (summaryCustomRow) {
               summaryCustomRow.classList.toggle("hidden", currentSummaryMode !== "custom");
+              if (currentSummaryMode === "custom") {
+                const validLen = (typeof chatMessages !== "undefined" && Array.isArray(chatMessages))
+                  ? chatMessages.filter(m => m && m.kind !== "thinking" && m.text).length
+                  : 0;
+                if (summaryStartIdx && !summaryStartIdx.value) summaryStartIdx.value = "1";
+                if (summaryEndIdx && !summaryEndIdx.value && validLen > 0) summaryEndIdx.value = String(validLen);
+                if (summaryStartIdx) summaryStartIdx.placeholder = `起始 (第 1 条)`;
+                if (summaryEndIdx) summaryEndIdx.placeholder = `截止 (共 ${validLen} 条)`;
+              }
             }
             refreshSummaryRangeHint();
           });
@@ -13958,14 +14006,28 @@ textarea {
           const userName = localStorage.getItem("companion_custom_user_name") || CONFIG.HUMAN_NAME || "月月";
           const aiName = localStorage.getItem("companion_custom_ai_name") || CONFIG.AI_NAME || "穷奇";
 
+          // 为每行对话附带清晰的时间戳与星期，让 AI 完全掌握事件发生的精确时间
           const convoLines = msgs.map(m => {
             const sender = m.from === "human" ? userName : aiName;
-            return `${sender}: ${m.text}`;
+            let timePrefix = "";
+            if (m.ts) {
+              const d = new Date(m.ts);
+              if (!isNaN(d.getTime())) {
+                const datePart = d.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: TZ });
+                const weekPart = d.toLocaleDateString("zh-CN", { weekday: "short", timeZone: TZ });
+                const timePart = d.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: TZ });
+                timePrefix = `[${datePart} ${timePart} ${weekPart}] `;
+              }
+            }
+            return `${timePrefix}${sender}: ${m.text}`;
           }).join("\n");
 
           doGenSummaryBtn.disabled = true;
           const origBtnText = doGenSummaryBtn.textContent;
           doGenSummaryBtn.textContent = "正在分析对话并提炼记忆...";
+
+          const nowD = new Date();
+          const nowStr = `${nowD.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit", weekday: "long", timeZone: TZ })} ${nowD.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: TZ })}`;
 
           try {
             const reqBody = {
@@ -13975,7 +14037,7 @@ textarea {
               temperature: 0.5,
               messages: [
                 { role: "system", content: promptText },
-                { role: "user", content: `以下是需要你客观提炼并分条总结的两人对话记录：\n\n${convoLines}` }
+                { role: "user", content: `【当前提炼时间】：${nowStr}（北京时间）\n以下是需要你客观提炼并按时间先后顺序分条总结的两人对话记录（每条已附带精确日期时间与星期）：\n\n${convoLines}` }
               ]
             };
 
@@ -13999,8 +14061,20 @@ textarea {
             lastSummarizedMaxId = msgs.reduce((max, m) => Math.max(max, msgNum(m.id)), 0);
 
             if (summaryResultTitle) {
-              const nowD = new Date();
-              summaryResultTitle.value = `<${nowD.getFullYear()}年${nowD.getMonth() + 1}月对话事件汇总 (${msgs.length}条)>`;
+              const firstMsg = msgs[0];
+              const lastMsg = msgs[msgs.length - 1];
+              let rangeStr = "";
+              if (firstMsg && firstMsg.ts && lastMsg && lastMsg.ts) {
+                const d1 = new Date(firstMsg.ts), d2 = new Date(lastMsg.ts);
+                const m1 = `${d1.getFullYear()}年${d1.getMonth() + 1}月${d1.getDate()}日`;
+                const m2 = `${d2.getMonth() + 1}月${d2.getDate()}日`;
+                rangeStr = (d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate())
+                  ? m1
+                  : `${m1}-${m2}`;
+              } else {
+                rangeStr = `${nowD.getFullYear()}年${nowD.getMonth() + 1}月`;
+              }
+              summaryResultTitle.value = `<${rangeStr}对话事件汇总 (${msgs.length}条)>`;
             }
             if (summaryResultContent) {
               summaryResultContent.value = reply.trim();
