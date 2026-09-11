@@ -284,10 +284,10 @@
       justify-content: center;
       height: calc(var(--header-h) + env(safe-area-inset-top));
       padding: calc(env(safe-area-inset-top) + 8px) var(--side-pad) 10px;
-      background: transparent !important;
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
-      border-bottom: none !important;
+      background: rgba(245, 245, 245, 0.65) !important;
+      backdrop-filter: blur(15px) !important;
+      -webkit-backdrop-filter: blur(15px) !important;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
       box-shadow: none !important;
       pointer-events: none;
     }
@@ -985,12 +985,12 @@
 
     .row.human .bubble {
       max-width: min(86vw, 640px) !important;
-      min-width: 88px !important;
+      min-width: 92px !important;
       background: #ffecf3 !important;
       color: #000000 !important;
       border: 0 !important;
       box-shadow: none !important;
-      padding: 7px 56px 8px 15px !important;
+      padding: 7px 68px 8px 15px !important;
       border-radius: 18px !important;
     }
 
@@ -1254,7 +1254,7 @@
     .meta {
       position: absolute !important;
       white-space: nowrap !important;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+      font-family: var(--font-main) !important;
       font-size: 9.5px !important;
       user-select: none !important;
       pointer-events: none !important;
@@ -2408,10 +2408,11 @@
       cursor: pointer;
       width: 40px;
       /* 按钮点击区域宽 */
+      margin-left: -10px;
       height: 40px;
       /* 按钮点击区域高 */
-      margin-left: -8px;
-      /* 往左靠，消除与输入框之间的过多留白，间距跟左边头像对称 */
+      right: 37px !important;
+      /* 调节麦克风左右 */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -2513,8 +2514,9 @@
       background: rgba(255, 255, 255, 0.4);
       border: 1px solid rgba(0, 0, 0, 0.08);
       border-radius: 10px !important;
+      -webkit-backdrop-filter: blur(15px) !important;
       padding: 5px 12px;
-      min-height: 32px !important;
+      min-height: 35px !important;
       /* 扁平胶囊最小高度 */
       height: auto !important;
       /* 打字增多时允许自动撑开 */
@@ -5233,7 +5235,8 @@
           </div>
           <div class="push-hint" id="pushHint"></div>
           <div style="margin-top:10px;">
-            <button type="button" class="llm-btn" id="pushTestBtn" style="padding:6px 14px; font-size:12px;">测试弹出一条通知</button>
+            <button type="button" class="llm-btn" id="pushTestBtn"
+              style="padding:6px 14px; font-size:12px;">测试弹出一条通知</button>
           </div>
         </section>
 
@@ -7977,12 +7980,13 @@ ${fieldPrompts}
 
 /* 1. 顶栏：轻盈纯净透明与居中排版 */
 .topbar {
-  background: transparent !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  border-bottom: none !important;
-  box-shadow: none !important;
+  background: rgba(245, 245, 245, 0.65) !important; /* 独白同款浅灰半透明底色 */
+  backdrop-filter: blur(15px) !important;           /* 安卓/电脑端磨砂模糊 */
+  -webkit-backdrop-filter: blur(15px) !important;   /* 【修改这里】苹果手机专属磨砂模糊，不能写 none */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important; /* 微弱底边线，勾勒玻璃边缘 */
+  box-shadow: none !important;                      /* 去掉多余阴影 */
 }
+
 
 .peerpill .name {
   font-family: var(--font-main) !important;
@@ -8018,20 +8022,26 @@ textarea {
 }
 
 /* 3. 消息气泡美化 */
+.row.human .bubble,
 .msg.human .bubble {
   background: #fce7f3 !important; /* 甜美柔粉 */
   color: #374151 !important;
-  border-radius: 16px 4px 16px 16px !important;
+  border-radius: 18px !important;
+  padding: 6px 68px 7px 15px !important; /* 右侧留足68px，使文字与双对勾时间戳距离与AI一致舒展 */
   box-shadow: 0 2px 10px rgba(244, 114, 182, 0.12) !important;
 }
+.row.ai .bubble,
 .msg.ai .bubble {
   background: rgba(255, 255, 255, 0.88) !important;
   color: #1f2937 !important;
-  border-radius: 4px 16px 16px 16px !important;
+  border-radius: 18px !important;
+  padding: 6px 46px 7px 19px !important;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04) !important;
 }
+.meta,
 .msg .time {
-  font-size: 11px !important;
+  font-family: var(--font-main) !important;
+  font-size: 10px !important;
   color: rgba(120, 120, 120, 0.65) !important;
 }
 
@@ -9426,7 +9436,7 @@ textarea {
           showToast('后台心跳已开启 · 切出应用保持常驻');
           if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
-              title: '后台心跳常驻中',
+              title: 'Gravitational Anchoring',
               artist: CONFIG.AI_NAME,
               album: CONFIG.APP_NAME
             });
@@ -10445,6 +10455,10 @@ textarea {
           if (on) {
             localStorage.setItem("companion_push", "on");
             reportSub(sub).catch(() => { });
+          }
+        } catch (_) { paint(false); }
+      })();
+
       const testBtn = document.getElementById("pushTestBtn");
       if (testBtn) {
         testBtn.addEventListener("click", async () => {
@@ -11825,9 +11839,9 @@ textarea {
                   vibrate: [80, 40, 80],
                   data: { url: "./" }
                 });
-              }).catch(() => {});
+              }).catch(() => { });
             }
-          } catch (_) {}
+          } catch (_) { }
         }
       }
       setMessage({ ...m, status: "sent" }, { render: false });
