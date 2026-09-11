@@ -1262,10 +1262,14 @@
     }
 
     .meta .tick {
-      margin-left: 2px;
+      margin-left: 2px !important;
       letter-spacing: 0;
       display: inline-flex;
       align-items: center;
+    }
+
+    .meta .tick svg {
+      margin-left: 0 !important;
     }
 
     .meta .state {
@@ -1283,7 +1287,7 @@
       color: #893a49 !important;
       display: flex !important;
       align-items: center !important;
-      gap: 2px !important;
+      gap: 0 !important;
     }
 
     .row.human .meta .tick {
@@ -8143,12 +8147,17 @@ textarea::placeholder {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04) !important;
 }
 
-/* 气泡内时间戳与已读对勾 */
+/* 气泡内时间戳 */
 .meta,
 .msg .time {
   font-family: var(--font-main) !important;
   font-size: 10px !important;
   color: rgba(120, 120, 120, 0.65) !important;      /* 时间戳颜色 */
+}
+
+/* 时间戳与已读双对勾的距离（数值越小越贴近，如 1px 或 2px 会很紧凑） */
+.meta .tick {
+  margin-left: 2px !important;                      /* 对勾距离时间戳的间隔 */
 }`;
 
     // 壁纸生效函数：同时驱动主聊天背景与各面板壁纸
@@ -8257,8 +8266,8 @@ textarea::placeholder {
       if (themeCustomCss) {
         const curCss = localStorage.getItem("companion_custom_css");
         const current = localStorage.getItem("companion_current_preset") || "duobai";
-        const isOldDuobai = (current === "duobai") && curCss && (!curCss.includes(".backbtn") || !curCss.includes(".floatbtn.send"));
-        // 如果用户从未修改过，或者当前是默认独白模版且尚未包含新按钮配置，自动升级为完整模版
+        const isOldDuobai = (current === "duobai") && curCss && (!curCss.includes(".backbtn") || !curCss.includes(".floatbtn.send") || !curCss.includes(".meta .tick"));
+        // 如果用户从未修改过，或者当前是默认独白模版且尚未包含新按钮或对勾间距配置，自动升级为完整模版
         if (curCss === null || curCss === undefined || curCss.trim() === "" || isOldDuobai) {
           themeCustomCss.value = DEFAULT_DUOBAI_CSS;
           applyLiveCss(DEFAULT_DUOBAI_CSS, true);
@@ -11070,7 +11079,7 @@ textarea::placeholder {
     }
 
     function fillMeta(metaEl, ts, isAn) {
-      const tickSvg = '<svg viewBox="0 0 1024 1024" width="13" height="13" fill="#893a49" style="display:inline-block; vertical-align:-1px; margin-left:2px;"><path d="M666.56 256l58.304 60.224L287.808 768 25.6 496.96l58.24-60.224 203.968 210.816L666.56 256z m273.536 0l58.304 60.224L561.344 768l-98.944-102.208 58.304-60.288 40.64 42.048L940.096 256z"/></svg>';
+      const tickSvg = '<svg viewBox="0 0 1024 1024" width="13" height="13" fill="#893a49" style="display:inline-block; vertical-align:-1px;"><path d="M666.56 256l58.304 60.224L287.808 768 25.6 496.96l58.24-60.224 203.968 210.816L666.56 256z m273.536 0l58.304 60.224L561.344 768l-98.944-102.208 58.304-60.288 40.64 42.048L940.096 256z"/></svg>';
       metaEl.innerHTML = `<span>${fmtTime(ts)}</span>` + (isAn ? `<span class="tick">${tickSvg}</span>` : "");
     }
     // 发送中的小时钟:两根指针绕表心转(SMIL,旋转中心写死(12,12),不依赖 transform-box,iOS 稳)。
