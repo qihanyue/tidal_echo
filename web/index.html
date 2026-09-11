@@ -1333,7 +1333,7 @@
       padding: 5px 14px;
       border-radius: 20px;
       cursor: pointer;
-      box-shadow: 0 1px 6px rgba(137, 58, 73, 0.06);
+      box-shadow: none !important;
       transition: transform .15s ease, background-color .15s ease, border-color .15s ease;
       display: inline-flex;
       align-items: center;
@@ -8215,6 +8215,7 @@ textarea::placeholder {
   border: 1px solid rgba(137, 58, 73, 0.18) !important; /* 边框 */
   border-radius: 20px !important;                   /* 药丸圆角 */
   font-size: 11.5px !important;                     /* 字号 */
+  box-shadow: none !important;                      /* 彻底去掉阴影 */
 }`;
 
     // 壁纸生效函数：同时驱动主聊天背景与各面板壁纸
@@ -8323,7 +8324,7 @@ textarea::placeholder {
       if (themeCustomCss) {
         const curCss = localStorage.getItem("companion_custom_css");
         const current = localStorage.getItem("companion_current_preset") || "duobai";
-        const isOldDuobai = (current === "duobai") && curCss && (!curCss.includes(".backbtn") || !curCss.includes(".floatbtn.send") || !curCss.includes(".meta .tick") || !curCss.includes(".older-btn"));
+        const isOldDuobai = (current === "duobai") && curCss && (!curCss.includes(".backbtn") || !curCss.includes(".floatbtn.send") || !curCss.includes(".meta .tick") || !curCss.includes(".older-btn") || !curCss.includes("彻底去掉阴影"));
         // 如果用户从未修改过，或者当前是默认独白模版且尚未包含全部配置，自动升级为完整模版
         if (curCss === null || curCss === undefined || curCss.trim() === "" || isOldDuobai) {
           themeCustomCss.value = DEFAULT_DUOBAI_CSS;
