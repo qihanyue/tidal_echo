@@ -2477,10 +2477,12 @@
     }
 
     .floatbtn.send svg {
-      width: 22px !important;
+      width: 18px !important;
       /* 纸飞机图标自身宽 */
-      height: 22px !important;
+      height: 18px !important;
       /* 纸飞机图标自身高 */
+      margin-right: 8px !important;
+      /* 纸飞机左右位置 */
     }
 
     /* 发送键按压回弹动画 */
@@ -2508,9 +2510,9 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      background: rgba(255, 255, 255, 0.42);
+      background: rgba(255, 255, 255, 0.4);
       border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 12px;
+      border-radius: 10px !important;
       padding: 5px 12px;
       min-height: 32px !important;
       /* 扁平胶囊最小高度 */
@@ -2545,7 +2547,7 @@
       background: transparent !important;
       color: #000000;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      font-size: 15px;
+      font-size: 17px;
       line-height: 22px;
       height: 22px;
       min-height: 22px;
@@ -14184,7 +14186,7 @@ textarea {
         discardSummaryBtn.addEventListener("click", () => {
           // 如果当前有正在请求中的总结任务，立即中断网络连接
           if (currentSummaryAbortController) {
-            try { currentSummaryAbortController.abort(); } catch (_) {}
+            try { currentSummaryAbortController.abort(); } catch (_) { }
             currentSummaryAbortController = null;
           }
           isGeneratingSummary = false;
