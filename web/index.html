@@ -1311,6 +1311,54 @@
       vertical-align: -0.18em;
     }
 
+    /* ── 展开更早历史消息胶囊按钮 ── */
+    .older-btn-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 14px 0 8px;
+      width: 100%;
+    }
+
+    .older-btn {
+      appearance: none;
+      background: rgba(255, 255, 255, 0.72);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(137, 58, 73, 0.18);
+      color: #893a49;
+      font-family: var(--font-main) !important;
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 5px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      box-shadow: 0 1px 6px rgba(137, 58, 73, 0.06);
+      transition: transform .15s ease, background-color .15s ease, border-color .15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .older-btn:active {
+      transform: scale(0.95);
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(137, 58, 73, 0.35);
+    }
+
+    .older-btn:disabled {
+      opacity: 0.7;
+      cursor: default;
+      transform: none;
+    }
+
+    .older-btn svg {
+      color: #893a49;
+      flex-shrink: 0;
+    }
+
     /* ── thinking ── collapsed follows AI bubble; expanded becomes a quiet reading section ── */
     .row.think {
       justify-content: flex-start;
@@ -8158,6 +8206,15 @@ textarea::placeholder {
 /* 时间戳与已读双对勾的距离（数值越小越贴近，如 1px 或 2px 会很紧凑） */
 .meta .tick {
   margin-left: 2px !important;                      /* 对勾距离时间戳的间隔 */
+}
+
+/* 顶部「展开更早消息」胶囊按钮 */
+.older-btn {
+  background: rgba(255, 255, 255, 0.72) !important; /* 按钮磨砂背景 */
+  color: #893a49 !important;                        /* 按钮文字与图标颜色 */
+  border: 1px solid rgba(137, 58, 73, 0.18) !important; /* 边框 */
+  border-radius: 20px !important;                   /* 药丸圆角 */
+  font-size: 11.5px !important;                     /* 字号 */
 }`;
 
     // 壁纸生效函数：同时驱动主聊天背景与各面板壁纸
@@ -8266,8 +8323,8 @@ textarea::placeholder {
       if (themeCustomCss) {
         const curCss = localStorage.getItem("companion_custom_css");
         const current = localStorage.getItem("companion_current_preset") || "duobai";
-        const isOldDuobai = (current === "duobai") && curCss && (!curCss.includes(".backbtn") || !curCss.includes(".floatbtn.send") || !curCss.includes(".meta .tick"));
-        // 如果用户从未修改过，或者当前是默认独白模版且尚未包含新按钮或对勾间距配置，自动升级为完整模版
+        const isOldDuobai = (current === "duobai") && curCss && (!curCss.includes(".backbtn") || !curCss.includes(".floatbtn.send") || !curCss.includes(".meta .tick") || !curCss.includes(".older-btn"));
+        // 如果用户从未修改过，或者当前是默认独白模版且尚未包含全部配置，自动升级为完整模版
         if (curCss === null || curCss === undefined || curCss.trim() === "" || isOldDuobai) {
           themeCustomCss.value = DEFAULT_DUOBAI_CSS;
           applyLiveCss(DEFAULT_DUOBAI_CSS, true);
@@ -11063,6 +11120,7 @@ textarea::placeholder {
       const beforeId = oldestMessageId();
       if (!beforeId) return;
       loadingOlder = true;
+      scheduleRender({ preserveAnchor: true });
       const anchor = captureAnchor();
       try {
         const msgs = await apiOlderHistory(beforeId, HISTORY_PAGE_SIZE);
@@ -11072,6 +11130,7 @@ textarea::placeholder {
         // Keep hasMoreOlder true so a later scroll can retry transient failures.
       } finally {
         loadingOlder = false;
+        scheduleRender({ preserveAnchor: true });
       }
     }
     function findRenderedMessageRow(key) {
@@ -11102,6 +11161,9 @@ textarea::placeholder {
 
     function buildVirtualRows() {
       const rows = [];
+      if (hasMoreOlder && chatMessages.length > 0) {
+        rows.push({ type: "older_btn", key: "row:older_btn" });
+      }
       let lastDayKey = null;
       let prevBubble = null;
       sortedMessages().forEach((m) => {
@@ -11164,6 +11226,7 @@ textarea::placeholder {
     }
     function estimatedHeight(row) {
       if (rowHeights.has(row.key)) return rowHeights.get(row.key);
+      if (row.type === "older_btn") return 46;
       if (row.type === "day") return DEFAULT_DAY_HEIGHT;
       if (row.type === "new") return DEFAULT_NEW_HEIGHT;
       if (row.type === "thinking") return DEFAULT_THINK_HEIGHT;
@@ -11467,9 +11530,29 @@ textarea::placeholder {
       }
       return row;
     }
+    function makeOlderBtn() {
+      const wrap = document.createElement("div");
+      wrap.className = "older-btn-row";
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "older-btn";
+      if (loadingOlder) {
+        btn.disabled = true;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><span>正在载入更早消息…</span>`;
+      } else {
+        btn.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg><span>点击展开更早消息</span>`;
+        btn.addEventListener("click", () => {
+          if (!loadingOlder) loadOlderMessages();
+        });
+      }
+      wrap.appendChild(btn);
+      return wrap;
+    }
+
     function createVirtualNode(row) {
       let el;
-      if (row.type === "day") el = makeDay(row);
+      if (row.type === "older_btn") el = makeOlderBtn();
+      else if (row.type === "day") el = makeDay(row);
       else if (row.type === "new") el = makeNewDivider(row);
       else if (row.type === "thinking") el = makeThinking(row);
       else if (row.type === "act") el = makeAct(row);
@@ -11502,6 +11585,7 @@ textarea::placeholder {
       });
     }
     function virtualRowSignature(row) {
+      if (row.type === "older_btn") return "older_btn:" + (loadingOlder ? "1" : "0");
       if (row.message) {
         const m = row.message;
         const _atts = (m.meta && Array.isArray(m.meta.attachments)) ? m.meta.attachments : [];
@@ -12417,8 +12501,8 @@ textarea::placeholder {
       }
       if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
       scrollIdleTimer = setTimeout(onScrollIdle, SCROLL_IDLE_MS);
-      // 只在「物化顶部已到 virtualRows[0]」时才从服务器取更早(否则上方还有内存里的行,recenter 物化即可,不必联网)
-      if ((virtualRows.length <= DOM_WINDOW || domStart === 0) && top < OLDER_LOAD_THRESHOLD) loadOlderMessages();
+      // 历史消息由顶部「点击展开更早消息」按钮受控触发加载，避免往上滑动时自动堆砌消息
+      // if ((virtualRows.length <= DOM_WINDOW || domStart === 0) && top < OLDER_LOAD_THRESHOLD) loadOlderMessages();
       if (nearBottom()) hideNewMsgPill();
       // 滚动期间不 render、不写 scrollTop,完全交给原生滚动 → 不抖;窗口调整推迟到 onScrollIdle
     }, { passive: true });
