@@ -299,7 +299,7 @@ def fetch_web_content(url: str, max_chars: int = 3500) -> str:
     return f"【网页链接: {url}】\n{header_info}正文提取内容:\n{clean_text}"
 
 
-def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", memory_context: str = "", tether_front: str = "", tether_middle: str = "", tether_back: str = "", web_context: str = "", weather_context: str = "", limit: int = 0) -> list:
+def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", memory_context: str = "", tether_front: str = "", tether_middle: str = "", tether_back: str = "", web_context: str = "", weather_context: str = "", inner_voice_prompt: str = "", limit: int = 0) -> list:
     base_persona = custom_persona or PERSONA
     parts = []
     # 1. 提示词最前面 (Front)
@@ -332,9 +332,8 @@ def build_messages(custom_persona: str = "", user_persona: str = "", time_contex
         parts.append(f"[最高执行准则与核心协定 (Back)]\n{tether_back.strip()}")
 
     # 7. 心声与内心独白生成指令 (Inner Voice)
-    iv_prompt = (bundle_meta or {}).get("inner_voice_prompt") or latest_item.get("inner_voice_prompt") or (latest_item.get("meta") or {}).get("inner_voice_prompt") or ""
-    if iv_prompt and iv_prompt.strip():
-        parts.append(f"### 【心声/内心独白生成指令】\n{iv_prompt.strip()}")
+    if inner_voice_prompt and inner_voice_prompt.strip():
+        parts.append(f"### 【心声/内心独白生成指令】\n{inner_voice_prompt.strip()}")
 
     parts.append(
         "### 【核心对话规则与对话节奏铁律】\n"
@@ -604,6 +603,9 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
             except (ValueError, TypeError):
                 pass
 
+    # 提取心声 (Inner Voice) 提示词
+    iv_prompt = (bundle_meta or {}).get("inner_voice_prompt") or latest_item.get("inner_voice_prompt") or (latest_item.get("meta") or {}).get("inner_voice_prompt") or ""
+
     try:
         limit = max(history_n * 2, 8)
         msgs = build_messages(
@@ -616,6 +618,7 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
             tether_back=t_back,
             web_context=web_ctx,
             weather_context=weather_ctx,
+            inner_voice_prompt=iv_prompt,
             limit=limit
         )
         reply = call_llm_dynamic(msgs, active_routes, temp)
@@ -634,6 +637,13 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
         if m_iv:
             inner_voice_text = m_iv.group(1).strip()
             reply = re.sub(r'<inner_voice>[\s\S]*?</inner_voice>', '', reply, flags=re.I).strip()
+        else:
+            # 容错：如果模型未输出闭合标签 </inner_voice>
+            m_iv2 = re.search(r'<inner_voice>([\s\S]*)$', reply, flags=re.I)
+            if m_iv2:
+                parts_iv = re.split(r'\s*(?:\[分段\]|\[split\])\s*', m_iv2.group(1), maxsplit=1)
+                inner_voice_text = parts_iv[0].strip()
+                reply = parts_iv[1].strip() if len(parts_iv) > 1 else ""
 
         # 按 [分段] 或 [split] 拆分成多个气泡
         pattern = r'\s*(?:\[分段\]|\[split\])\s*'
