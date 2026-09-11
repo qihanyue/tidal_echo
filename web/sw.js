@@ -2,7 +2,8 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "穷奇";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v47-fix-voice-payload-sticker";
+const CACHE = "companion-v48-sticker-square-cache";
+const STICKER_CACHE = "companion-stickers-media-v1";
 const PRECACHE = [
   "./index.html",
   "./broken_by_bunny.png",
@@ -23,13 +24,12 @@ self.addEventListener("install", (e) => {
     caches.open(CACHE)
       .then((c) => c.addAll(PRECACHE))
       .then(() => self.skipWaiting())
-      .catch(() => self.skipWaiting())
   );
 });
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys()
-      .then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((ks) => Promise.all(ks.filter((k) => k !== CACHE && k !== STICKER_CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -41,6 +41,7 @@ self.addEventListener("fetch", (e) => {
     e.respondWith(fetch(e.request, { cache: "reload" }).catch(() => caches.match("./index.html")));
     return;
   }
+  // 1. 同源静态资源优先走 App Shell 缓存
   if (e.request.method === "GET" && url.origin === location.origin) {
     e.respondWith(
       caches.match(e.request).then((r) => {
@@ -52,6 +53,30 @@ self.addEventListener("fetch", (e) => {
         });
       })
     );
+    return;
+  }
+  // 2. 外部图床/表情包图片 Cache-First 本地离线持久化缓存！
+  // 命中后 0ms 瞬间秒开，无需每次重复从图床拉取，即使断网也能秒出
+  const isImageReq = e.request.destination === "image" || /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(url.pathname);
+  if (e.request.method === "GET" && isImageReq) {
+    e.respondWith(
+      caches.open(STICKER_CACHE).then((cache) => {
+        return cache.match(e.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          return fetch(e.request).then((networkResponse) => {
+            if (networkResponse && (networkResponse.status === 200 || networkResponse.type === "opaque")) {
+              cache.put(e.request, networkResponse.clone());
+            }
+            return networkResponse;
+          }).catch(() => {
+            return new Response("", { status: 404, statusText: "Sticker Offline" });
+          });
+        });
+      })
+    );
+    return;
   }
 });
 

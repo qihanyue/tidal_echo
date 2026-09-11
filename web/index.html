@@ -2116,24 +2116,30 @@
 
     .sticker-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      align-items: start;
     }
 
     .sticker-card {
       position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      box-sizing: border-box;
       background: #ffffff;
       border-radius: 14px;
       border: 1px solid rgba(0, 0, 0, 0.06);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-      padding: 8px 6px;
+      padding: 6px 6px 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
       transition: transform .12s ease, box-shadow .12s ease;
+      overflow: hidden;
     }
 
     .sticker-card:active {
@@ -2143,22 +2149,25 @@
 
     .sticker-thumb-box {
       width: 100%;
-      aspect-ratio: 1 / 1;
+      height: 100%;
+      flex: 1;
+      min-height: 0;
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 8px;
       overflow: hidden;
-      background: #fafafa;
+      background: transparent;
     }
 
     .sticker-card-thumb {
-      width: 100%;
-      height: 100%;
-      aspect-ratio: 1 / 1;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
       object-fit: contain;
-      border-radius: 8px;
+      border-radius: 6px;
       display: block;
       transition: opacity .15s ease;
     }
@@ -2184,16 +2193,17 @@
     }
 
     .sticker-fallback-icon {
-      font-size: 22px;
-      line-height: 1;
-      margin-bottom: 4px;
-      opacity: 0.85;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 2px;
+      opacity: 0.6;
     }
 
     .sticker-fallback-name {
-      font-size: 11px;
+      font-size: 10px;
       color: #666;
-      line-height: 1.25;
+      line-height: 1.2;
       max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -2221,36 +2231,38 @@
     }
 
     .sticker-card-name {
-      font-size: 11.5px;
-      color: #555;
-      margin-top: 6px;
-      width: 100%;
+      position: absolute;
+      bottom: 3px;
+      left: 4px;
+      right: 4px;
+      height: 16px;
+      line-height: 16px;
+      font-size: 10.5px;
+      color: #666;
       text-align: center;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      line-height: 1.3;
+      pointer-events: none;
     }
 
     /* 编辑模式下的删除角标 */
     .sticker-del-badge {
       display: none;
       position: absolute;
-      top: -5px;
-      right: -5px;
+      top: 4px;
+      right: 4px;
       width: 22px;
       height: 22px;
       border-radius: 50%;
       background: #ff5277;
       color: #fff;
-      font-size: 15px;
+      font-size: 14px;
       line-height: 20px;
       text-align: center;
       box-shadow: 0 2px 6px rgba(255, 82, 119, 0.4);
       cursor: pointer;
       border: 2px solid #fff;
-      font-weight: bold;
-      z-index: 5;
     }
 
     .sticker-sheet-card.is-editing .sticker-del-badge {
@@ -6775,7 +6787,22 @@
       try {
         localStorage.setItem(STICKER_KEY, JSON.stringify(list));
       } catch (_) { }
+      preloadStickerImages(list);
       if (rerender) renderStickerGrid();
+    }
+
+    // 后台静默预加载表情包图片，让 Service Worker 自动持久化缓存到本地离线库
+    function preloadStickerImages(list) {
+      if (!Array.isArray(list) || !list.length) return;
+      setTimeout(() => {
+        list.forEach(item => {
+          if (item && item.url && !item.url.startsWith("data:")) {
+            const img = new Image();
+            img.referrerPolicy = "no-referrer";
+            img.src = item.url;
+          }
+        });
+      }, 50);
     }
 
     function findSticker(name) {
@@ -6847,7 +6874,9 @@
           <div class="sticker-thumb-box">
             <img class="sticker-card-thumb" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.name)}" referrerpolicy="no-referrer" loading="lazy" onerror="handleStickerThumbError(this, '${escapeHtml(item.name)}')">
             <div class="sticker-fallback-card hidden" title="图片无法直接加载">
-              <span class="sticker-fallback-icon">🏷️</span>
+              <span class="sticker-fallback-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+              </span>
               <span class="sticker-fallback-name">${escapeHtml(item.name)}</span>
             </div>
           </div>
@@ -7226,7 +7255,9 @@ ${fieldPrompts}
         if (timeEl) timeEl.textContent = "· 暂无记录";
         body.innerHTML = `
           <div class="inner-voice-empty">
-            <div style="font-size:28px; margin-bottom:8px; opacity:0.6;">💭</div>
+            <div style="margin-bottom:8px; display:flex; justify-content:center; opacity:0.55;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            </div>
             <div style="font-weight:600; color:#555; margin-bottom:4px;">暂无心声记录</div>
             <div style="font-size:12px; color:#999;">开启后与 AI 发送消息，将在此感知内心独白</div>
           </div>
