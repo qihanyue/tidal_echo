@@ -5226,12 +5226,15 @@
 
         <!-- 锁屏通知 -->
         <section class="settings-card">
-          <div class="settings-label">锁屏通知 <i class="info-i" title="Gemini发消息、而你没在看时，推送到手机锁屏">i</i></div>
+          <div class="settings-label">锁屏通知 <i class="info-i" title="AI发消息、而你没在看时，推送到手机锁屏">i</i></div>
           <div class="segmented" id="pushSeg" role="group" aria-label="锁屏通知开关">
             <button type="button" data-val="off">关</button>
             <button type="button" data-val="on">开</button>
           </div>
           <div class="push-hint" id="pushHint"></div>
+          <div style="margin-top:10px;">
+            <button type="button" class="llm-btn" id="pushTestBtn" style="padding:6px 14px; font-size:12px;">测试弹出一条通知</button>
+          </div>
         </section>
 
         <!-- AI body routing -->
@@ -10442,9 +10445,34 @@ textarea {
           if (on) {
             localStorage.setItem("companion_push", "on");
             reportSub(sub).catch(() => { });
+      const testBtn = document.getElementById("pushTestBtn");
+      if (testBtn) {
+        testBtn.addEventListener("click", async () => {
+          let perm = (typeof Notification !== "undefined") ? Notification.permission : "denied";
+          if (perm !== "granted") {
+            alert("请先开启上方的【锁屏通知】开关并允许系统权限哦！");
+            return;
           }
-        } catch (_) { paint(false); }
-      })();
+          showToast("请在 3 秒内按电源键锁屏或切回手机桌面！");
+          setTimeout(async () => {
+            try {
+              const reg = await navigator.serviceWorker.ready;
+              const aiDisplayName = localStorage.getItem("companion_custom_ai_name") || (typeof CONFIG !== "undefined" && CONFIG.AI_NAME) || "穷奇";
+              reg.showNotification(aiDisplayName, {
+                body: "叮咚！弹窗通知通道完全打通啦，切出去也能准时收到~",
+                icon: "./icon-192.png",
+                badge: "./icon-192.png",
+                tag: "test-push",
+                renotify: true,
+                vibrate: [80, 40, 80],
+                data: { url: "./" }
+              });
+            } catch (err) {
+              alert("测试弹窗失败: " + err.message);
+            }
+          }, 3000);
+        });
+      }
     })();
 
     /* ════════════ 连接状态 ════════════ */
@@ -11779,6 +11807,28 @@ textarea {
       if (m.from === "ai" && m.kind !== "thinking" && m.kind !== "act") {               // act 是环境信息:不响铃、不在通话里朗读
         playReceiveSound();
         if (window.VoiceCall && window.VoiceCall.isOpen()) window.VoiceCall.speak(m.text || "");
+
+        // 关键增强：即使保活心跳保持长连，只要用户切去别的应用或按了锁屏（document.hidden），立即唤起系统通知横幅
+        if (document.hidden && typeof Notification !== "undefined" && Notification.permission === "granted") {
+          try {
+            const aiDisplayName = localStorage.getItem("companion_custom_ai_name") || (typeof CONFIG !== "undefined" && CONFIG.AI_NAME) || "穷奇";
+            const cleanText = (m.text || "").replace(/<[^>]+>/g, "").replace(/\[(?:表情|sticker):[^\]]+\]/g, "[表情]").trim();
+            const previewText = cleanText.slice(0, 100) || "给你发来了一条新消息";
+            if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+              navigator.serviceWorker.ready.then(reg => {
+                reg.showNotification(aiDisplayName, {
+                  body: previewText,
+                  icon: "./icon-192.png",
+                  badge: "./icon-192.png",
+                  tag: "companion-" + (m.id || Date.now()),
+                  renotify: true,
+                  vibrate: [80, 40, 80],
+                  data: { url: "./" }
+                });
+              }).catch(() => {});
+            }
+          } catch (_) {}
+        }
       }
       setMessage({ ...m, status: "sent" }, { render: false });
       scheduleRender({ stickToBottom: stick });
