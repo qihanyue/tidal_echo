@@ -5529,9 +5529,11 @@
 
             <div class="llm-field hidden" id="summaryCustomRangeRow">
               <div style="display:flex; gap:10px; align-items:center;">
-                <input class="llm-input" id="summaryStartIdx" type="number" min="1" placeholder="起始楼层 (第 1 条)" style="flex:1;">
+                <input class="llm-input" id="summaryStartIdx" type="number" min="1" placeholder="起始楼层 (第 1 条)"
+                  style="flex:1;">
                 <span style="color:var(--text-faint);">至</span>
-                <input class="llm-input" id="summaryEndIdx" type="number" min="1" placeholder="截止楼层 (如第 50 条)" style="flex:1;">
+                <input class="llm-input" id="summaryEndIdx" type="number" min="1" placeholder="截止楼层 (如第 50 条)"
+                  style="flex:1;">
               </div>
             </div>
 
@@ -5541,12 +5543,30 @@
             <div class="llm-field">
               <label class="settings-label" for="summaryPromptInput">提炼提示词 (Summary Prompt)</label>
               <textarea class="llm-textarea" id="summaryPromptInput" rows="5"
-                style="font-size:12.5px; line-height:1.5;">你是一个客观敏锐的记录者。请仔细阅读以下两人的聊天记录，提炼出一份精炼的过往经历总结。
-要求：
-1. 重点提炼核心事实、双方发生的关键事件、达成的约定、重要的情感与态度转变；
-2. 以客观第三人称视角叙述，条理清晰，言简意赅，禁止套话与说教；
-3. 每项事件以时间或先后顺序分条列出；
-4. 输出内容将作为两人的长期记忆背景。</textarea>
+                style="font-size:12.5px; line-height:1.5;"><总结规则>
+禁止私自编造不存在的内容!
+禁止私自编造不存在的内容!
+禁止私自编造不存在的内容!
+如果遇到复杂的请如实直述，禁止去编造、改动!
+## 【系统总结最高协议】：进行summary时，绝对必须正确按照<总结规则>生成！！！
+
+**【内容核心 (最高优先级)】**: 你的summary【必须】专注于以下几点，请直接输出(不需要回答我好的）：
+
+总结规则：
+进行summary时，必须精准提取内容，不遗漏任何锚点的重要细节，完美判断char和user的关系发展，必须直白且如实总结时间节点和故事发展，每件事的叙述控制在最多80字左右，此外再包含重要日期+时间节点即可。
+
+char的长期记忆summary格式为：
+当前年份日期星期时间，穷奇的第一人称总结与月月发生的事件，禁止太过于主观!
+
+## 示例：
+“2025年4月2日8:30-8:45, 星期三, 我和月月聊了关于早餐的话题，她吃了面包。
+2025年4月2日9:30, 星期三, 月月说路上堵车。”
+
+## 精炼记忆时禁止偷懒输出token count，必须进行正确的精炼
+
+##图片禁止总结为“发了一张图片/个人照片”，必须说明是什么图片，如果只是表情包则禁止总结在其中!!
+
+</总结规则></textarea>
             </div>
 
             <button class="llm-btn primary" id="doGenerateSummaryBtn" type="button"
@@ -6477,19 +6497,25 @@
         </div>
         <div class="inner-voice-hdr-actions">
           <button type="button" class="inner-voice-icon-btn" id="innerVoiceClearBtn" title="清空心声" aria-label="清空">
-            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
           </button>
-          <button type="button" class="inner-voice-icon-btn" id="innerVoiceSettingsBtn" title="心声设置与提示词" aria-label="设置">
-            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <button type="button" class="inner-voice-icon-btn" id="innerVoiceSettingsBtn" title="心声设置与提示词"
+            aria-label="设置">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+              </path>
             </svg>
           </button>
           <button type="button" class="inner-voice-icon-btn" id="innerVoiceCloseBtn" title="关闭" aria-label="关闭">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
@@ -6509,7 +6535,8 @@
       <div class="inner-voice-header">
         <h3 class="inner-voice-title" style="font-size:16px;">编辑心声面板设置</h3>
         <button type="button" class="inner-voice-icon-btn" id="innerVoiceSettingsCloseBtn" aria-label="关闭">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
@@ -6522,7 +6549,8 @@
             <span class="inner-voice-switch-title">开启心声生成</span>
             <span class="inner-voice-switch-desc">关闭后心声提示词不会发送给 AI，不记录心声</span>
           </div>
-          <input type="checkbox" id="innerVoiceEnabledToggle" style="width:20px; height:20px; accent-color:var(--accent, #e86b8b); cursor:pointer;">
+          <input type="checkbox" id="innerVoiceEnabledToggle"
+            style="width:20px; height:20px; accent-color:var(--accent, #e86b8b); cursor:pointer;">
         </div>
 
         <div style="font-size:12px; font-weight:600; color:#333; margin:4px 0 2px;">自定义心声字段 (标签名 + AI生成指令)</div>
@@ -6532,8 +6560,10 @@
           <!-- 由 JS 动态渲染 4 组字段编辑输入框 -->
         </div>
       </div>
-      <div class="sticker-modal-footer" style="padding: 12px 18px; border-top:1px solid rgba(0,0,0,0.05); display:flex; justify-content:space-between; align-items:center;">
-        <button type="button" class="sticker-modal-btn cancel" id="innerVoiceResetDefaultBtn" style="color:#e86b8b;">恢复默认</button>
+      <div class="sticker-modal-footer"
+        style="padding: 12px 18px; border-top:1px solid rgba(0,0,0,0.05); display:flex; justify-content:space-between; align-items:center;">
+        <button type="button" class="sticker-modal-btn cancel" id="innerVoiceResetDefaultBtn"
+          style="color:#e86b8b;">恢复默认</button>
         <div style="display:flex; gap:10px;">
           <button type="button" class="sticker-modal-btn cancel" id="innerVoiceSettingsCancelBtn">取消</button>
           <button type="button" class="sticker-modal-btn confirm" id="innerVoiceSettingsSaveBtn">保存设置</button>
@@ -7483,9 +7513,9 @@ ${fieldPrompts}
         // 静默向 Service Worker 发起一次字体预热，确保第一时间持久化缓存到手机本地
         try {
           if (typeof fetch === "function") {
-            fetch(scheme.url, { mode: "no-cors" }).catch(() => {});
+            fetch(scheme.url, { mode: "no-cors" }).catch(() => { });
           }
-        } catch (_) {}
+        } catch (_) { }
       } else {
         styleEl.textContent = `
           :root {
@@ -13659,6 +13689,8 @@ textarea {
 
     /* ════════════ Memory系统 (Memory & 古法总结 & GitHub 同步) ════════════ */
     function initMemorySystem() {
+      if (window._companion_memory_system_inited) return;
+      window._companion_memory_system_inited = true;
       const STORAGE_MEMORIES = "companion_memories";
       const STORAGE_GH = "companion_github_config";
       const STORAGE_ENABLE = "companion_memory_enabled";
@@ -13984,8 +14016,17 @@ textarea {
       if (summaryEndIdx) summaryEndIdx.addEventListener("input", refreshSummaryRangeHint);
 
       let lastSummarizedMaxId = 0;
+      let isGeneratingSummary = false;
+      let currentSummaryAbortController = null;
+      let isSavingSummary = false;
+
       if (doGenSummaryBtn) {
         doGenSummaryBtn.addEventListener("click", async () => {
+          if (isGeneratingSummary) {
+            showToast("正在生成记忆总结中，请稍候...");
+            return;
+          }
+
           const msgs = getMessagesForSummary();
           if (!msgs.length) {
             alert("选定范围内没有找到可提炼的对话记录！");
@@ -14022,6 +14063,8 @@ textarea {
             return `${timePrefix}${sender}: ${m.text}`;
           }).join("\n");
 
+          isGeneratingSummary = true;
+          currentSummaryAbortController = new AbortController();
           doGenSummaryBtn.disabled = true;
           const origBtnText = doGenSummaryBtn.textContent;
           doGenSummaryBtn.textContent = "正在分析对话并提炼记忆...";
@@ -14044,7 +14087,8 @@ textarea {
             const resp = await fetch(`${API_BASE}/app/proxy_completion`, {
               method: "POST",
               headers: { ...authHeaders(), "Content-Type": "application/json" },
-              body: JSON.stringify(reqBody)
+              body: JSON.stringify(reqBody),
+              signal: currentSummaryAbortController.signal
             });
 
             if (!resp.ok) {
@@ -14085,8 +14129,14 @@ textarea {
             }
             showToast("记忆提炼完成，请检查润色");
           } catch (err) {
+            if (err.name === "AbortError") {
+              // 用户点了放弃，主动中断了请求，静默退出
+              return;
+            }
             alert(`生成总结失败: ${err.message}`);
           } finally {
+            isGeneratingSummary = false;
+            currentSummaryAbortController = null;
             doGenSummaryBtn.disabled = false;
             doGenSummaryBtn.textContent = origBtnText;
           }
@@ -14095,37 +14145,53 @@ textarea {
 
       if (saveSummaryBtn) {
         saveSummaryBtn.addEventListener("click", () => {
+          if (isSavingSummary) return;
           const title = (summaryResultTitle ? summaryResultTitle.value.trim() : "") || "对话记忆汇总";
           const content = summaryResultContent ? summaryResultContent.value.trim() : "";
           if (!content) {
             alert("提炼内容不能为空！");
             return;
           }
-          const list = loadMemories();
-          list.unshift({
-            id: "mem_" + Date.now(),
-            title,
-            content,
-            ts: new Date().toISOString(),
-            source: "summary"
-          });
-          saveMemories(list);
-          if (lastSummarizedMaxId > 0) {
-            localStorage.setItem(STORAGE_LAST_ID, String(lastSummarizedMaxId));
-          }
-          if (summaryResultBox) summaryResultBox.classList.add("hidden");
+          isSavingSummary = true;
+          try {
+            const list = loadMemories();
+            list.unshift({
+              id: "mem_" + Date.now(),
+              title,
+              content,
+              ts: new Date().toISOString(),
+              source: "summary"
+            });
+            saveMemories(list);
+            if (lastSummarizedMaxId > 0) {
+              localStorage.setItem(STORAGE_LAST_ID, String(lastSummarizedMaxId));
+            }
+            if (summaryResultContent) summaryResultContent.value = "";
+            if (summaryResultBox) summaryResultBox.classList.add("hidden");
 
-          if (memTabSeg) {
-            const cardsBtn = memTabSeg.querySelector("button[data-tab='cards']");
-            if (cardsBtn) cardsBtn.click();
+            if (memTabSeg) {
+              const cardsBtn = memTabSeg.querySelector("button[data-tab='cards']");
+              if (cardsBtn) cardsBtn.click();
+            }
+            showToast("新记忆已存入Memory！");
+          } finally {
+            setTimeout(() => { isSavingSummary = false; }, 500);
           }
-          showToast("新记忆已存入Memory！");
         });
       }
 
       if (discardSummaryBtn) {
         discardSummaryBtn.addEventListener("click", () => {
+          // 如果当前有正在请求中的总结任务，立即中断网络连接
+          if (currentSummaryAbortController) {
+            try { currentSummaryAbortController.abort(); } catch (_) {}
+            currentSummaryAbortController = null;
+          }
+          isGeneratingSummary = false;
+          // 清空草稿内容，防止后续误显
+          if (summaryResultContent) summaryResultContent.value = "";
           if (summaryResultBox) summaryResultBox.classList.add("hidden");
+          showToast("已放弃本次总结草稿");
         });
       }
 
@@ -14435,11 +14501,16 @@ textarea {
       updateMemoryUi();
     }
 
-    document.addEventListener("DOMContentLoaded", initMemorySystem);
-    setTimeout(initMemorySystem, 1000);
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initMemorySystem);
+    } else {
+      initMemorySystem();
+    }
 
     /* ════════════ Tether · 锚缰设定系统 (Field Protocol) ════════════ */
     function initTetherSystem() {
+      if (window._companion_tether_system_inited) return;
+      window._companion_tether_system_inited = true;
       const STORAGE_BOOKS = "companion_tether_books";
       const STORAGE_ENABLE = "companion_tether_enabled";
       const STORAGE_GH = "companion_github_config";
@@ -15062,8 +15133,11 @@ textarea {
       updateTetherUi();
     }
 
-    document.addEventListener("DOMContentLoaded", initTetherSystem);
-    setTimeout(initTetherSystem, 1000);
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initTetherSystem);
+    } else {
+      initTetherSystem();
+    }
 
   </script>
 
