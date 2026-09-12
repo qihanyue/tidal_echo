@@ -2271,7 +2271,8 @@
       user-select: none;
       -webkit-user-select: none;
       transition: transform .12s ease, box-shadow .12s ease, border-color .15s ease, background-color .15s ease;
-      overflow: visible; /* 避免右上角删除角标和左上角勾选框被意外裁剪 */
+      overflow: visible;
+      /* 避免右上角删除角标和左上角勾选框被意外裁剪 */
     }
 
     .sticker-card:active {
@@ -2460,7 +2461,8 @@
       box-shadow: 0 2px 8px rgba(255, 71, 102, 0.45);
       cursor: pointer;
       border: 2px solid #ffffff;
-      z-index: 30; /* 绝对最高层级 */
+      z-index: 30;
+      /* 绝对最高层级 */
       padding: 0;
       margin: 0;
       box-sizing: border-box;
@@ -2510,6 +2512,7 @@
         transform: translateY(100%);
         opacity: 0;
       }
+
       to {
         transform: translateY(0);
         opacity: 1;
@@ -5568,7 +5571,8 @@
       <div class="msg-batch-right">
         <button type="button" class="msg-batch-btn cancel" id="msgBatchCancelBtn">取消</button>
         <button type="button" class="msg-batch-btn delete" id="msgBatchDelBtn" disabled>
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 7h16"></path>
             <path d="M10 11v6M14 11v6"></path>
             <path d="M5 7l1 13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-13"></path>
@@ -5697,7 +5701,7 @@
 
         <!-- AI body routing -->
         <section class="settings-card">
-          <div class="settings-label">联系 Claude <i class="info-i"
+          <div class="settings-label">联系 穷奇 <i class="info-i"
               title="Desktop＝Claude Code channel；API＝服务器上的 OpenAI-compatible loop。同一时刻只让一个身体接消息，避免双答。">i</i></div>
           <div class="segmented" id="brainSeg" role="group" aria-label="联系方式">
             <button type="button" data-val="desktop">Desktop</button>
@@ -7400,7 +7404,7 @@ char的长期记忆summary格式为：
             fetch(`${API_BASE}/app/messages/${id}`, {
               method: "DELETE",
               headers: authHeaders()
-            }).catch(() => {});
+            }).catch(() => { });
           });
         }
       }
@@ -7470,10 +7474,10 @@ char的长期记忆summary格式为：
           caches.open("companion-stickers-media-v1").then(cache => {
             urls.forEach(u => {
               if (u && typeof u === "string" && !u.startsWith("data:")) {
-                cache.delete(u).catch(() => {});
+                cache.delete(u).catch(() => { });
               }
             });
-          }).catch(() => {});
+          }).catch(() => { });
         }
       } catch (_) { }
     }
@@ -10725,7 +10729,7 @@ textarea::placeholder {
       try {
         const curTotal = Number(localStorage.getItem(LS_KEY_TOKEN_TOTAL) || 0) + total;
         localStorage.setItem(LS_KEY_TOKEN_TOTAL, String(curTotal));
-      } catch (_) {}
+      } catch (_) { }
 
       renderTokenUsageStatus();
     }
@@ -11452,8 +11456,8 @@ textarea::placeholder {
             headers: Object.assign(authHeaders(), { "Content-Type": "application/json" }),
             body: JSON.stringify({ visible: !!visible }),
             keepalive: true,
-          }).catch(() => {});
-        } catch (_) {}
+          }).catch(() => { });
+        } catch (_) { }
       }
 
       async function ping() {
@@ -13022,12 +13026,12 @@ textarea::placeholder {
       if (stick && typeof isUserEngagedAtBottom !== "undefined") isUserEngagedAtBottom = true;
       const key = msgKey(m.id != null ? m.id : (m._key || m.key));
       if (seen.has(key)) {
-        setMessage({ ...m, status: "sent" }, { render: true });
-        if (stick) scrollToBottom();
+        setMessage({ ...m, status: "sent" }, { render: false });
+        scheduleRender({ stickToBottom: stick });
         return;
       }
       if (claimPendingOutgoing(m, key)) {
-        if (stick) scrollToBottom();
+        scheduleRender({ stickToBottom: stick });
         return;
       }
       seen.add(key);
@@ -13060,11 +13064,7 @@ textarea::placeholder {
       }
       setMessage({ ...m, status: "sent" }, { render: false });
       scheduleRender({ stickToBottom: stick });
-      if (stick) {
-        scrollToBottom({ smooth: false });
-        setTimeout(() => scrollToBottom({ smooth: false }), 60);
-      }
-      if (!stick && m.from === "ai" && m.kind !== "thinking" && m.kind !== "act") showNewMsgPill();  // user is reading history: don't yank them down, just show "↓ new message" at the bottom
+      if (!stick && m.from === "ai" && m.kind !== "thinking" && m.kind !== "act") showNewMsgPill();  // 用户在看历史时才显示小胶囊,不强行拉底
 
     }
 
@@ -13501,6 +13501,24 @@ textarea::placeholder {
 
     /* ════════════ 滚动 ════════════ */
     let isUserEngagedAtBottom = true;
+    let isUserTouching = false;
+    let touchStopTimer = null;
+    const markTouchActive = () => {
+      isUserTouching = true;
+      if (touchStopTimer) { clearTimeout(touchStopTimer); touchStopTimer = null; }
+    };
+    const markTouchInactive = () => {
+      if (touchStopTimer) clearTimeout(touchStopTimer);
+      touchStopTimer = setTimeout(() => { isUserTouching = false; touchStopTimer = null; }, 350);
+    };
+    scrollEl.addEventListener("touchstart", markTouchActive, { passive: true });
+    scrollEl.addEventListener("touchend", markTouchInactive, { passive: true });
+    scrollEl.addEventListener("touchcancel", markTouchInactive, { passive: true });
+    scrollEl.addEventListener("wheel", () => {
+      markTouchActive();
+      markTouchInactive();
+    }, { passive: true });
+
     function nearBottom() {
       const dist = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight;
       return dist < 480;
@@ -13518,7 +13536,6 @@ textarea::placeholder {
         const top = scrollEl.scrollHeight;
         if (smooth && scrollEl.scrollTo) scrollEl.scrollTo({ top, behavior: "smooth" });
         else scrollEl.scrollTop = top;
-        scheduleRender();
       });
     }
     // 滚动停下后(惯性结束)才动窗口:这是 DOM 回收守丝滑命根的开关——卸载/插入/写 scrollTop 全 gate 在这里
@@ -13548,7 +13565,8 @@ textarea::placeholder {
       scrolling = true;
       if (nearBottom()) {
         isUserEngagedAtBottom = true;
-      } else if (scrollDir < 0 && (scrollEl.scrollHeight - top - scrollEl.clientHeight > 480)) {
+      } else if (isUserTouching && scrollDir < 0 && (scrollEl.scrollHeight - top - scrollEl.clientHeight > 480)) {
+        // 只有用户手指正在操作屏幕且向上滑离底部时，才判定离开底部
         isUserEngagedAtBottom = false;
       }
       if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
