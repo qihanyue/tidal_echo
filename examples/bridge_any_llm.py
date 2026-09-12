@@ -778,7 +778,7 @@ def stream_inbound(cursor: int) -> None:
             # 步骤 2：建立实时 SSE 流连接
             url = f"{RELAY_URL}/channel/in?since={cursor}&limit=100"
             req = urllib.request.Request(url, headers={**_auth(), "Accept": "text/event-stream"})
-            with urllib.request.urlopen(req, timeout=12) as resp:
+            with urllib.request.urlopen(req, timeout=45) as resp:
                 log("in", f"stream connected (since={cursor})")
                 backoff = 1
                 data_lines: list = []
@@ -810,23 +810,12 @@ def stream_inbound(cursor: int) -> None:
                             cursor = max_id
                             write_cursor(cursor)
                             log("in", f"收到历史同步指令(Reroll)，已重新对齐对话上下文 ({len(convo)} 条)")
-                            # 立刻拉一次 inbound_pending，直接触发 LLM，不等 bundle 帧
-                            # 这样即使 SSE 断线，reroll 也不会卡住
-                            # load_history 的 max_id 就是人类消息 id 本身，since 要 -1 才能拉到
-                            try:
-                                _since = max(0, cursor - 1)
-                                pending = relay_get_json(f"/channel/inbound_pending?since={_since}&limit=50")
-                                if isinstance(pending, list) and pending:
-                                    valid = [it for it in pending if int(it.get("id") or 0) > _since]
-                                    if valid:
-                                        cursor = max(int(it.get("id") or 0) for it in valid)
-                                        write_cursor(cursor)
-                                        log("in", f"Reroll inbound_pending: 触发 {len(valid)} 条未回复消息")
-                                        handle_incoming_messages(valid, bundle_meta=m)
-                                    else:
-                                        log("in", "Reroll inbound_pending: 无新消息")
-                            except Exception as _pe:
-                                log("in", f"Reroll inbound_pending 失败({_pe})，等待 SSE 推送")
+                            items = m.get("items") or []
+                            if items:
+                                cursor = max(cursor, max((int(it.get("id") or 0) for it in items), default=0))
+                                write_cursor(cursor)
+                                log("in", f"Reroll: 触发 {len(items)} 条未回复消息")
+                                handle_incoming_messages(items, bundle_meta=m)
                             continue
                         if m.get("type") == "ping":
                             continue

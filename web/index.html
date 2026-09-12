@@ -14077,7 +14077,7 @@ textarea::placeholder {
               rerollWatchdogTimer = setTimeout(() => {
                 hideTyping();
                 showToast("等待回复超时，已自动恢复");
-              }, 30000);
+              }, 90000);
             }
           } catch (err) {
             if (typeof rerollWatchdogTimer !== "undefined" && rerollWatchdogTimer) {
@@ -14444,7 +14444,7 @@ textarea::placeholder {
         rerollWatchdogTimer = setTimeout(() => {
           hideTyping();
           showToast("重新生成超时，已自动恢复状态");
-        }, 30000);
+        }, 90000);
 
         if (USE_MOCK) {
           Mock.reroll();

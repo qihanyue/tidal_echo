@@ -611,7 +611,7 @@ async def sse_stream(subs: set, request: Request, initial: list[dict] | None = N
             if await request.is_disconnected():
                 break
             try:
-                payload = await asyncio.wait_for(q.get(), timeout=15)
+                payload = await asyncio.wait_for(q.get(), timeout=5)
                 yield sse_data(payload)
             except asyncio.TimeoutError:
                 yield sse_ping()  # keep the connection alive and let clients watchdog it
@@ -922,10 +922,12 @@ async def app_reroll(request: Request):
                 )
         conn.commit()
 
-    # 4. 组装 sync_history 帧，附带所有上下文字段（llm_config/personas 等），
-    #    bridge 收到后直接拉 inbound_pending 触发 LLM，不再依赖 bundle SSE 帧。
-    #    这样即使 SSE 连接在广播期间断开重连，bridge 也能通过轮询兜底自行触发。
-    sync_frame = {"type": "sync_history"}
+    # 4. 组装 sync_history 帧，直接附带待重试的消息 items 与所有上下文配置，
+    #    bridge 收到后重置历史并立即直接生成，无需额外 HTTP 往返查库。
+    sync_frame = {
+        "type": "sync_history",
+        "items": [plugin_payload(m) for m in pending_msgs],
+    }
     for f in ("llm_config", "personas", "time_context", "memory_context",
               "tether_front", "tether_middle", "tether_back", "tether_context",
               "web_reader_enabled", "weather_context", "inner_voice_prompt"):
