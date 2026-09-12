@@ -882,10 +882,7 @@ async def app_reroll(request: Request):
         # 通知所有前端窗口清理对应的 DOM 气泡与本地缓存
         await broadcast(app_subs, {"type": "messages_deleted", "ids": to_delete})
 
-    # 2. 通知 bridge 重新对齐上下文记忆，把废弃的回复剔除
-    await broadcast(plugin_subs, {"type": "sync_history"})
-
-    # 3. 查找上一次 AI 回复之后的所有未回复人类消息 (即重试的目标问题)
+    # 2. 查找上一次 AI 回复之后的所有未回复人类消息 (即重试的目标问题)
     with db() as conn:
         last_ai_row = conn.execute(
             "SELECT MAX(id) as max_id FROM messages WHERE direction = 'out' AND kind = 'reply'"
@@ -911,7 +908,7 @@ async def app_reroll(request: Request):
         await broadcast(app_subs, {"type": "typing", "active": False})
         return {"ok": False, "detail": "没有可重新回复的人类消息"}
 
-    # 4. 标记 triggered = True
+    # 3. 先标记 triggered = True，再广播 sync_history，保证 bridge 拉 inbound_pending 时能查到
     msg_ids = [m["id"] for m in pending_msgs]
     with db() as conn:
         for mid in msg_ids:
@@ -925,37 +922,25 @@ async def app_reroll(request: Request):
                 )
         conn.commit()
 
-    # 5. 组装 bundle 广播给 bridge (AI 侧)，赋予全新大于历史游标的事件 ID，绝不被 cursor 拦截
-    with db() as conn:
-        max_r = conn.execute("SELECT MAX(id) as max_id FROM messages").fetchone()
-        next_evt_id = ((max_r["max_id"] if max_r and max_r["max_id"] else 0) + 1)
-
-    bundle = {
-        "type": "bundle",
-        "id": next_evt_id,
-        "content": "\n".join(m["text"] for m in pending_msgs if m.get("text")),
-        "items": [plugin_payload(m) for m in pending_msgs],
-        "user": "human",
-        "attachments": (pending_msgs[-1].get("meta") or {}).get("attachments") if pending_msgs else [],
-    }
-    if body.get("llm_config"):
-        bundle["llm_config"] = body.get("llm_config")
-    if body.get("personas"):
-        bundle["personas"] = body.get("personas")
-    if body.get("time_context"):
-        bundle["time_context"] = body.get("time_context")
-    if body.get("memory_context"):
-        bundle["memory_context"] = body.get("memory_context")
-    for f in ("tether_front", "tether_middle", "tether_back", "tether_context", "web_reader_enabled", "weather_context", "inner_voice_prompt"):
+    # 4. 组装 sync_history 帧，附带所有上下文字段（llm_config/personas 等），
+    #    bridge 收到后直接拉 inbound_pending 触发 LLM，不再依赖 bundle SSE 帧。
+    #    这样即使 SSE 连接在广播期间断开重连，bridge 也能通过轮询兜底自行触发。
+    sync_frame = {"type": "sync_history"}
+    for f in ("llm_config", "personas", "time_context", "memory_context",
+              "tether_front", "tether_middle", "tether_back", "tether_context",
+              "web_reader_enabled", "weather_context", "inner_voice_prompt"):
         if body.get(f) is not None:
-            bundle[f] = body.get(f)
+            sync_frame[f] = body.get(f)
 
     if brain_target() == "loop":
+        # loop 模式走原有路径
+        bundle_content = "\n".join(m["text"] for m in pending_msgs if m.get("text"))
         loop_msg = dict(pending_msgs[-1])
-        loop_msg["text"] = bundle["content"]
+        loop_msg["text"] = bundle_content
         asyncio.create_task(forward_to_loop(loop_msg))
     else:
-        await broadcast(plugin_subs, bundle)
+        await broadcast(plugin_subs, sync_frame)
+
     await broadcast(app_subs, {"type": "typing", "active": True})
     return {"ok": True, "deleted_ids": to_delete, "triggered_ids": msg_ids}
 
