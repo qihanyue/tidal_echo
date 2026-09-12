@@ -11142,22 +11142,59 @@ textarea::placeholder {
       es.onerror = () => { connected = false; setConn("reconnecting"); };  // EventSource 自动重试
     }
 
-    /* ════════════ presence ping ════════════ */
-    /* The foregrounded PWA pings the relay every 60s ("user is around"); paused when hidden. The relay uses this
-       for an online / recently-left / away signal. Skipped when logged out (no secret) or in mock mode. */
-    (function presencePing() {
+    /* ════════════ presence ping & visibility ════════════ */
+    /* PWA 前台每 60s ping 一次 relay，同时在切屏（进入后台/回到前台）时即时上报可见性。
+       后端据此精确判断手机是否在锁屏/切走，即便保活音频常驻，也能准时发出锁屏推送通知。 */
+    (function presenceAndVisibility() {
       const PING_MS = 60000;
       let timer = null;
+
+      function reportVisibility(visible) {
+        if (USE_MOCK || !secret) return;
+        try {
+          fetch(`${API_BASE}/app/visibility`, {
+            method: "POST",
+            headers: Object.assign(authHeaders(), { "Content-Type": "application/json" }),
+            body: JSON.stringify({ visible: !!visible }),
+            keepalive: true,
+          }).catch(() => {});
+        } catch (_) {}
+      }
+
       async function ping() {
         if (document.hidden || USE_MOCK || !secret) return;
         try {
           await fetch(`${API_BASE}/app/ping`, { method: "POST", headers: authHeaders(), keepalive: true });
         } catch (e) { /* presence 失败静默,不影响聊天 */ }
       }
-      function start() { if (timer) return; ping(); timer = setInterval(ping, PING_MS); }
-      function stop() { if (timer) { clearInterval(timer); timer = null; } }
-      document.addEventListener("visibilitychange", () => { document.hidden ? stop() : start(); });
-      if (!document.hidden) start();
+
+      function start() {
+        if (timer) return;
+        reportVisibility(true);
+        ping();
+        timer = setInterval(ping, PING_MS);
+      }
+
+      function stop() {
+        if (timer) { clearInterval(timer); timer = null; }
+        reportVisibility(false);
+      }
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          stop();
+        } else {
+          start();
+        }
+      });
+
+      if (!document.hidden) {
+        start();
+      } else {
+        reportVisibility(false);
+      }
+
+      window.addEventListener("pagehide", () => reportVisibility(false));
     })();
 
     /* ════════════ 锁屏通知 (Web Push) ════════════ */

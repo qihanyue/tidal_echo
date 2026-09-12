@@ -22,6 +22,7 @@ import mimetypes
 import hmac
 import json
 import os
+import time
 import re
 import secrets
 import subprocess
@@ -323,6 +324,53 @@ plugin_subs: set[asyncio.Queue] = set()  # AI side    (GET /channel/in)
 app_subs: set[asyncio.Queue] = set()     # human side (GET /app/stream)
 stream_drafts: dict[tuple[str, str], dict] = {}
 
+# --- PWA 前台可见性状态与 Push 防抖 ---
+_is_client_visible: bool = False
+_last_visible_ts: datetime | None = None
+_last_push_time: float = 0.0
+PUSH_DEBOUNCE_SEC: float = 5.0  # 5秒内多条连续回复气泡只推送首条，避免轰炸震动
+
+
+def should_push_notification() -> bool:
+    """判断是否应当向客户端发送锁屏推送通知。
+    1. 若没有任何前端 SSE 连接在线，必定推送。
+    2. 若有 SSE 连接（如保活音乐常驻），但客户端不在前台（切走或锁屏），必定推送。
+    3. 若最近 5 秒内刚刚推送过，防抖抑制，避免连发多条气泡连续震动。
+    """
+    global _last_push_time
+    now = time.time()
+    if now - _last_push_time < PUSH_DEBOUNCE_SEC:
+        return False
+
+    # 没有客户端在线，直接推
+    if not app_subs:
+        return True
+
+    # 客户端虽保持连接，但处于后台（或超过 75 秒没有前台心跳确认可见）
+    if not _is_client_visible:
+        return True
+    if _last_visible_ts is None:
+        return True
+
+    age = (datetime.now(timezone.utc) - _last_visible_ts).total_seconds()
+    if age > 75.0:
+        return True
+
+    # 此时客户端在线且前台可见，不打扰正在看屏的用户
+    return False
+
+
+async def try_push_notification(msg: dict) -> None:
+    """尝试为 AI 真实回复发送推送通知（带前台判定与防抖）。"""
+    global _last_push_time
+    if not should_push_notification():
+        return
+    _last_push_time = time.time()
+    try:
+        await push_to_all(notification_from_message(msg))
+    except Exception:
+        pass
+
 
 async def broadcast(subs: set, payload: dict) -> None:
     for q in list(subs):
@@ -448,11 +496,8 @@ async def handle_stream_delta(kind: str, body: dict) -> dict:
     msg = save_message("out", base_kind, text, dict(draft.get("meta") or {}))
     await broadcast(app_subs, {"type": "typing", "active": False})
     await broadcast(app_subs, app_payload(msg))
-    if base_kind == "reply" and not app_subs:
-        try:
-            await push_to_all(notification_from_message(msg))
-        except Exception:
-            pass
+    if base_kind == "reply":
+        await try_push_notification(msg)
     return {"id": msg["id"], "stream_id": stream_id, "saved": True}
 
 
@@ -706,13 +751,8 @@ async def channel_out(request: Request):
     # the AI replied — clear the typing state
     await broadcast(app_subs, {"type": "typing", "active": False})
     await broadcast(app_subs, app_payload(msg))
-    # Unread push: only when no PWA tab is holding the stream (app_subs empty);
-    # only push real replies, not 'thinking' chatter.
-    if kind == "reply" and not app_subs:
-        try:
-            await push_to_all(notification_from_message(msg))
-        except Exception:
-            pass  # a push failure must never affect persistence/fan-out
+    if kind == "reply":
+        await try_push_notification(msg)
     return {"id": msg["id"]}
 
 
@@ -1224,9 +1264,28 @@ def latest_message():
 async def app_ping(request: Request):
     """PWA foreground heartbeat."""
     check_auth(request)
-    global _last_seen_ts
-    _last_seen_ts = datetime.now(timezone.utc)
+    global _last_seen_ts, _last_visible_ts, _is_client_visible
+    now = datetime.now(timezone.utc)
+    _last_seen_ts = now
+    _last_visible_ts = now
+    _is_client_visible = True
     return {"ok": True}
+
+
+@app.post("/app/visibility")
+async def app_visibility(request: Request):
+    """PWA 上报前台可见性（切出切回即时更新）。"""
+    check_auth(request)
+    global _is_client_visible, _last_visible_ts
+    try:
+        body = await request.json()
+        visible = bool(body.get("visible", False))
+    except Exception:
+        visible = False
+    _is_client_visible = visible
+    if visible:
+        _last_visible_ts = datetime.now(timezone.utc)
+    return {"ok": True, "visible": _is_client_visible}
 
 
 @app.get("/app/status")
