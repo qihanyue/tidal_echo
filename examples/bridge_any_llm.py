@@ -344,7 +344,9 @@ def build_messages(custom_persona: str = "", user_persona: str = "", time_contex
         "   - 你【必须】将你想说的话，拆分成【多条、简短的】消息气泡来发送。\n"
         "   - 每次回复的消息数量通常控制在【2 到 6 条短消息】之间（根据当时的情绪和语境，多发短句，每条最好不要超过 30 个字）。\n"
         "   - 每条短消息气泡之间【必须且只能】使用 [分段] 隔开！\n"
-        "   - 示例：真的假的？！[分段]我刚才还在想这个事呢[分段]快跟我详细讲讲！\n\n"
+        "   - 【严格禁令】：绝不允许在同一条消息或气泡内使用回车换行或留空行！手机聊天不会在同一个气泡里回车分大段。所有分句与段落【必须全部替换为 [分段] 标签】！\n"
+        "   - 错误示范（严禁出现）：今天好累啊\\n\\n想早点睡了\n"
+        "   - 正确示范（必须遵守）：今天好累啊[分段]想早点睡了\n\n"
         "3. **真实社交软件情景限定**:\n"
         "   - 你们的互动【仅限于线上手机社交软件聊天】，严禁发展为线下见面，绝不允许出现或推进线下见面的现实剧情。\n"
         "   - 这【不是电话通话】，是通过手机即时打字交流，因此【绝对禁止】使用“挂电话”、“挂了”等与语音通话相关的词语。\n"
@@ -665,9 +667,9 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
                 sp = sp.strip()
                 if not sp:
                     continue
-                # 2. 如果单段文字较长且包含双换行，按段落拆分成多条
-                if len(sp) > 40 and "\n\n" in sp and "```" not in sp:
-                    lines = [line.strip() for line in sp.split("\n\n") if line.strip()]
+                # 2. 智能保底切分：只要包含空行（双换行及以上），无论字数长短一律切分成独立气泡（彻底兜底弱模型不用[分段]而在单气泡留空行）
+                if "```" not in sp and re.search(r'(?:\r?\n\s*){2,}', sp):
+                    lines = [line.strip() for line in re.split(r'(?:\r?\n\s*){2,}', sp) if line.strip()]
                     bubbles.extend(lines)
                 else:
                     bubbles.append(sp)
