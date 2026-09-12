@@ -108,6 +108,7 @@
       --bubble-human-fg: #253447;
       --bubble-human-line: transparent;
       --accent: #4C6378;
+      --tint: var(--accent);
       --send-bg: #2C4056;
       --tick: #7E93A4;
       --accent-fg: #ffffff;
@@ -186,6 +187,11 @@
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+      accent-color: var(--accent, #4C6378);
     }
 
     @font-face {
@@ -5789,7 +5795,7 @@
             <div class="llm-row" style="display:flex; justify-content:space-between; align-items:center;">
               <label class="settings-label" for="timePerceptionToggle" style="margin-bottom:0;">时间感知 (现实时间与时差)</label>
               <input type="checkbox" id="timePerceptionToggle" checked
-                style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+                style="width:20px; height:20px; accent-color:var(--accent, #4C6378); cursor:pointer;">
             </div>
             <div class="llm-hint">开启后，AI 会实时感知当前现实时间（年月日、星期几、几点几分）以及距离上次聊天的时差。</div>
           </div>
@@ -5968,7 +5974,7 @@
               <div style="font-size:12px; color:var(--text-faint);" id="memoryStatsText">已激活 0 条记忆段落，已自动注入对话背景</div>
             </div>
             <input type="checkbox" id="memoryEnableToggle" checked
-              style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+              style="width:20px; height:20px; accent-color:var(--accent, #4C6378); cursor:pointer;">
           </div>
 
           <div id="memoryCardList">
@@ -6179,7 +6185,7 @@ char的长期记忆summary格式为：
               <div style="font-size:12px; color:var(--text-faint);" id="tetherStatsText">已激活 0 部书卷，共 0 个条目</div>
             </div>
             <input type="checkbox" id="tetherGlobalToggle" checked
-              style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+              style="width:20px; height:20px; accent-color:var(--accent, #4C6378); cursor:pointer;">
           </div>
 
           <div id="tetherBookList">
@@ -6243,7 +6249,7 @@ char的长期记忆summary格式为：
           style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:10px; background:var(--card-sub-bg, rgba(255,255,255,.05)); margin-bottom:10px; border:1px solid var(--card-line, rgba(150,168,182,.2));">
           <span style="font-size:13px; color:var(--text);">是否启用该书卷</span>
           <input type="checkbox" id="tetherBookEnabledInput" checked
-            style="width:18px; height:18px; accent-color:var(--tint); cursor:pointer;">
+            style="width:18px; height:18px; accent-color:var(--accent, #4C6378); cursor:pointer;">
         </div>
 
         <div class="llm-field" style="margin-bottom:10px;">
@@ -6344,7 +6350,7 @@ char的长期记忆summary格式为：
               <div style="font-size:12px; color:var(--text-faint);">聊天发送链接时，AI 自动打开网页阅读正文后回复</div>
             </div>
             <input type="checkbox" id="webReaderGlobalToggle" checked
-              style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+              style="width:20px; height:20px; accent-color:var(--accent, #4C6378); cursor:pointer;">
           </div>
           <div class="llm-hint" style="margin-top:6px; line-height:1.6;">
             支持小红书、微信公众号、知乎、新闻资讯与博客链接。后台自动清洗广告代码，只将最纯净的正文喂给 AI，不依赖模型自身联网能力。
@@ -6359,7 +6365,7 @@ char的长期记忆summary格式为：
               <div style="font-size:12px; color:var(--text-faint);">遇到未知事实或突发资讯时，AI 自主决定是否联网查证</div>
             </div>
             <input type="checkbox" id="webSearchGlobalToggle" checked
-              style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+              style="width:20px; height:20px; accent-color:var(--accent, #4C6378); cursor:pointer;">
           </div>
           <div class="llm-hint" style="margin-top:6px; line-height:1.6;">
             开启后，AI 拥有全网实时检索超能力。遇到最新现实动态或需要求证的事实时自主联网搜索，查完后自然回复你，并在气泡上方以一行精致小字标明使用的检索工具。
@@ -6374,7 +6380,7 @@ char的长期记忆summary格式为：
               <div style="font-size:12px; color:var(--text-faint);">长时间未聊天时，AI 像现实好友一样主动找你发消息</div>
             </div>
             <input type="checkbox" id="proactiveWakeGlobalToggle"
-              style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+              style="width:20px; height:20px; accent-color:var(--accent, #4C6378); cursor:pointer;">
           </div>
           <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
             <span style="font-size:13px; color:var(--text); white-space:nowrap;">静默时长:</span>
@@ -6401,7 +6407,7 @@ char的长期记忆summary格式为：
               <div style="font-size:12px; color:var(--text-faint);">实时感知你所在城市的晴雨与温差，赋予 AI 真实气象时空感</div>
             </div>
             <input type="checkbox" id="weatherRadarGlobalToggle" checked
-              style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+              style="width:20px; height:20px; accent-color:var(--accent, #4C6378); cursor:pointer;">
           </div>
 
           <!-- 城市配置与定位 -->
@@ -6440,7 +6446,7 @@ char的长期记忆summary格式为：
               <div style="font-size:12px; color:var(--text-faint);">实时感知你的经纬度与地标街区，赋予 AI 真实物理时空感</div>
             </div>
             <input type="checkbox" id="locationRadarGlobalToggle" checked
-              style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+              style="width:20px; height:20px; accent-color:var(--accent, #4C6378); cursor:pointer;">
           </div>
 
           <!-- 位置配置与定位 -->
@@ -16344,7 +16350,7 @@ textarea::placeholder {
                 <div class="tether-card-badges">
                   <span class="tether-badge ${pos}">${posLabel}</span>
                   <span class="tether-badge">${activeEntryCount}/${entries.length} 条目</span>
-                  <input type="checkbox" class="tether-toggle-single" data-id="${bookId}" ${isEnabled ? "checked" : ""} style="width:18px; height:18px; accent-color:var(--tint); cursor:pointer;">
+                  <input type="checkbox" class="tether-toggle-single" data-id="${bookId}" ${isEnabled ? "checked" : ""} style="width:18px; height:18px; accent-color:var(--accent, #4C6378); cursor:pointer;">
                 </div>
               </div>
               <div class="tether-card-summary" title="点击展开/收起详情">
@@ -16449,7 +16455,7 @@ textarea::placeholder {
             <div class="tether-entry-box" data-idx="${idx}">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                 <div style="display:flex; align-items:center; gap:8px;">
-                  <input type="checkbox" class="entry-enable-check" ${isEn ? "checked" : ""} style="width:16px; height:16px; accent-color:var(--tint); cursor:pointer;">
+                  <input type="checkbox" class="entry-enable-check" ${isEn ? "checked" : ""} style="width:16px; height:16px; accent-color:var(--accent, #4C6378); cursor:pointer;">
                   <span style="font-size:12px; font-weight:600; color:${isEn ? 'var(--tint)' : 'var(--text-faint)'};">${isEn ? '已启用' : '已禁用'}</span>
                 </div>
                 <button type="button" class="llm-btn danger entry-del-btn" style="padding:2px 8px; font-size:11px;">删除</button>
