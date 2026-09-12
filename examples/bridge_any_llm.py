@@ -186,7 +186,7 @@ def _row_to_msg(m: dict):
     return None
 
 
-def load_history() -> tuple:
+def load_history(exclude_ids: set | None = None) -> tuple:
     """翻页拉全部历史 → (近期对话 messages, 最新一条的 id)。relay 的 history 是
     `id > since ASC LIMIT`,所以从 0 往后翻页直到取完,再取尾部当上下文。"""
     rows, since = [], 0
@@ -199,6 +199,8 @@ def load_history() -> tuple:
         if len(page) < 500:
             break
     max_id = rows[-1]["id"] if rows else 0
+    if exclude_ids:
+        rows = [r for r in rows if r.get("id") not in exclude_ids]
     msgs = [mm for m in rows if (mm := _row_to_msg(m))]
     return msgs[-convo.maxlen:], max_id
 
@@ -216,6 +218,9 @@ def _merge_consecutive_roles(msgs: list) -> list:
             continue
         if merged and merged[-1]["role"] == role:
             prev = merged[-1]
+            # 强化去重：如果相邻两条内容完全一致（例如意外重试造成的连发），直接跳过避免复读
+            if prev["content"] == content:
+                continue
             if isinstance(prev["content"], str) and isinstance(content, str):
                 prev["content"] += f"\n{content}"
             else:
@@ -1146,13 +1151,14 @@ def stream_inbound(cursor: int) -> None:
                             log("in", "收到清空历史指令，已重置记忆")
                             continue
                         if m.get("type") == "sync_history":
+                            items = m.get("items") or []
+                            item_ids = {int(it["id"]) for it in items if it.get("id")}
                             convo.clear()
-                            ctx, max_id = load_history()
+                            ctx, max_id = load_history(exclude_ids=item_ids)
                             convo.extend(ctx)
                             cursor = max_id
                             write_cursor(cursor)
                             log("in", f"收到历史同步指令(Reroll)，已重新对齐对话上下文 ({len(convo)} 条)")
-                            items = m.get("items") or []
                             if items:
                                 cursor = max(cursor, max((int(it.get("id") or 0) for it in items), default=0))
                                 write_cursor(cursor)
