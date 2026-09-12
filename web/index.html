@@ -6319,6 +6319,11 @@ char的长期记忆summary格式为：
               <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">全网智能搜索</div>
               <div style="font-size:11px; color:var(--text-soft);" id="tidesWebSearchStatusBadge">已开启 · 自主检索</div>
             </div>
+            <div
+              style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
+              <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">主动打破沉默</div>
+              <div style="font-size:11px; color:var(--text-soft);" id="tidesProactiveWakeStatusBadge">未开启</div>
+            </div>
           </div>
         </section>
 
@@ -6349,6 +6354,33 @@ char的长期记忆summary格式为：
           </div>
           <div class="llm-hint" style="margin-top:6px; line-height:1.6;">
             开启后，AI 拥有全网实时检索超能力。遇到最新现实动态或需要求证的事实时自主联网搜索，查完后自然回复你，并在气泡上方以一行精致小字标明使用的检索工具。
+          </div>
+        </section>
+
+        <!-- 主动打破沉默配置 -->
+        <section class="settings-card" style="margin-bottom:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div>
+              <div class="settings-label" style="margin-bottom:2px;">主动打破沉默 (Proactive Wake)</div>
+              <div style="font-size:12px; color:var(--text-faint);">长时间未聊天时，AI 像现实好友一样主动找你发消息</div>
+            </div>
+            <input type="checkbox" id="proactiveWakeGlobalToggle"
+              style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+            <span style="font-size:13px; color:var(--text); white-space:nowrap;">静默时长:</span>
+            <input type="number" id="proactiveWakeIntervalInput" min="1" max="1440" value="180"
+              style="width:75px; padding:5px 8px; border-radius:8px; border:1px solid var(--card-line, rgba(150,168,182,.3)); background:var(--card-sub-bg, rgba(255,255,255,.05)); color:var(--text); text-align:center; font-size:13px;">
+            <span style="font-size:12px; color:var(--text-faint);">分钟未聊后主动问候 (1-5条生活碎碎念)</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; gap:8px;">
+            <div class="llm-hint" style="margin:0; line-height:1.5; font-size:11px; flex:1;">
+              安全熔断保护：若大模型 API 发生报错立即停手，绝不纠缠重试；后台每分钟极速自检，完全零耗电零开销。
+            </div>
+            <button class="settings-btn" id="proactiveWakeTestBtn" type="button"
+              style="padding:6px 14px; font-size:12px; border-radius:8px; background:var(--tint); color:#fff; border:none; cursor:pointer; white-space:nowrap;">
+              测试唤醒一次
+            </button>
           </div>
         </section>
 
@@ -9314,6 +9346,10 @@ textarea::placeholder {
     const tidesWebReaderStatusBadge = document.getElementById("tidesWebReaderStatusBadge");
     const webSearchGlobalToggle = document.getElementById("webSearchGlobalToggle");
     const tidesWebSearchStatusBadge = document.getElementById("tidesWebSearchStatusBadge");
+    const proactiveWakeGlobalToggle = document.getElementById("proactiveWakeGlobalToggle");
+    const proactiveWakeIntervalInput = document.getElementById("proactiveWakeIntervalInput");
+    const tidesProactiveWakeStatusBadge = document.getElementById("tidesProactiveWakeStatusBadge");
+    const proactiveWakeTestBtn = document.getElementById("proactiveWakeTestBtn");
     const weatherRadarGlobalToggle = document.getElementById("weatherRadarGlobalToggle");
     const tidesWeatherStatusBadge = document.getElementById("tidesWeatherStatusBadge");
     const weatherCityInput = document.getElementById("weatherCityInput");
@@ -9636,7 +9672,52 @@ textarea::placeholder {
         tidesWebSearchStatusBadge.textContent = isEnSearch ? "已开启 · 自主检索" : "已暂停 · 未启用";
         tidesWebSearchStatusBadge.style.color = isEnSearch ? "var(--tint)" : "var(--text-faint)";
       }
+      const isEnWake = localStorage.getItem("companion_proactive_wake_enabled") === "true";
+      const wakeInterval = parseInt(localStorage.getItem("companion_proactive_wake_interval") || "180", 10);
+      if (proactiveWakeGlobalToggle) proactiveWakeGlobalToggle.checked = isEnWake;
+      if (proactiveWakeIntervalInput) proactiveWakeIntervalInput.value = wakeInterval;
+      if (tidesProactiveWakeStatusBadge) {
+        tidesProactiveWakeStatusBadge.textContent = isEnWake ? `已开启 · ${wakeInterval}m` : "未开启";
+        tidesProactiveWakeStatusBadge.style.color = isEnWake ? "var(--tint)" : "var(--text-faint)";
+      }
       renderWeatherUi();
+    }
+
+    async function pushProactiveWakeConfigToServer() {
+      try {
+        const isEnWake = localStorage.getItem("companion_proactive_wake_enabled") === "true";
+        const wakeInterval = Math.max(1, parseInt(localStorage.getItem("companion_proactive_wake_interval") || "180", 10));
+        const _activePreset = getActivePreset ? getActivePreset() : null;
+        const ctx = {
+          llm_config: _activePreset ? {
+            base_url: _activePreset.baseUrl,
+            api_key: _activePreset.apiKey,
+            model: _activePreset.model,
+            temperature: _activePreset.temperature,
+            history_n: _activePreset.history_n || 12
+          } : {},
+          personas: typeof personaState !== "undefined" ? personaState : {},
+          time_context: getTimePerceptionContext ? getTimePerceptionContext() : "",
+          memory_context: getLongTermMemoryContext ? getLongTermMemoryContext() : "",
+          tether_front: getTetherContext ? getTetherContext().front : "",
+          tether_middle: getTetherContext ? getTetherContext().middle : "",
+          tether_back: getTetherContext ? getTetherContext().back : "",
+          web_reader_enabled: (localStorage.getItem("companion_web_reader_enabled") !== "false"),
+          web_search_enabled: (localStorage.getItem("companion_web_search_enabled") !== "false"),
+          weather_context: getWeatherContext ? getWeatherContext() : "",
+          inner_voice_prompt: (typeof getInnerVoicePrompt === "function" ? getInnerVoicePrompt() : "")
+        };
+
+        await fetch(`${API_BASE}/app/proactive_config`, {
+          method: "POST",
+          headers: { ...authHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({
+            enabled: isEnWake,
+            interval_minutes: wakeInterval,
+            context: ctx
+          })
+        });
+      } catch (_) { }
     }
 
     if (webReaderGlobalToggle) {
@@ -9652,6 +9733,55 @@ textarea::placeholder {
         localStorage.setItem("companion_web_search_enabled", webSearchGlobalToggle.checked ? "true" : "false");
         syncTidesUi();
         showToast(webSearchGlobalToggle.checked ? "已开启全网智能搜索" : "已关闭全网智能搜索");
+      });
+    }
+
+    if (proactiveWakeGlobalToggle) {
+      proactiveWakeGlobalToggle.addEventListener("change", () => {
+        localStorage.setItem("companion_proactive_wake_enabled", proactiveWakeGlobalToggle.checked ? "true" : "false");
+        syncTidesUi();
+        pushProactiveWakeConfigToServer();
+        showToast(proactiveWakeGlobalToggle.checked ? "已开启主动打破沉默" : "已关闭主动打破沉默");
+      });
+    }
+
+    if (proactiveWakeIntervalInput) {
+      proactiveWakeIntervalInput.addEventListener("change", () => {
+        let val = parseInt(proactiveWakeIntervalInput.value, 10);
+        if (isNaN(val) || val < 1) val = 1;
+        proactiveWakeIntervalInput.value = val;
+        localStorage.setItem("companion_proactive_wake_interval", String(val));
+        syncTidesUi();
+        pushProactiveWakeConfigToServer();
+      });
+    }
+
+    if (proactiveWakeTestBtn) {
+      proactiveWakeTestBtn.addEventListener("click", async () => {
+        const origText = proactiveWakeTestBtn.textContent;
+        proactiveWakeTestBtn.disabled = true;
+        proactiveWakeTestBtn.textContent = "唤醒中...";
+        try {
+          await pushProactiveWakeConfigToServer();
+          const r = await fetch(`${API_BASE}/app/proactive_test`, {
+            method: "POST",
+            headers: { ...authHeaders(), "Content-Type": "application/json" },
+            body: JSON.stringify({})
+          });
+          const res = await r.json();
+          if (res && res.ok) {
+            showToast("已向 AI 发出主动问候指令");
+          } else {
+            showToast("唤醒指令已发送，等待 AI 响应");
+          }
+        } catch (e) {
+          showToast("唤醒请求受阻: " + e.message);
+        } finally {
+          setTimeout(() => {
+            proactiveWakeTestBtn.disabled = false;
+            proactiveWakeTestBtn.textContent = origText;
+          }, 1500);
+        }
       });
     }
 

@@ -903,6 +903,139 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
     return False
 
 
+def handle_proactive_wake(bundle_meta: dict) -> None:
+    """处理主动打破沉默 / 定时唤醒任务。报错立即上报熔断并停止重试。"""
+    try:
+        dyn_llm = (bundle_meta or {}).get("llm_config") or {}
+        dyn_personas = (bundle_meta or {}).get("personas") or {}
+        time_ctx = (bundle_meta or {}).get("time_context") or ""
+        memory_ctx = (bundle_meta or {}).get("memory_context") or ""
+        t_front = (bundle_meta or {}).get("tether_front") or ""
+        t_middle = (bundle_meta or {}).get("tether_middle") or ""
+        t_back = (bundle_meta or {}).get("tether_back") or ""
+        t_ctx = (bundle_meta or {}).get("tether_context")
+        if isinstance(t_ctx, dict):
+            if not t_front and t_ctx.get("front"): t_front = t_ctx["front"]
+            if not t_middle and t_ctx.get("middle"): t_middle = t_ctx["middle"]
+            if not t_back and t_ctx.get("back"): t_back = t_ctx["back"]
+        elif isinstance(t_ctx, str) and t_ctx.strip() and not t_back:
+            t_back = t_ctx.strip()
+
+        weather_ctx = (bundle_meta or {}).get("weather_context") or ""
+        web_search_enabled = (bundle_meta or {}).get("web_search_enabled", True)
+        iv_prompt = (bundle_meta or {}).get("inner_voice_prompt") or ""
+
+        if not time_ctx:
+            try:
+                now = time.localtime()
+                weekday_map = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
+                w_str = weekday_map[now.tm_wday]
+                t_str = time.strftime(f"%Y年%m月%d日 {w_str} %H:%M", now)
+                time_ctx = f"[当前现实环境与时间感知]\n- 当前时间: {t_str}"
+            except Exception:
+                pass
+
+        custom_ai = dyn_personas.get("ai") or ""
+        custom_user = dyn_personas.get("user") or ""
+        history_n = int(dyn_llm.get("history_n") or HISTORY_N)
+
+        active_routes = MODEL_ROUTES
+        temp = TEMPERATURE
+        if dyn_llm.get("base_url") and dyn_llm.get("model"):
+            active_routes = [{
+                "base": dyn_llm["base_url"].rstrip("/"),
+                "key": dyn_llm.get("api_key") or "",
+                "model": dyn_llm["model"]
+            }] + MODEL_ROUTES
+            if "temperature" in dyn_llm:
+                try:
+                    temp = float(dyn_llm["temperature"])
+                except (ValueError, TypeError):
+                    pass
+
+        limit = max(history_n * 2, 8)
+        msgs = build_messages(
+            custom_persona=custom_ai,
+            user_persona=custom_user,
+            time_context=time_ctx,
+            memory_context=memory_ctx,
+            tether_front=t_front,
+            tether_middle=t_middle,
+            tether_back=t_back,
+            web_search_enabled=web_search_enabled,
+            weather_context=weather_ctx,
+            inner_voice_prompt=iv_prompt,
+            limit=limit
+        )
+
+        wake_instruction = (
+            "### 【当前场景指令 · 主动打破沉默与问候】\n"
+            "你们已经有一段时间没有说话了。请以你的角色设定与语气，像真实生活中的人类朋友/恋人突然想起来在微信上找对方一样，自然、生活化地主动发送 1 到 5 条简短的消息气泡（必须使用 [分段] 隔开）。\n"
+            "- 【话题建议】：可以关心对方在忙什么、随手拍生活假图 [图片: 画面描述]、分享刚刚看到的趣事、吐槽日常或闲聊碎碎念。\n"
+            "- 【严格禁令】：绝不要生硬地说明“检测到长时间未发言”或“系统定时唤醒”，切勿道歉，全情沉浸在角色世界中！"
+        )
+        msgs.append({"role": "system", "content": wake_instruction})
+
+        reply, usage = call_llm_dynamic(msgs, active_routes, temp)
+    except Exception as e:
+        log("wake", f"主动唤醒大模型调用异常: {e}，触发熔断保护并停止重试")
+        try:
+            relay_post_json("/app/proactive_report", {"success": False, "error": str(e)})
+        except Exception:
+            pass
+        return
+
+    if reply:
+        inner_voice_text = ""
+        m_iv = re.search(r'<inner_voice>([\s\S]*?)</inner_voice>', reply, flags=re.I)
+        if m_iv:
+            inner_voice_text = m_iv.group(1).strip()
+            reply = re.sub(r'<inner_voice>[\s\S]*?</inner_voice>', '', reply, flags=re.I).strip()
+
+        pattern = r'\s*(?:\[分段\]|\[split\])\s*'
+        raw_bubbles = [b.strip() for b in re.split(pattern, reply) if b.strip()]
+        if not raw_bubbles:
+            raw_bubbles = [reply.strip()]
+
+        bubbles = []
+        for b in raw_bubbles:
+            sub_parts = re.split(r'(\[(?:图片|image|fake_img|表情|sticker)[^\]]*\])', b)
+            for sp in sub_parts:
+                sp = sp.strip()
+                if not sp: continue
+                if "```" not in sp and re.search(r'(?:\r?\n\s*){2,}', sp):
+                    lines = [line.strip() for line in re.split(r'(?:\r?\n\s*){2,}', sp) if line.strip()]
+                    bubbles.extend(lines)
+                else:
+                    bubbles.append(sp)
+        if not bubbles:
+            bubbles = raw_bubbles
+
+        tool_meta = {"proactive": True}
+        if inner_voice_text:
+            tool_meta["inner_voice"] = inner_voice_text
+        if usage and isinstance(usage, dict):
+            tool_meta["usage"] = {
+                "prompt_tokens": usage.get("prompt_tokens", 0),
+                "completion_tokens": usage.get("completion_tokens", 0),
+                "total_tokens": usage.get("total_tokens", 0),
+            }
+
+        # 限制单次主动打招呼发送 1~5 条消息气泡
+        final_bubbles = bubbles[:5]
+        for i, bubble in enumerate(final_bubbles):
+            convo.append({"role": "assistant", "content": bubble})
+            send_reply(bubble, meta=tool_meta if i == 0 else None)
+            if i < len(final_bubbles) - 1:
+                time.sleep(0.6)
+
+        log("wake", f"主动唤醒成功发送 {len(final_bubbles)} 条消息")
+        try:
+            relay_post_json("/app/proactive_report", {"success": True})
+        except Exception:
+            pass
+
+
 def call_llm_dynamic(messages: list, routes: list, temperature: float) -> tuple[str, dict]:
     if not routes:
         raise RuntimeError("未检测到有效的大模型配置，请在前端「设置 -> 大模型 API」中填入 Base URL 和模型名称")
@@ -1031,6 +1164,10 @@ def stream_inbound(cursor: int) -> None:
 
                         # 区分 bundle 打包消息与单条普通消息
                         if m.get("type") == "bundle":
+                            if m.get("proactive"):
+                                log("wake", "收到主动打破沉默指令，准备触发 AI 发言...")
+                                handle_proactive_wake(m)
+                                continue
                             items = m.get("items") or []
                             if items:
                                 # 用户显式触发的 bundle (Reroll / 接收回复)，推进游标至最新事件 ID

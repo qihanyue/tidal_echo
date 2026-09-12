@@ -146,6 +146,11 @@ def save_message(direction: str, kind: str, text: str, meta: dict) -> dict:
         )
         conn.commit()
         mid = cur.lastrowid
+    if direction == "in":
+        if proactive_state.get("circuit_broken"):
+            proactive_state["circuit_broken"] = False
+            proactive_state["last_error"] = ""
+            print("[ProactiveWake] 人类发送新消息，已自动重置安全熔断器", flush=True)
     return {"id": mid, "ts": ts, "direction": direction, "kind": kind, "text": text, "meta": meta}
 
 
@@ -683,13 +688,140 @@ def check_auth(request: Request) -> None:
 
 
 # ---------------------------------------------------------------------------
+# 主动打破沉默与定时唤醒 (Proactive Wake) 机制
+# ---------------------------------------------------------------------------
+
+PROACTIVE_CONFIG_FILE = DB_PATH.parent / "proactive_config.json"
+
+proactive_state = {
+    "enabled": False,
+    "interval_minutes": 180,
+    "last_attempt_time": 0.0,
+    "circuit_broken": False,  # 只要 API 失败 1 次立即熔断，静默挂起
+    "last_error": "",
+    "context": {}             # 缓存最近一次前端同步的上下文 (llm_config, personas 等)
+}
+
+
+def parse_iso_ts(ts_str: str) -> float:
+    try:
+        cleaned = (ts_str or "").replace("Z", "+00:00")
+        dt = datetime.fromisoformat(cleaned)
+        return dt.timestamp()
+    except Exception:
+        return time.time()
+
+
+def load_proactive_config():
+    try:
+        if PROACTIVE_CONFIG_FILE.exists():
+            with open(PROACTIVE_CONFIG_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                proactive_state["enabled"] = bool(data.get("enabled", False))
+                proactive_state["interval_minutes"] = max(1, int(data.get("interval_minutes", 180)))
+                proactive_state["context"] = data.get("context", {})
+                print(f"[ProactiveWake] 已载入配置: 开启={proactive_state['enabled']}, 间隔={proactive_state['interval_minutes']}m", flush=True)
+    except Exception as e:
+        print(f"[ProactiveWake] 读取配置文件异常: {e}", flush=True)
+
+
+def save_proactive_config():
+    try:
+        with open(PROACTIVE_CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump({
+                "enabled": proactive_state["enabled"],
+                "interval_minutes": proactive_state["interval_minutes"],
+                "context": proactive_state["context"]
+            }, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"[ProactiveWake] 保存配置文件异常: {e}", flush=True)
+
+
+async def trigger_proactive_bundle(test_mode: bool = False) -> bool:
+    if not plugin_subs:
+        print("[ProactiveWake] 当前无 AI 桥接连接 (plugin_subs 为空)，跳过主动唤醒", flush=True)
+        return False
+
+    with db() as conn:
+        max_r = conn.execute("SELECT MAX(id) as max_id FROM messages").fetchone()
+        next_evt_id = ((max_r["max_id"] if max_r and max_r["max_id"] else 0) + 1)
+
+    ctx = proactive_state.get("context") or {}
+    bundle = {
+        "type": "bundle",
+        "event_id": next_evt_id,
+        "content": "[系统指令 · 主动打破沉默与问候]",
+        "proactive": True,
+        "test_mode": test_mode,
+        "created_at": now_iso(),
+    }
+    for k in ("llm_config", "personas", "time_context", "memory_context",
+              "tether_front", "tether_middle", "tether_back", "tether_context",
+              "web_reader_enabled", "web_search_enabled", "weather_context", "inner_voice_prompt"):
+        if ctx.get(k) is not None:
+            bundle[k] = ctx.get(k)
+
+    await broadcast(plugin_subs, bundle)
+    return True
+
+
+async def proactive_wake_worker():
+    """后台巡视任务：每 30 秒检查一次静默时长，失败立即熔断。"""
+    load_proactive_config()
+    while True:
+        try:
+            await asyncio.sleep(30)
+            if not proactive_state["enabled"]:
+                continue
+            if proactive_state["circuit_broken"]:
+                continue  # 已熔断，保持静默，等待人类发言或用户重新开关
+
+            interval_sec = max(60, proactive_state["interval_minutes"] * 60)
+            now = time.time()
+
+            # 查数据库中最后一条消息的创建时间与方向
+            with db() as conn:
+                last_row = conn.execute(
+                    "SELECT ts, direction, kind FROM messages ORDER BY id DESC LIMIT 1"
+                ).fetchone()
+
+            if not last_row:
+                continue
+
+            last_msg_time = parse_iso_ts(last_row["ts"])
+            elapsed = now - last_msg_time
+
+            # 检查静默时长是否达到设定值
+            if elapsed < interval_sec:
+                continue
+
+            # 检查距离上一次尝试触发唤醒的时间，必须也至少过去 interval_sec（双重防抖）
+            if (now - proactive_state["last_attempt_time"]) < interval_sec:
+                continue
+
+            proactive_state["last_attempt_time"] = now
+            print(f"[ProactiveWake] 满足静默唤醒条件 (已静默 {int(elapsed/60)} 分钟 >= 设定 {proactive_state['interval_minutes']} 分钟)，触发主动打招呼...", flush=True)
+
+            await trigger_proactive_bundle(test_mode=False)
+
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            print(f"[ProactiveWake] 巡视任务运行异常: {e}", flush=True)
+            await asyncio.sleep(10)
+
+
+# ---------------------------------------------------------------------------
 # app
 # ---------------------------------------------------------------------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    load_proactive_config()
+    wake_task = asyncio.create_task(proactive_wake_worker())
     yield
+    wake_task.cancel()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -1286,6 +1418,69 @@ async def app_visibility(request: Request):
     if visible:
         _last_visible_ts = datetime.now(timezone.utc)
     return {"ok": True, "visible": _is_client_visible}
+
+
+@app.post("/app/proactive_config")
+async def update_proactive_config(request: Request):
+    """更新主动打破沉默配置并同步上下文。"""
+    check_auth(request)
+    body = await request.json()
+    if "enabled" in body:
+        proactive_state["enabled"] = bool(body["enabled"])
+    if "interval_minutes" in body:
+        proactive_state["interval_minutes"] = max(1, int(body["interval_minutes"]))
+    if "context" in body and isinstance(body["context"], dict):
+        proactive_state["context"].update(body["context"])
+    # 用户主动修改或开关，自动解除熔断
+    proactive_state["circuit_broken"] = False
+    proactive_state["last_error"] = ""
+    save_proactive_config()
+    return {
+        "ok": True,
+        "enabled": proactive_state["enabled"],
+        "interval_minutes": proactive_state["interval_minutes"],
+        "circuit_broken": proactive_state["circuit_broken"]
+    }
+
+
+@app.get("/app/proactive_config")
+async def get_proactive_config_api(request: Request):
+    """获取当前主动唤醒运行状态。"""
+    check_auth(request)
+    return {
+        "ok": True,
+        "enabled": proactive_state["enabled"],
+        "interval_minutes": proactive_state["interval_minutes"],
+        "circuit_broken": proactive_state["circuit_broken"],
+        "last_error": proactive_state["last_error"]
+    }
+
+
+@app.post("/app/proactive_test")
+async def test_proactive_wake(request: Request):
+    """手动测试唤醒一次。"""
+    check_auth(request)
+    body = await request.json()
+    if "context" in body and isinstance(body["context"], dict):
+        proactive_state["context"].update(body["context"])
+    proactive_state["circuit_broken"] = False
+    success = await trigger_proactive_bundle(test_mode=True)
+    return {"ok": success}
+
+
+@app.post("/app/proactive_report")
+async def report_proactive_result(request: Request):
+    """Bridge 上报主动唤醒调用结果，失败时立即开启安全熔断。"""
+    check_auth(request)
+    body = await request.json()
+    success = body.get("success", False)
+    if not success:
+        proactive_state["circuit_broken"] = True
+        proactive_state["last_error"] = body.get("error", "API failure")
+        print(f"[ProactiveWake] 收到 Bridge API 失败上报，触发熔断保护，暂停唤醒: {proactive_state['last_error']}", flush=True)
+    else:
+        print("[ProactiveWake] 主动打招呼成功完成", flush=True)
+    return {"ok": True, "circuit_broken": proactive_state["circuit_broken"]}
 
 
 @app.get("/app/status")
