@@ -307,7 +307,73 @@ def fetch_web_content(url: str, max_chars: int = 3500) -> str:
     return f"【网页链接: {url}】\n{header_info}正文提取内容:\n{clean_text}"
 
 
-def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", memory_context: str = "", tether_front: str = "", tether_middle: str = "", tether_back: str = "", web_context: str = "", weather_context: str = "", inner_voice_prompt: str = "", limit: int = 0) -> list:
+# ---------------------------------------------------------------------------
+# 全网智能搜索引擎 (Web Search / 联网搜索超能力)
+# ---------------------------------------------------------------------------
+def search_web(query: str, max_results: int = 4, max_chars: int = 2500) -> str:
+    """全网实时检索：优先 Jina Search（若有配置 key），无 key 或受阻时自动无缝降级到 DuckDuckGo Lite 零配置免登录引擎。"""
+    query = (query or "").strip()
+    if not query:
+        return ""
+
+    # 1. 尝试 Jina Search (s.jina.ai)
+    jina_key = os.environ.get("JINA_API_KEY", "").strip()
+    if jina_key:
+        try:
+            jina_url = f"https://s.jina.ai/{urllib.parse.quote(query)}"
+            headers = {
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "text/plain",
+                "X-Timeout": "10",
+                "Authorization": f"Bearer {jina_key}",
+            }
+            req = urllib.request.Request(jina_url, headers=headers)
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                raw_text = resp.read(200000).decode("utf-8", errors="replace").strip()
+                if raw_text and len(raw_text) > 40:
+                    log("search", f"Jina Search 检索成功 ({len(raw_text)} 字符)")
+                    if len(raw_text) > max_chars:
+                        raw_text = raw_text[:max_chars] + "\n...(部分较长内容已截断)"
+                    return raw_text
+        except Exception as e:
+            log("search", f"Jina Search 访问受阻 ({e})，降级到轻量无Key引擎检索...")
+
+    # 2. 优雅降级：DuckDuckGo Lite（零配置免注册，直接请求，极轻量零内存）
+    try:
+        url = "https://lite.duckduckgo.com/lite/"
+        data = urllib.parse.urlencode({"q": query}).encode("utf-8")
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        }
+        req = urllib.request.Request(url, data=data, headers=headers)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            html = resp.read().decode("utf-8", errors="replace")
+
+        links = re.findall(r'<a[^>]+class=[\'"]result-link[\'"][^>]*>([\s\S]*?)</a>', html)
+        snippets = re.findall(r'<td[^>]+class=[\'"]result-snippet[\'"][^>]*>([\s\S]*?)</td>', html)
+
+        items = []
+        for i in range(min(len(links), len(snippets), max_results)):
+            t = re.sub(r'<[^>]+>', '', links[i]).strip()
+            s = re.sub(r'<[^>]+>', '', snippets[i]).strip()
+            if t and s:
+                items.append(f"{i+1}. 【{t}】\n   摘要: {s}")
+
+        if items:
+            res_text = "\n\n".join(items)
+            log("search", f"轻量引擎检索成功，获取 {len(items)} 条摘要")
+            if len(res_text) > max_chars:
+                res_text = res_text[:max_chars] + "\n...(部分较长内容已截断)"
+            return res_text
+    except Exception as ex:
+        log("search", f"轻量引擎检索失败: {ex}")
+
+    return f"暂未检索到关于「{query}」的有效实时信息。"
+
+
+def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", memory_context: str = "", tether_front: str = "", tether_middle: str = "", tether_back: str = "", web_context: str = "", web_search_enabled: bool = False, web_search_context: str = "", weather_context: str = "", inner_voice_prompt: str = "", limit: int = 0) -> list:
     base_persona = custom_persona or PERSONA
     parts = []
     # 1. 提示词最前面 (Front)
@@ -334,6 +400,24 @@ def build_messages(custom_persona: str = "", user_persona: str = "", time_contex
             "[网页实时阅读插件 · 后台已为你打开并阅读用户提及的网页]:\n"
             f"{web_context.strip()}\n\n"
             "(提示: 上述内容是用户发送给你的链接的真实完整正文。请像个认真阅读过该内容的人一样，与用户自然讨论、分析或调侃该内容，切勿生硬复述或透露机器插件细节。)"
+        )
+    # 6. 全网搜索结果注入 (当后台执行完搜索后)
+    if web_search_context and web_search_context.strip():
+        parts.append(
+            "[全网实时搜索结果 · 后台已为你检索完成]:\n"
+            f"{web_search_context.strip()}\n\n"
+            "(提示: 上述是为你实时搜索到的最新全网资讯。请像个刚刚查阅完手机资料的人一样，自然结合上述事实与用户交流，切勿生硬复述或透露指令细节。)"
+        )
+    # 7. 全网智能搜索能力指令说明 (当允许搜索且尚未完成搜索时)
+    elif web_search_enabled:
+        parts.append(
+            "### 【全网智能搜索能力 (Web Search)】\n"
+            "- 你已装备实时连接互联网全网搜索引擎的超能力。\n"
+            "- 【自主决定】：当你需要获取最新现实事实、突发新闻、验证未知知识，或用户询问/要求你查证时，你可以自主决定是否调用搜索工具。如果是日常闲聊、陪伴倾诉或已知常识，直接正常回复即可，绝不要强行搜索。\n"
+            "- 【搜索调用语法】：如果你决定发起搜索，请在回复的【第一行独占一行】输出：\n"
+            "  [搜索: 关键词]\n"
+            "  （例如：[搜索: 2026年春节档电影] 或 [搜索: 今天有什么科技新闻]）\n"
+            "  系统检测到该指令后会在后台立即执行检索，并将最新全网结果反馈给你，随后你再结合搜索结果为用户回复。"
         )
     # 6. 提示词最后面 (Back - 最高执行准则)
     if tether_back and tether_back.strip():
@@ -635,6 +719,13 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
 
     weather_ctx = (bundle_meta or {}).get("weather_context") or latest_item.get("weather_context") or ""
 
+    # ── 全网智能搜索 (Web Search) ──
+    web_search_enabled = (bundle_meta or {}).get("web_search_enabled")
+    if web_search_enabled is None:
+        web_search_enabled = latest_item.get("web_search_enabled")
+    if web_search_enabled is None:
+        web_search_enabled = True
+
     if not time_ctx:
         # 兜底生成当前时间
         try:
@@ -680,6 +771,7 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
             tether_middle=t_middle,
             tether_back=t_back,
             web_context=web_ctx,
+            web_search_enabled=web_search_enabled,
             weather_context=weather_ctx,
             inner_voice_prompt=iv_prompt,
             limit=limit
@@ -694,6 +786,41 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
         return False
 
     if reply:
+        # ── 检查 AI 是否自主发起了搜索指令 ──
+        search_query = ""
+        if web_search_enabled and reply:
+            m_search = re.search(r'\[(?:搜索|search)[:：]\s*(.+?)\]', reply, flags=re.I)
+            if m_search:
+                search_query = m_search.group(1).strip()
+                log("search", f"AI 自主发起全网搜索: {search_query}")
+                search_results = search_web(search_query)
+                # 重新带上搜索结果让模型进行最终回复生成
+                msgs_with_search = build_messages(
+                    custom_persona=custom_ai,
+                    user_persona=custom_user,
+                    time_context=time_ctx,
+                    memory_context=memory_ctx,
+                    tether_front=t_front,
+                    tether_middle=t_middle,
+                    tether_back=t_back,
+                    web_context=web_ctx,
+                    web_search_enabled=False,
+                    web_search_context=f"检索关键词「{search_query}」的全网最新资料:\n{search_results}",
+                    weather_context=weather_ctx,
+                    inner_voice_prompt=iv_prompt,
+                    limit=limit
+                )
+                try:
+                    sec_reply, sec_usage = call_llm_dynamic(msgs_with_search, active_routes, temp)
+                    if sec_reply:
+                        reply = sec_reply
+                        if sec_usage:
+                            usage = sec_usage
+                except Exception as ex:
+                    log("search", f"带搜索结果二轮生成失败: {ex}")
+                    # 容错：剔除搜索标签后直接作为兜底回复
+                    reply = re.sub(r'\[(?:搜索|search)[:：]\s*(.+?)\]', '', reply, flags=re.I).strip()
+
         # 0. 抽取心声 (Inner Voice)，并将其彻底从发给用户的气泡和历史记忆中剔除
         inner_voice_text = ""
         m_iv = re.search(r'<inner_voice>([\s\S]*?)</inner_voice>', reply, flags=re.I)
@@ -739,14 +866,23 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
         tool_meta = {}
         if inner_voice_text:
             tool_meta["inner_voice"] = inner_voice_text
+        
+        tools_list = []
         if web_snippets and valid_urls:
-            tool_meta["tools"] = [
-                {
-                    "tool": "看了看网页",
-                    "cmd": f"读取链接: {', '.join(valid_urls[:2])}",
-                    "result": f"已成功抓取并解析 {len(valid_urls)} 个网页的正文内容"
-                }
-            ]
+            tools_list.append({
+                "tool": "看了看网页",
+                "cmd": f"读取链接: {', '.join(valid_urls[:2])}",
+                "result": f"已成功抓取并解析 {len(valid_urls)} 个网页的正文内容"
+            })
+        if search_query:
+            tools_list.append({
+                "tool": "搜了搜网络",
+                "cmd": f"检索关键词: {search_query}",
+                "result": f"已成功获取关于「{search_query}」的最新全网内容"
+            })
+        if tools_list:
+            tool_meta["tools"] = tools_list
+
         if usage and isinstance(usage, dict):
             tool_meta["usage"] = {
                 "prompt_tokens": usage.get("prompt_tokens", 0),

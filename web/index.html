@@ -6314,6 +6314,11 @@ char的长期记忆summary格式为：
               <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">Tether & Memory</div>
               <div style="font-size:11px; color:var(--text-soft);">协定与长期回忆录</div>
             </div>
+            <div
+              style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
+              <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">全网智能搜索</div>
+              <div style="font-size:11px; color:var(--text-soft);" id="tidesWebSearchStatusBadge">已开启 · 自主检索</div>
+            </div>
           </div>
         </section>
 
@@ -6329,6 +6334,21 @@ char的长期记忆summary格式为：
           </div>
           <div class="llm-hint" style="margin-top:6px; line-height:1.6;">
             支持小红书、微信公众号、知乎、新闻资讯与博客链接。后台自动清洗广告代码，只将最纯净的正文喂给 AI，不依赖模型自身联网能力。
+          </div>
+        </section>
+
+        <!-- 全网智能搜索配置 -->
+        <section class="settings-card" style="margin-bottom:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div>
+              <div class="settings-label" style="margin-bottom:2px;">全网智能搜索 (Web Search)</div>
+              <div style="font-size:12px; color:var(--text-faint);">遇到未知事实或突发资讯时，AI 自主决定是否联网查证</div>
+            </div>
+            <input type="checkbox" id="webSearchGlobalToggle" checked
+              style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+          </div>
+          <div class="llm-hint" style="margin-top:6px; line-height:1.6;">
+            开启后，AI 拥有全网实时检索超能力。遇到最新现实动态或需要求证的事实时自主联网搜索，查完后自然回复你，并在气泡上方以一行精致小字标明使用的检索工具。
           </div>
         </section>
 
@@ -9292,6 +9312,8 @@ textarea::placeholder {
 
     const webReaderGlobalToggle = document.getElementById("webReaderGlobalToggle");
     const tidesWebReaderStatusBadge = document.getElementById("tidesWebReaderStatusBadge");
+    const webSearchGlobalToggle = document.getElementById("webSearchGlobalToggle");
+    const tidesWebSearchStatusBadge = document.getElementById("tidesWebSearchStatusBadge");
     const weatherRadarGlobalToggle = document.getElementById("weatherRadarGlobalToggle");
     const tidesWeatherStatusBadge = document.getElementById("tidesWeatherStatusBadge");
     const weatherCityInput = document.getElementById("weatherCityInput");
@@ -9608,6 +9630,12 @@ textarea::placeholder {
         tidesWebReaderStatusBadge.textContent = isEnReader ? "已开启 · 自动解析" : "已暂停 · 未启用";
         tidesWebReaderStatusBadge.style.color = isEnReader ? "var(--tint)" : "var(--text-faint)";
       }
+      const isEnSearch = localStorage.getItem("companion_web_search_enabled") !== "false";
+      if (webSearchGlobalToggle) webSearchGlobalToggle.checked = isEnSearch;
+      if (tidesWebSearchStatusBadge) {
+        tidesWebSearchStatusBadge.textContent = isEnSearch ? "已开启 · 自主检索" : "已暂停 · 未启用";
+        tidesWebSearchStatusBadge.style.color = isEnSearch ? "var(--tint)" : "var(--text-faint)";
+      }
       renderWeatherUi();
     }
 
@@ -9616,6 +9644,14 @@ textarea::placeholder {
         localStorage.setItem("companion_web_reader_enabled", webReaderGlobalToggle.checked ? "true" : "false");
         syncTidesUi();
         showToast(webReaderGlobalToggle.checked ? "已开启网页链接自动阅读" : "已关闭网页链接自动阅读");
+      });
+    }
+
+    if (webSearchGlobalToggle) {
+      webSearchGlobalToggle.addEventListener("change", () => {
+        localStorage.setItem("companion_web_search_enabled", webSearchGlobalToggle.checked ? "true" : "false");
+        syncTidesUi();
+        showToast(webSearchGlobalToggle.checked ? "已开启全网智能搜索" : "已关闭全网智能搜索");
       });
     }
 
@@ -11148,6 +11184,8 @@ textarea::placeholder {
         if (_tetherCtx.back) payload.tether_back = _tetherCtx.back;
         // 网页透视眼开关（默认开启）
         payload.web_reader_enabled = (localStorage.getItem("companion_web_reader_enabled") !== "false");
+        // 全网智能搜索开关（默认开启）
+        payload.web_search_enabled = (localStorage.getItem("companion_web_search_enabled") !== "false");
         // 城市天气雷达注入
         payload.weather_context = getWeatherContext();
         // 心声指令注入 (开启时注入)
@@ -14227,6 +14265,7 @@ textarea::placeholder {
               tether_middle: getTetherContext().middle,
               tether_back: getTetherContext().back,
               web_reader_enabled: (localStorage.getItem("companion_web_reader_enabled") !== "false"),
+              web_search_enabled: (localStorage.getItem("companion_web_search_enabled") !== "false"),
               weather_context: getWeatherContext(),
               inner_voice_prompt: (typeof getInnerVoicePrompt === "function" ? getInnerVoicePrompt() : "")
             };
@@ -14646,6 +14685,7 @@ textarea::placeholder {
           if (_tetherCtx.middle) payload.tether_middle = _tetherCtx.middle;
           if (_tetherCtx.back) payload.tether_back = _tetherCtx.back;
           payload.web_reader_enabled = (localStorage.getItem("companion_web_reader_enabled") !== "false");
+          payload.web_search_enabled = (localStorage.getItem("companion_web_search_enabled") !== "false");
           payload.weather_context = getWeatherContext();
           if (typeof getInnerVoicePrompt === "function") {
             const _ivPrompt = getInnerVoicePrompt();
