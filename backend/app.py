@@ -691,7 +691,7 @@ def check_auth(request: Request) -> None:
 # 主动打破沉默与定时唤醒 (Proactive Wake) 机制
 # ---------------------------------------------------------------------------
 
-PROACTIVE_CONFIG_FILE = DB_PATH.parent / "proactive_config.json"
+PROACTIVE_CONFIG_FILE = Path(DB_PATH).parent / "proactive_config.json"
 
 proactive_state = {
     "enabled": False,
