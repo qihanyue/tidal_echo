@@ -818,8 +818,8 @@ def stream_inbound(cursor: int) -> None:
                         if m.get("type") == "bundle":
                             items = m.get("items") or []
                             if items:
-                                # 用户点击【接收回复】显式触发的 bundle，允许重新作答（不被 cursor 拦截）
-                                cursor = max(cursor, max(int(it.get("id") or 0) for it in items))
+                                # 用户显式触发的 bundle (Reroll / 接收回复)，推进游标至最新事件 ID
+                                cursor = max(cursor, int(m.get("id") or 0), max((int(it.get("id") or 0) for it in items), default=0))
                                 write_cursor(cursor)
                                 handle_incoming_messages(items, bundle_meta=m)
                             continue

@@ -363,6 +363,13 @@ async function handleFrame(frame: string): Promise<void> {
     tlog('in', `dropping non-JSON frame: ${data.slice(0, 120)}`)
     return
   }
+  if (msg.type === 'sync_history' || msg.type === 'clear_history') {
+    if (msg.type === 'clear_history') {
+      lastInId = 0
+      writeNumberFile(IN_LAST_FILE, 0)
+    }
+    return
+  }
   // human→AI chat: only advance the cursor after a successful delivery; skip
   // anything already seen (id<=cursor, which reconnect backfill may overlap).
   // A failed delivery (CC busy) does NOT advance — the next reconnect's ?since=

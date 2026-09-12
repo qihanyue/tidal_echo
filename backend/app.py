@@ -822,11 +822,17 @@ async def app_trigger_reply(request: Request):
         conn.commit()
 
     # 3. 组装 bundle 打包负载广播给 bridge (AI 侧)
+    with db() as conn:
+        max_r = conn.execute("SELECT MAX(id) as max_id FROM messages").fetchone()
+        next_evt_id = ((max_r["max_id"] if max_r and max_r["max_id"] else 0) + 1)
+
     bundle = {
         "type": "bundle",
-        "id": pending_msgs[-1]["id"],
+        "id": next_evt_id,
         "content": "\n".join(m["text"] for m in pending_msgs if m.get("text")),
         "items": [plugin_payload(m) for m in pending_msgs],
+        "user": "human",
+        "attachments": (pending_msgs[-1].get("meta") or {}).get("attachments") if pending_msgs else [],
     }
     if body.get("llm_config"):
         bundle["llm_config"] = body.get("llm_config")
@@ -841,7 +847,9 @@ async def app_trigger_reply(request: Request):
             bundle[f] = body.get(f)
 
     if brain_target() == "loop":
-        asyncio.create_task(forward_to_loop(pending_msgs[-1]))
+        loop_msg = dict(pending_msgs[-1])
+        loop_msg["text"] = bundle["content"]
+        asyncio.create_task(forward_to_loop(loop_msg))
     else:
         await broadcast(plugin_subs, bundle)
     await broadcast(app_subs, {"type": "typing", "active": True})
@@ -917,12 +925,18 @@ async def app_reroll(request: Request):
                 )
         conn.commit()
 
-    # 5. 组装 bundle 广播给 bridge (AI 侧)
+    # 5. 组装 bundle 广播给 bridge (AI 侧)，赋予全新大于历史游标的事件 ID，绝不被 cursor 拦截
+    with db() as conn:
+        max_r = conn.execute("SELECT MAX(id) as max_id FROM messages").fetchone()
+        next_evt_id = ((max_r["max_id"] if max_r and max_r["max_id"] else 0) + 1)
+
     bundle = {
         "type": "bundle",
-        "id": pending_msgs[-1]["id"],
+        "id": next_evt_id,
         "content": "\n".join(m["text"] for m in pending_msgs if m.get("text")),
         "items": [plugin_payload(m) for m in pending_msgs],
+        "user": "human",
+        "attachments": (pending_msgs[-1].get("meta") or {}).get("attachments") if pending_msgs else [],
     }
     if body.get("llm_config"):
         bundle["llm_config"] = body.get("llm_config")
@@ -937,11 +951,30 @@ async def app_reroll(request: Request):
             bundle[f] = body.get(f)
 
     if brain_target() == "loop":
-        asyncio.create_task(forward_to_loop(pending_msgs[-1]))
+        loop_msg = dict(pending_msgs[-1])
+        loop_msg["text"] = bundle["content"]
+        asyncio.create_task(forward_to_loop(loop_msg))
     else:
         await broadcast(plugin_subs, bundle)
     await broadcast(app_subs, {"type": "typing", "active": True})
     return {"ok": True, "deleted_ids": to_delete, "triggered_ids": msg_ids}
+
+
+@app.post("/app/messages/batch_delete")
+async def batch_delete_messages(request: Request):
+    """Batch delete messages from server database and sync with AI."""
+    check_auth(request)
+    body = await request.json()
+    ids = body.get("ids") or []
+    valid_ids = [int(x) for x in ids if str(x).isdigit() and int(x) > 0]
+    if valid_ids:
+        with db() as conn:
+            placeholders = ",".join("?" for _ in valid_ids)
+            conn.execute(f"DELETE FROM messages WHERE id IN ({placeholders})", valid_ids)
+            conn.commit()
+        await broadcast(app_subs, {"type": "messages_deleted", "ids": valid_ids})
+        await broadcast(plugin_subs, {"type": "sync_history"})
+    return {"ok": True, "deleted_ids": valid_ids}
 
 
 @app.delete("/app/messages/{msg_id}")

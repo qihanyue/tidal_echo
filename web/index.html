@@ -2180,7 +2180,7 @@
       box-sizing: border-box;
       background: #ffffff;
       border-radius: 14px;
-      border: 1px solid rgba(0, 0, 0, 0.06);
+      border: 1.5px solid rgba(0, 0, 0, 0.06);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
       padding: 6px 6px 20px;
       display: flex;
@@ -2190,13 +2190,67 @@
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
-      transition: transform .12s ease, box-shadow .12s ease;
-      overflow: hidden;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .15s ease, background-color .15s ease;
+      overflow: visible; /* 避免右上角删除角标和左上角勾选框被意外裁剪 */
     }
 
     .sticker-card:active {
-      transform: scale(0.95);
+      transform: scale(0.96);
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    /* 编辑模式下选中的卡片高亮样式 */
+    .sticker-card.is-selected {
+      border-color: #e86b8b !important;
+      background: #fff8f9;
+      box-shadow: 0 4px 14px rgba(232, 107, 139, 0.25);
+    }
+
+    /* 批量多选圆形勾选框 */
+    .sticker-select-checkbox {
+      display: none;
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1.5px solid rgba(0, 0, 0, 0.22);
+      z-index: 25;
+      box-sizing: border-box;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      transition: all .15s ease;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .sticker-sheet-card.is-editing .sticker-select-checkbox {
+      display: flex;
+    }
+
+    .sticker-card.is-selected .sticker-select-checkbox {
+      background: #e86b8b;
+      border-color: #e86b8b;
+    }
+
+    .sticker-select-checkbox svg {
+      width: 13px;
+      height: 13px;
+      fill: none;
+      stroke: #ffffff;
+      stroke-width: 2.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: all .15s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    .sticker-card.is-selected .sticker-select-checkbox svg {
+      opacity: 1;
+      transform: scale(1);
     }
 
     .sticker-thumb-box {
@@ -2211,6 +2265,7 @@
       border-radius: 8px;
       overflow: hidden;
       background: transparent;
+      z-index: 1;
     }
 
     .sticker-card-thumb {
@@ -2296,47 +2351,141 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       pointer-events: none;
+      z-index: 2;
+      transition: background-color .15s ease;
     }
 
-    /* 编辑模式下的删除角标 */
+    /* 编辑模式下允许点击名称修改改名 */
+    .sticker-sheet-card.is-editing .sticker-card-name {
+      pointer-events: auto;
+      background: rgba(0, 0, 0, 0.04);
+      border-radius: 4px;
+    }
+
+    /* 编辑模式下的单个删除角标（置顶 z-index，加大触控热区，绝不被图片遮挡） */
     .sticker-del-badge {
       display: none;
       position: absolute;
-      top: 4px;
-      right: 4px;
-      width: 22px;
-      height: 22px;
+      top: -5px;
+      right: -5px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
-      background: #ff5277;
-      color: #fff;
-      font-size: 14px;
+      background: #ff4766;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 700;
       line-height: 20px;
       text-align: center;
-      box-shadow: 0 2px 6px rgba(255, 82, 119, 0.4);
+      box-shadow: 0 2px 8px rgba(255, 71, 102, 0.45);
       cursor: pointer;
-      border: 2px solid #fff;
+      border: 2px solid #ffffff;
+      z-index: 30; /* 绝对最高层级 */
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+
+    /* 扩大触控热区至 40px，防止真机上按不到 */
+    .sticker-del-badge::before {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+    }
+
+    .sticker-del-badge:active {
+      transform: scale(0.9);
+      background: #e03050;
     }
 
     .sticker-sheet-card.is-editing .sticker-del-badge {
-      display: block;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .sticker-sheet-card.is-editing .sticker-card {
-      animation: wobble .24s infinite alternate ease-in-out;
+    /* ── 底部批量操作工具条 ── */
+    .sticker-batch-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      flex-shrink: 0;
+      animation: sheetBarUp .2s ease both;
     }
 
-    .sticker-sheet-card.is-editing .sticker-card:nth-child(2n) {
-      animation-delay: 0.12s;
+    .sticker-batch-bar.hidden {
+      display: none !important;
     }
 
-    @keyframes wobble {
+    @keyframes sheetBarUp {
       from {
-        transform: rotate(-1deg);
+        transform: translateY(100%);
+        opacity: 0;
       }
-
       to {
-        transform: rotate(1deg);
+        transform: translateY(0);
+        opacity: 1;
       }
+    }
+
+    .sticker-batch-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sticker-batch-action-btn {
+      background: transparent;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      color: #333;
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 5px 12px;
+      border-radius: 14px;
+      transition: all .15s ease;
+    }
+
+    .sticker-batch-action-btn:active {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .sticker-batch-count {
+      font-size: 13px;
+      color: #777;
+    }
+
+    .sticker-batch-del-btn {
+      background: #ff4766;
+      color: #ffffff;
+      border: none;
+      border-radius: 18px;
+      padding: 7px 18px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s ease;
+      box-shadow: 0 2px 8px rgba(255, 71, 102, 0.35);
+    }
+
+    .sticker-batch-del-btn:disabled {
+      background: #f1f2f4;
+      color: #a0a5ad;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .sticker-batch-del-btn:not(:disabled):active {
+      transform: scale(0.96);
+      background: #e03050;
     }
 
     .sticker-empty {
@@ -2349,6 +2498,154 @@
 
     .sticker-empty.hidden {
       display: none !important;
+    }
+
+    /* ── 聊天记录批量操作工具条 ── */
+    .msg-batch-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+      position: sticky;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      box-sizing: border-box;
+      animation: sheetBarUp .2s ease both;
+    }
+
+    .msg-batch-bar.hidden {
+      display: none !important;
+    }
+
+    .msg-batch-left,
+    .msg-batch-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .msg-batch-count {
+      font-size: 13px;
+      font-weight: 600;
+      color: #666;
+    }
+
+    .msg-batch-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 7px 14px;
+      border-radius: 18px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all .15s ease;
+    }
+
+    .msg-batch-btn.secondary {
+      background: rgba(0, 0, 0, 0.05);
+      border-color: rgba(0, 0, 0, 0.12);
+      color: #333;
+    }
+
+    .msg-batch-btn.secondary:active {
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .msg-batch-btn.cancel {
+      background: transparent;
+      color: #777;
+    }
+
+    .msg-batch-btn.cancel:active {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .msg-batch-btn.delete {
+      background: #893a49;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(137, 58, 73, 0.35);
+    }
+
+    .msg-batch-btn.delete:disabled {
+      background: #f1f2f4;
+      color: #a0a5ad;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .msg-batch-btn.delete:not(:disabled):active {
+      transform: scale(0.96);
+      background: #742e3b;
+    }
+
+    /* 消息行多选勾选框 */
+    .row-select-checkbox {
+      display: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1.5px solid rgba(0, 0, 0, 0.22);
+      flex-shrink: 0;
+      margin: 0 8px;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      transition: all .15s ease;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      box-sizing: border-box;
+      align-self: center;
+    }
+
+    /* 多选模式激活时显示勾选框并隐藏输入底栏 */
+    body.is-msg-select-mode .row-select-checkbox {
+      display: flex;
+    }
+
+    body.is-msg-select-mode .composer {
+      display: none !important;
+    }
+
+    body.is-msg-select-mode .row {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .row.is-selected-msg .row-select-checkbox {
+      background: #893a49;
+      border-color: #893a49;
+    }
+
+    .row-select-checkbox svg {
+      width: 13px;
+      height: 13px;
+      fill: none;
+      stroke: #ffffff;
+      stroke-width: 2.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: all .15s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    .row.is-selected-msg .row-select-checkbox svg {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .row.is-selected-msg .bubble {
+      outline: 2px solid rgba(137, 58, 73, 0.55);
+      outline-offset: 1px;
     }
 
     /* ── 批量添加弹窗 ── */
@@ -5130,8 +5427,15 @@
             </svg>
             <span class="action-text">清空记录</span>
           </button>
-          <!-- 第3行：与截图一致的留白占位格 -->
-          <div class="action-item placeholder" aria-hidden="true"></div>
+          <!-- 7. 批量管理 (进入多选批量删除模式) -->
+          <button type="button" class="action-item" id="actionBatchMsgBtn">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 11 12 14 22 4" />
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+            </svg>
+            <span class="action-text">批量管理</span>
+          </button>
           <div class="action-item placeholder" aria-hidden="true"></div>
           <div class="action-item placeholder" aria-hidden="true"></div>
         </div>
@@ -5175,6 +5479,25 @@
         </svg>
       </button>
     </footer>
+    <!-- 聊天记录批量操作工具条 -->
+    <div class="msg-batch-bar hidden" id="msgBatchBar" aria-label="批量管理栏">
+      <div class="msg-batch-left">
+        <button type="button" class="msg-batch-btn secondary" id="msgSelectAllBtn">全选</button>
+        <span class="msg-batch-count" id="msgBatchCount">已选 0 条</span>
+      </div>
+      <div class="msg-batch-right">
+        <button type="button" class="msg-batch-btn cancel" id="msgBatchCancelBtn">取消</button>
+        <button type="button" class="msg-batch-btn delete" id="msgBatchDelBtn" disabled>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 7h16"></path>
+            <path d="M10 11v6M14 11v6"></path>
+            <path d="M5 7l1 13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-13"></path>
+            <path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"></path>
+          </svg>
+          <span>删除已选</span>
+        </button>
+      </div>
+    </div>
     <!-- 手动模式：接收回复隐藏桩（通过麦克风触发） -->
     <button id="manualTriggerBtn" type="button" class="hidden" style="display:none !important;">
       <span>接收回复</span>
@@ -6471,6 +6794,14 @@ char的长期记忆summary格式为：
         </svg>
         <span>复制文本</span>
       </button>
+      <button class="msg-act" type="button" data-act="select" role="menuitem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+          stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 11 12 14 22 4" />
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+        </svg>
+        <span>多选</span>
+      </button>
       <button class="msg-act danger" type="button" data-act="delete" role="menuitem">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
           stroke-linejoin="round" aria-hidden="true">
@@ -6653,6 +6984,14 @@ char的长期记忆summary格式为：
           <p>还没有表情包呢<br>点击右上角「添加」批量导入吧</p>
         </div>
       </div>
+      <!-- 批量管理底部工具栏 -->
+      <div class="sticker-batch-bar hidden" id="stickerBatchBar">
+        <div class="sticker-batch-left">
+          <button type="button" class="sticker-batch-action-btn" id="stickerSelectAllBtn">全选</button>
+          <span class="sticker-batch-count" id="stickerBatchCount">已选 0 项</span>
+        </div>
+        <button type="button" class="sticker-batch-del-btn" id="stickerBatchDelBtn" disabled>删除</button>
+      </div>
     </div>
   </div>
 
@@ -6783,6 +7122,159 @@ char的长期记忆summary格式为：
       try { localStorage.setItem("companion_deleted_ids", JSON.stringify(Array.from(deletedKeys).slice(-5000))); } catch (_) { }
     }
 
+    // ── 聊天记录批量多选状态与管理系统 ──
+    let isMessageSelectMode = false;
+    const selectedMsgKeys = new Set();
+
+    function updateMsgBatchBarUi() {
+      const bar = document.getElementById("msgBatchBar");
+      if (!bar) return;
+      const countEl = document.getElementById("msgBatchCount");
+      const delBtn = document.getElementById("msgBatchDelBtn");
+      const selectAllBtn = document.getElementById("msgSelectAllBtn");
+      const count = selectedMsgKeys.size;
+      if (countEl) countEl.textContent = `已选 ${count} 条`;
+      if (delBtn) delBtn.disabled = (count === 0);
+
+      let totalMsgs = 0;
+      try {
+        if (typeof sortedMessages === "function") {
+          totalMsgs = sortedMessages().length;
+        } else if (typeof chatMessages !== "undefined") {
+          totalMsgs = chatMessages.length;
+        }
+      } catch (_) { }
+
+      if (selectAllBtn) {
+        if (totalMsgs > 0 && count === totalMsgs) {
+          selectAllBtn.textContent = "取消全选";
+        } else {
+          selectAllBtn.textContent = "全选";
+        }
+      }
+    }
+
+    function enterMessageSelectMode(initialKey = null) {
+      isMessageSelectMode = true;
+      selectedMsgKeys.clear();
+      if (initialKey != null) {
+        selectedMsgKeys.add(msgKey(initialKey));
+      }
+      document.body.classList.add("is-msg-select-mode");
+      const bar = document.getElementById("msgBatchBar");
+      if (bar) bar.classList.remove("hidden");
+      updateMsgBatchBarUi();
+      if (typeof scrollEl !== "undefined" && scrollEl) {
+        scrollEl.querySelectorAll(".row[data-message-key]").forEach(row => {
+          const k = row.dataset.messageKey;
+          row.classList.toggle("is-selected-msg", selectedMsgKeys.has(k));
+        });
+      }
+    }
+
+    function exitMessageSelectMode() {
+      isMessageSelectMode = false;
+      selectedMsgKeys.clear();
+      document.body.classList.remove("is-msg-select-mode");
+      const bar = document.getElementById("msgBatchBar");
+      if (bar) bar.classList.add("hidden");
+      if (typeof scrollEl !== "undefined" && scrollEl) {
+        scrollEl.querySelectorAll(".row[data-message-key]").forEach(row => {
+          row.classList.remove("is-selected-msg");
+        });
+      }
+    }
+
+    function toggleMessageSelection(key) {
+      const k = msgKey(key);
+      if (selectedMsgKeys.has(k)) {
+        selectedMsgKeys.delete(k);
+      } else {
+        selectedMsgKeys.add(k);
+      }
+      if (typeof findRenderedMessageRow === "function") {
+        const row = findRenderedMessageRow(k);
+        if (row) {
+          row.classList.toggle("is-selected-msg", selectedMsgKeys.has(k));
+        }
+      }
+      updateMsgBatchBarUi();
+    }
+
+    function toggleSelectAllMessages() {
+      let msgs = [];
+      try {
+        if (typeof sortedMessages === "function") {
+          msgs = sortedMessages();
+        } else if (typeof chatMessages !== "undefined") {
+          msgs = chatMessages;
+        }
+      } catch (_) { }
+      const totalMsgs = msgs.length;
+      if (selectedMsgKeys.size === totalMsgs) {
+        selectedMsgKeys.clear();
+      } else {
+        msgs.forEach(m => {
+          if (m && m._key) selectedMsgKeys.add(msgKey(m._key));
+        });
+      }
+      if (typeof scrollEl !== "undefined" && scrollEl) {
+        scrollEl.querySelectorAll(".row[data-message-key]").forEach(row => {
+          const k = row.dataset.messageKey;
+          row.classList.toggle("is-selected-msg", selectedMsgKeys.has(k));
+        });
+      }
+      updateMsgBatchBarUi();
+    }
+
+    async function doBatchDeleteMessages() {
+      if (!selectedMsgKeys.size) return;
+      const count = selectedMsgKeys.size;
+      if (!confirm(`确定删除选中的 ${count} 条记录吗？删除后前后端将彻底同步，不可恢复。`)) {
+        return;
+      }
+      const keysToDelete = Array.from(selectedMsgKeys);
+      const idsToDelete = [];
+
+      keysToDelete.forEach((key) => {
+        const m = (typeof messageByKey !== "undefined") ? messageByKey.get(msgKey(key)) : null;
+        const numId = m ? Number(m.id) : (Number(key) || null);
+        if (Number.isInteger(numId) && numId > 0) {
+          idsToDelete.push(numId);
+        }
+        deletedKeys.add(msgKey(key));
+        if (typeof removeMessage === "function") {
+          removeMessage(key, { render: false, cache: true });
+        }
+      });
+
+      persistDeletedKeys();
+      exitMessageSelectMode();
+      if (typeof invalidateRows === "function") invalidateRows();
+      if (typeof scheduleRender === "function") scheduleRender({ stickToBottom: (typeof nearBottom === "function" ? nearBottom() : true) });
+      if (typeof scheduleCacheSave === "function") scheduleCacheSave();
+
+      // 前后端同步：调用服务端的 batch_delete 接口
+      if (idsToDelete.length > 0) {
+        try {
+          await fetch(`${API_BASE}/app/messages/batch_delete`, {
+            method: "POST",
+            headers: { ...authHeaders(), "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: idsToDelete })
+          });
+        } catch (err) {
+          // 兜底逐条删除
+          idsToDelete.forEach((id) => {
+            fetch(`${API_BASE}/app/messages/${id}`, {
+              method: "DELETE",
+              headers: authHeaders()
+            }).catch(() => {});
+          });
+        }
+      }
+      showToast(`已删除 ${count} 条记录`);
+    }
+
     /* ════════════ 表情包管理系统 (Sticker System) ════════════ */
     const STICKER_KEY = "companion_stickers";
     const DEFAULT_STICKERS = [
@@ -6836,13 +7328,31 @@ char的长期记忆summary格式为：
     }
     window.handleStickerInlineError = handleStickerInlineError;
 
+    let selectedStickerIds = new Set();
+
+    // 清理已删除表情包在 Service Worker 中的持久化离线图片缓存
+    function cleanStickerMediaCaches(urls) {
+      if (!urls || !urls.length) return;
+      try {
+        if ("caches" in window) {
+          caches.open("companion-stickers-media-v1").then(cache => {
+            urls.forEach(u => {
+              if (u && typeof u === "string" && !u.startsWith("data:")) {
+                cache.delete(u).catch(() => {});
+              }
+            });
+          }).catch(() => {});
+        }
+      } catch (_) { }
+    }
+
     function getStickerList() {
       if (cachedStickers) return cachedStickers;
       try {
         const raw = localStorage.getItem(STICKER_KEY);
-        if (raw) {
+        if (raw !== null) {
           const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length) {
+          if (Array.isArray(parsed)) {
             let changed = false;
             // 自动自愈：清洗本地已有历史数据中的脏字符和 http 协议，并将已失效的老默认 ibb.co 迁移至内置 SVG
             cachedStickers = parsed.map(item => {
@@ -6867,6 +7377,7 @@ char的长期记忆summary格式为：
           }
         }
       } catch (_) { }
+      // 仅当用户从未初始化过表情（首次进入应用）时才加载内置预设
       cachedStickers = [...DEFAULT_STICKERS];
       saveStickerList(cachedStickers, false);
       return cachedStickers;
@@ -6946,33 +7457,103 @@ char的长期记忆summary格式为：
       return null;
     }
 
+    // 动态同步编辑模式下的勾选与底部批量操作工具条状态
+    function updateStickerSelectionUi() {
+      const list = getStickerList();
+      const grid = document.getElementById("stickerGrid");
+      const batchBar = document.getElementById("stickerBatchBar");
+      const countEl = document.getElementById("stickerBatchCount");
+      const selectAllBtn = document.getElementById("stickerSelectAllBtn");
+      const delBtn = document.getElementById("stickerBatchDelBtn");
+
+      if (!isStickerEditing) {
+        if (batchBar) batchBar.classList.add("hidden");
+        return;
+      }
+
+      if (batchBar) batchBar.classList.remove("hidden");
+
+      if (grid) {
+        grid.querySelectorAll(".sticker-card").forEach(card => {
+          const id = card.dataset.id;
+          if (id && selectedStickerIds.has(id)) {
+            card.classList.add("is-selected");
+          } else {
+            card.classList.remove("is-selected");
+          }
+        });
+      }
+
+      const total = list.length;
+      const selectedCount = selectedStickerIds.size;
+
+      if (countEl) {
+        countEl.textContent = `已选 ${selectedCount} 项`;
+      }
+
+      if (selectAllBtn) {
+        if (total > 0 && selectedCount === total) {
+          selectAllBtn.textContent = "取消全选";
+        } else {
+          selectAllBtn.textContent = "全选";
+        }
+      }
+
+      if (delBtn) {
+        delBtn.disabled = selectedCount === 0;
+        delBtn.textContent = selectedCount > 0 ? `删除 (${selectedCount})` : "删除";
+      }
+    }
+
     function renderStickerGrid() {
       const grid = document.getElementById("stickerGrid");
       const emptyHint = document.getElementById("stickerEmptyHint");
       if (!grid) return;
       const list = getStickerList();
+
       if (!list.length) {
         grid.innerHTML = "";
         if (emptyHint) emptyHint.classList.remove("hidden");
+        if (isStickerEditing) {
+          isStickerEditing = false;
+          const sheet = document.getElementById("stickerSheet");
+          const card = sheet ? sheet.querySelector(".sticker-sheet-card") : null;
+          if (card) card.classList.remove("is-editing");
+          const editBtn = document.getElementById("stickerEditToggleBtn");
+          if (editBtn) editBtn.textContent = "编辑";
+        }
+        updateStickerSelectionUi();
         return;
       }
       if (emptyHint) emptyHint.classList.add("hidden");
 
-      grid.innerHTML = list.map((item, idx) => `
-        <div class="sticker-card" data-idx="${idx}" data-id="${escapeHtml(item.id || "")}">
-          <button type="button" class="sticker-del-badge" aria-label="删除表情" title="删除">×</button>
-          <div class="sticker-thumb-box">
-            <img class="sticker-card-thumb" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.name)}" referrerpolicy="no-referrer" loading="lazy" onerror="handleStickerThumbError(this, '${escapeHtml(item.name)}')">
-            <div class="sticker-fallback-card hidden" title="图片无法直接加载">
-              <span class="sticker-fallback-icon">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
-              </span>
-              <span class="sticker-fallback-name">${escapeHtml(item.name)}</span>
+      // 清理已失效的选中 id
+      const currentIds = new Set(list.map(i => i.id));
+      selectedStickerIds.forEach(id => {
+        if (!currentIds.has(id)) selectedStickerIds.delete(id);
+      });
+
+      grid.innerHTML = list.map((item, idx) => {
+        const isSelected = selectedStickerIds.has(item.id);
+        return `
+          <div class="sticker-card ${isSelected ? 'is-selected' : ''}" data-idx="${idx}" data-id="${escapeHtml(item.id || '')}">
+            <div class="sticker-select-checkbox" aria-label="勾选表情">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </div>
+            <div class="sticker-thumb-box">
+              <img class="sticker-card-thumb" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.name)}" referrerpolicy="no-referrer" loading="lazy" onerror="handleStickerThumbError(this, '${escapeHtml(item.name)}')">
+              <div class="sticker-fallback-card hidden" title="图片无法直接加载">
+                <span class="sticker-fallback-icon">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                </span>
+                <span class="sticker-fallback-name">${escapeHtml(item.name)}</span>
+              </div>
+            </div>
+            <div class="sticker-card-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</div>
+            <button type="button" class="sticker-del-badge" aria-label="删除表情" title="删除">×</button>
           </div>
-          <div class="sticker-card-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</div>
-        </div>
-      `).join("");
+        `;
+      }).join("");
 
       // 绑定每个卡片的交互
       grid.querySelectorAll(".sticker-card").forEach(card => {
@@ -6980,12 +7561,15 @@ char的长期记忆summary格式为：
         const item = list[idx];
         if (!item) return;
 
-        // 删除按钮
+        // 1. 单个删除按钮（置顶最高层级，阻断冒泡，带二次确认与缓存清理）
         const delBtn = card.querySelector(".sticker-del-badge");
         if (delBtn) {
           delBtn.addEventListener("click", (e) => {
+            e.preventDefault();
             e.stopPropagation();
             if (confirm(`确定删除表情「${item.name}」吗？`)) {
+              cleanStickerMediaCaches([item.url]);
+              selectedStickerIds.delete(item.id);
               list.splice(idx, 1);
               saveStickerList(list);
               showToast("已删除表情");
@@ -6993,28 +7577,49 @@ char的长期记忆summary格式为：
           });
         }
 
-        // 点击卡片
+        // 2. 编辑模式下点击名称可单独改名
+        const nameEl = card.querySelector(".sticker-card-name");
+        if (nameEl) {
+          nameEl.addEventListener("click", (e) => {
+            if (isStickerEditing) {
+              e.stopPropagation();
+              const newName = prompt("修改表情包名称：", item.name);
+              if (newName && newName.trim() && newName.trim() !== item.name) {
+                item.name = newName.trim();
+                saveStickerList(list);
+                showToast("表情已改名");
+              }
+            }
+          });
+        }
+
+        // 3. 点击卡片主体
         card.addEventListener("click", () => {
           if (isStickerEditing) {
-            const newName = prompt("修改表情包名称：", item.name);
-            if (newName && newName.trim() && newName.trim() !== item.name) {
-              item.name = newName.trim();
-              saveStickerList(list);
-              showToast("表情已改名");
+            // 编辑模式下：点击卡片即切换勾选状态（多选）
+            if (selectedStickerIds.has(item.id)) {
+              selectedStickerIds.delete(item.id);
+            } else {
+              selectedStickerIds.add(item.id);
             }
+            updateStickerSelectionUi();
           } else {
+            // 正常聊天发送模式
             closeStickerSheet();
             inputEl.value = `[表情: ${item.name}]`;
             doSend();
           }
         });
       });
+
+      updateStickerSelectionUi();
     }
 
     function openStickerSheet() {
       const sheet = document.getElementById("stickerSheet");
       if (!sheet) return;
       isStickerEditing = false;
+      selectedStickerIds.clear();
       const card = sheet.querySelector(".sticker-sheet-card");
       if (card) card.classList.remove("is-editing");
       const editBtn = document.getElementById("stickerEditToggleBtn");
@@ -7027,6 +7632,12 @@ char的长期记忆summary格式为：
       const sheet = document.getElementById("stickerSheet");
       if (sheet) sheet.classList.add("hidden");
       isStickerEditing = false;
+      selectedStickerIds.clear();
+      const card = sheet ? sheet.querySelector(".sticker-sheet-card") : null;
+      if (card) card.classList.remove("is-editing");
+      const editBtn = document.getElementById("stickerEditToggleBtn");
+      if (editBtn) editBtn.textContent = "编辑";
+      updateStickerSelectionUi();
     }
 
     function parseBatchStickers(text) {
@@ -7083,6 +7694,9 @@ char的长期记忆summary格式为：
       const editBtn = document.getElementById("stickerEditToggleBtn");
       const addOpenBtn = document.getElementById("stickerAddOpenBtn");
 
+      const selectAllBtn = document.getElementById("stickerSelectAllBtn");
+      const batchDelBtn = document.getElementById("stickerBatchDelBtn");
+
       const modal = document.getElementById("stickerBatchModal");
       const modalScrim = document.getElementById("stickerBatchScrim");
       const modalCancel = document.getElementById("stickerBatchCancelBtn");
@@ -7100,6 +7714,45 @@ char的长期记忆summary格式为：
           if (card) {
             if (isStickerEditing) card.classList.add("is-editing");
             else card.classList.remove("is-editing");
+          }
+          if (!isStickerEditing) {
+            selectedStickerIds.clear();
+          }
+          updateStickerSelectionUi();
+        });
+      }
+
+      // 全选 / 取消全选
+      if (selectAllBtn) {
+        selectAllBtn.addEventListener("click", () => {
+          const list = getStickerList();
+          if (selectedStickerIds.size === list.length) {
+            selectedStickerIds.clear();
+          } else {
+            list.forEach(i => selectedStickerIds.add(i.id));
+          }
+          updateStickerSelectionUi();
+        });
+      }
+
+      // 批量删除
+      if (batchDelBtn) {
+        batchDelBtn.addEventListener("click", () => {
+          if (!selectedStickerIds.size) return;
+          const count = selectedStickerIds.size;
+          if (confirm(`确定要删除选中的 ${count} 个表情包吗？删除后 AI 将无法再看到或使用这些表情。`)) {
+            let list = getStickerList();
+            const deletedUrls = [];
+            list.forEach(item => {
+              if (selectedStickerIds.has(item.id)) {
+                if (item.url) deletedUrls.push(item.url);
+              }
+            });
+            list = list.filter(item => !selectedStickerIds.has(item.id));
+            cleanStickerMediaCaches(deletedUrls);
+            selectedStickerIds.clear();
+            saveStickerList(list);
+            showToast(`已批量删除 ${count} 个表情包`);
           }
         });
       }
@@ -11323,6 +11976,14 @@ textarea::placeholder {
       toggle.addEventListener("click", () => setThinkOpen(!block.classList.contains("open")));
       row.appendChild(block);
       if (openThinkKeys.has(m._key)) setThinkOpen(true, { persist: false });
+      if (typeof isMessageSelectMode !== "undefined" && isMessageSelectMode && selectedMsgKeys.has(m._key)) {
+        row.classList.add("is-selected-msg");
+      }
+      const chk = document.createElement("div");
+      chk.className = "row-select-checkbox";
+      chk.setAttribute("aria-label", "勾选消息");
+      chk.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      row.insertBefore(chk, row.firstChild);
       return row;
     }
     /* ── 提取消息中的工具调用列表 ── */
@@ -11448,6 +12109,15 @@ textarea::placeholder {
       row.className = "row act";
       row.dataset.id = m.id; row.dataset.from = "ai"; row.dataset.messageKey = m._key;
 
+      if (typeof isMessageSelectMode !== "undefined" && isMessageSelectMode && selectedMsgKeys.has(m._key)) {
+        row.classList.add("is-selected-msg");
+      }
+      const chk = document.createElement("div");
+      chk.className = "row-select-checkbox";
+      chk.setAttribute("aria-label", "勾选消息");
+      chk.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      row.appendChild(chk);
+
       const block = createToolBannerElement(m, m._key);
       if (block) row.appendChild(block);
       return row;
@@ -11529,6 +12199,15 @@ textarea::placeholder {
         }
         row.appendChild(wrap);
       }
+
+      if (typeof isMessageSelectMode !== "undefined" && isMessageSelectMode && selectedMsgKeys.has(m._key)) {
+        row.classList.add("is-selected-msg");
+      }
+      const chk = document.createElement("div");
+      chk.className = "row-select-checkbox";
+      chk.setAttribute("aria-label", "勾选消息");
+      chk.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      row.insertBefore(chk, row.firstChild);
       return row;
     }
     function makeOlderBtn() {
@@ -11592,7 +12271,8 @@ textarea::placeholder {
         const _atts = (m.meta && Array.isArray(m.meta.attachments)) ? m.meta.attachments : [];
         const _attSig = _atts.map((a) => `${a.kind || ""}:${a.url || a.localUrl || ""}:${a.uploading ? 1 : 0}:${a.failed ? 1 : 0}`).join(",");
         const _rxSig = (m.meta && m.meta.reactions) ? JSON.stringify(m.meta.reactions) : "";
-        return [row.key, row.type, m.status || "", m.id, m.ts, m.text || "", _attSig, row.grouped ? 1 : 0, row.tail ? 1 : 0, openThinkKeys.has(m._key) ? 1 : 0, openActKeys.has(m._key) ? 1 : 0, _rxSig].join("~");
+        const _selSig = (typeof isMessageSelectMode !== "undefined" && isMessageSelectMode && selectedMsgKeys.has(m._key)) ? 1 : 0;
+        return [row.key, row.type, m.status || "", m.id, m.ts, m.text || "", _attSig, row.grouped ? 1 : 0, row.tail ? 1 : 0, openThinkKeys.has(m._key) ? 1 : 0, openActKeys.has(m._key) ? 1 : 0, _rxSig, _selSig].join("~");
       }
       return row.key;
     }
@@ -11935,6 +12615,10 @@ textarea::placeholder {
     function hideTyping() {
       typingActive = false;
       renderStatus();
+      if (typeof rerollWatchdogTimer !== "undefined" && rerollWatchdogTimer) {
+        clearTimeout(rerollWatchdogTimer);
+        rerollWatchdogTimer = null;
+      }
       if (window.VoiceCall && window.VoiceCall.isOpen()) window.VoiceCall.peerTyping(false);
       if (typingTimer) { clearTimeout(typingTimer); typingTimer = null; }
     }
@@ -11996,6 +12680,7 @@ textarea::placeholder {
       if (m.from === "ai") hideTyping();
       const stick = (typeof isUserEngagedAtBottom !== "undefined" ? isUserEngagedAtBottom : true) || nearBottom();
       if (stick && typeof isUserEngagedAtBottom !== "undefined") isUserEngagedAtBottom = true;
+      const key = msgKey(m.id != null ? m.id : (m._key || m.key));
       if (seen.has(key)) {
         setMessage({ ...m, status: "sent" }, { render: true });
         if (stick) scrollToBottom();
@@ -12407,8 +13092,24 @@ textarea::placeholder {
           if (e && e.cancelable && e.type === "touchend") e.preventDefault(); // 再抑制一次原生默认行为
         }
       }
+      // 多选模式下点击消息行切换勾选
+      scrollEl.addEventListener("click", (e) => {
+        if (typeof isMessageSelectMode !== "undefined" && isMessageSelectMode) {
+          if (e.target.closest("button") || e.target.closest("a")) return;
+          const row = e.target.closest(".row[data-message-key]");
+          if (row) {
+            e.preventDefault();
+            e.stopPropagation();
+            const key = row.dataset.messageKey;
+            if (key && typeof toggleMessageSelection === "function") {
+              toggleMessageSelection(key);
+            }
+          }
+        }
+      }, true);
+
       scrollEl.addEventListener("touchstart", (e) => {
-        if (isOpen() || e.touches.length !== 1) return;          // 多指(缩放)不触发
+        if ((typeof isMessageSelectMode !== "undefined" && isMessageSelectMode) || isOpen() || e.touches.length !== 1) return;
         const bubble = e.target.closest(".bubble");
         if (!bubble || !scrollEl.contains(bubble) || e.target.closest("a")) return;
         pressBubble = bubble;
@@ -12426,12 +13127,21 @@ textarea::placeholder {
 
       // 桌面右键
       scrollEl.addEventListener("contextmenu", (e) => {
+        if (typeof isMessageSelectMode !== "undefined" && isMessageSelectMode) return;
         const bubble = e.target.closest(".bubble");
         if (!bubble || !scrollEl.contains(bubble)) return;
         if (!bubbleInfo(bubble)) return;
         e.preventDefault();
         open(bubble);
       });
+
+      function doSelect() {
+        const key = openKey;
+        close();
+        if (key != null && typeof enterMessageSelectMode === "function") {
+          enterMessageSelectMode(key);
+        }
+      }
 
       scrim.addEventListener("click", () => { if (swallowClick) { swallowClick = false; return; } close(); });
       actions.addEventListener("click", (e) => {
@@ -12441,6 +13151,7 @@ textarea::placeholder {
         else if (act.dataset.act === "insert") doInsert();
         else if (act.dataset.act === "copy") doCopy();
         else if (act.dataset.act === "delete") doDelete();
+        else if (act.dataset.act === "select") doSelect();
       });
 
       window.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
@@ -13347,12 +14058,35 @@ textarea::placeholder {
               weather_context: getWeatherContext(),
               inner_voice_prompt: (typeof getInnerVoicePrompt === "function" ? getInnerVoicePrompt() : "")
             };
-            await fetch(`${API_BASE}/app/trigger_reply`, {
+            const r = await fetch(`${API_BASE}/app/trigger_reply`, {
               method: "POST",
               headers: { ...authHeaders(), "Content-Type": "application/json" },
               body: JSON.stringify(bodyData)
             });
-          } catch (err) { }
+            if (!r.ok) {
+              if (typeof rerollWatchdogTimer !== "undefined" && rerollWatchdogTimer) {
+                clearTimeout(rerollWatchdogTimer);
+                rerollWatchdogTimer = null;
+              }
+              hideTyping();
+              showToast("接收回复失败");
+            } else {
+              if (typeof rerollWatchdogTimer !== "undefined" && rerollWatchdogTimer) {
+                clearTimeout(rerollWatchdogTimer);
+              }
+              rerollWatchdogTimer = setTimeout(() => {
+                hideTyping();
+                showToast("等待回复超时，已自动恢复");
+              }, 30000);
+            }
+          } catch (err) {
+            if (typeof rerollWatchdogTimer !== "undefined" && rerollWatchdogTimer) {
+              clearTimeout(rerollWatchdogTimer);
+              rerollWatchdogTimer = null;
+            }
+            hideTyping();
+            showToast("网络异常");
+          }
           setTimeout(() => {
             manualBtn.disabled = false;
             manualBtn.innerHTML = origText;
@@ -13652,19 +14386,31 @@ textarea::placeholder {
         });
       }
 
-      // 4. 重新生成 (Reroll) —— 彻底清理服务端数据库及 AI 侧内存中的旧回复，重新对齐生成
+      // 4. 重新生成 (Reroll) —— 严格遵循 Mooncache 规则：末尾校验、回溯本轮 AI 连续气泡、瞬时退回提问态、30秒看门狗防卡死
       async function doReroll() {
         if (actionPop) actionPop.classList.add("hidden");
 
-        // 1. 查找末尾连续属于 AI 的所有消息（含普通气泡、思考块、动作块等）
-        const allMsgs = sortedMessages();
+        // 1. Mooncache 核心规则：末尾消息校验，若不是 AI 回复直接拦截，绝不进 typing
+        const allMsgs = (typeof sortedMessages === "function") ? sortedMessages() : [];
+        if (!allMsgs.length) {
+          showToast("暂无聊天记录");
+          return;
+        }
+
+        const lastMsg = allMsgs[allMsgs.length - 1];
+        if (!lastMsg || lastMsg.from !== "ai") {
+          showToast("最后一条不是 AI 回复，无法重新生成");
+          return;
+        }
+
+        // 2. 回溯找出本轮对话中连续产生的所有 AI 气泡（含 thinking、act、多段分语气泡等）
         const aiKeysToRemove = [];
         const aiIdsToDelete = [];
 
         for (let i = allMsgs.length - 1; i >= 0; i--) {
           const m = allMsgs[i];
-          if (m.from === "ai") {
-            aiKeysToRemove.push(m._key);
+          if (m && m.from === "ai") {
+            if (m._key) aiKeysToRemove.push(m._key);
             const numId = Number(m.id);
             if (Number.isInteger(numId) && numId > 0) {
               aiIdsToDelete.push(numId);
@@ -13675,20 +14421,37 @@ textarea::placeholder {
           }
         }
 
-        // 2. 本地界面与缓存立即删除旧回复，让画面瞬间恢复到用户刚提问的状态
-        if (aiKeysToRemove.length > 0) {
-          aiKeysToRemove.forEach((k) => removeMessage(k, { render: false, cache: true }));
-          scheduleRender({ stickToBottom: true });
+        if (!aiKeysToRemove.length) {
+          showToast("未找到可撤回的 AI 回复");
+          return;
         }
 
-        showTyping(); // 立即进入等待状态，消除迟钝感
+        // 3. 本地界面与缓存立即删除旧回复，并记录入黑名单，让画面瞬间恢复到用户刚提问的状态
+        aiKeysToRemove.forEach((k) => {
+          deletedKeys.add(msgKey(k));
+          removeMessage(k, { render: false, cache: true });
+        });
+        persistDeletedKeys();
+        if (typeof invalidateRows === "function") invalidateRows();
+        scheduleRender({ stickToBottom: true });
+        scheduleCacheSave();
+
+        // 4. 进入等待状态，并启动 30 秒看门狗定时器，防止死锁卡 typing
+        showTyping();
+        if (typeof rerollWatchdogTimer !== "undefined" && rerollWatchdogTimer) {
+          clearTimeout(rerollWatchdogTimer);
+        }
+        rerollWatchdogTimer = setTimeout(() => {
+          hideTyping();
+          showToast("重新生成超时，已自动恢复状态");
+        }, 30000);
 
         if (USE_MOCK) {
           Mock.reroll();
           return;
         }
 
-        // 3. 构造请求体，附带当前的 LLM 设定、双人设、感知与记忆
+        // 5. 构造请求体，附带当前的 LLM 设定、双人设、感知与记忆
         const payload = { delete_ids: aiIdsToDelete };
         try {
           const _activePreset = getActivePreset ? getActivePreset() : null;
@@ -13718,8 +14481,7 @@ textarea::placeholder {
           }
         } catch (_) { }
 
-        // 4. 调用服务端的 /app/reroll 原生接口
-        // 服务端会自动：物理删除数据库记录 -> 广播清空 Bridge(AI) 内存记忆 -> 重新拉取对齐 -> 下发重新生成
+        // 6. 调用服务端的 /app/reroll 原生接口
         try {
           const r = await fetch(`${API_BASE}/app/reroll`, {
             method: "POST",
@@ -13727,10 +14489,18 @@ textarea::placeholder {
             body: JSON.stringify(payload)
           });
           if (!r.ok) {
+            if (typeof rerollWatchdogTimer !== "undefined" && rerollWatchdogTimer) {
+              clearTimeout(rerollWatchdogTimer);
+              rerollWatchdogTimer = null;
+            }
             hideTyping();
             showToast("重新生成失败 (" + r.status + ")");
           }
         } catch (err) {
+          if (typeof rerollWatchdogTimer !== "undefined" && rerollWatchdogTimer) {
+            clearTimeout(rerollWatchdogTimer);
+            rerollWatchdogTimer = null;
+          }
           hideTyping();
           showToast("网络异常，请重试");
         }
@@ -13739,6 +14509,36 @@ textarea::placeholder {
       if (actionRerollBtn) {
         actionRerollBtn.addEventListener("click", () => {
           doReroll();
+        });
+      }
+
+      // 4.5 批量管理消息入口与底栏操作绑定
+      const actionBatchMsgBtn = document.getElementById("actionBatchMsgBtn");
+      if (actionBatchMsgBtn) {
+        actionBatchMsgBtn.addEventListener("click", () => {
+          if (actionPop) actionPop.classList.add("hidden");
+          enterMessageSelectMode();
+        });
+      }
+
+      const msgSelectAllBtn = document.getElementById("msgSelectAllBtn");
+      if (msgSelectAllBtn) {
+        msgSelectAllBtn.addEventListener("click", () => {
+          toggleSelectAllMessages();
+        });
+      }
+
+      const msgBatchCancelBtn = document.getElementById("msgBatchCancelBtn");
+      if (msgBatchCancelBtn) {
+        msgBatchCancelBtn.addEventListener("click", () => {
+          exitMessageSelectMode();
+        });
+      }
+
+      const msgBatchDelBtn = document.getElementById("msgBatchDelBtn");
+      if (msgBatchDelBtn) {
+        msgBatchDelBtn.addEventListener("click", () => {
+          doBatchDeleteMessages();
         });
       }
 
