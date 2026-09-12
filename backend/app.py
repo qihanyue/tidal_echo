@@ -850,7 +850,7 @@ async def app_trigger_reply(request: Request):
         loop_msg = dict(pending_msgs[-1])
         loop_msg["text"] = bundle["content"]
         asyncio.create_task(forward_to_loop(loop_msg))
-    else:
+    if plugin_subs:
         await broadcast(plugin_subs, bundle)
     await broadcast(app_subs, {"type": "typing", "active": True})
     return {"ok": True, "triggered_ids": msg_ids}
@@ -940,7 +940,7 @@ async def app_reroll(request: Request):
         loop_msg = dict(pending_msgs[-1])
         loop_msg["text"] = bundle_content
         asyncio.create_task(forward_to_loop(loop_msg))
-    else:
+    if plugin_subs:
         await broadcast(plugin_subs, sync_frame)
 
     await broadcast(app_subs, {"type": "typing", "active": True})
@@ -1076,7 +1076,7 @@ async def app_send(request: Request):
         # "loop" calls the optional server-side API loop.
         if brain_target() == "loop":
             asyncio.create_task(forward_to_loop(msg))
-        else:
+        if plugin_subs:
             await broadcast(plugin_subs, plugin_payload(msg))
         # the AI starts processing -> push a typing state to the PWA
         await broadcast(app_subs, {"type": "typing", "active": True})
