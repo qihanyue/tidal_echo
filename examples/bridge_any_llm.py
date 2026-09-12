@@ -378,7 +378,7 @@ def search_web(query: str, max_results: int = 4, max_chars: int = 2500) -> str:
     return f"暂未检索到关于「{query}」的有效实时信息。"
 
 
-def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", memory_context: str = "", tether_front: str = "", tether_middle: str = "", tether_back: str = "", web_context: str = "", web_search_enabled: bool = False, web_search_context: str = "", weather_context: str = "", location_context: str = "", inner_voice_prompt: str = "", limit: int = 0) -> list:
+def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", memory_context: str = "", tether_front: str = "", tether_middle: str = "", tether_back: str = "", web_context: str = "", web_search_enabled: bool = False, web_search_context: str = "", weather_context: str = "", location_context: str = "", inner_voice_prompt: str = "", limit: int = 0, reply_min: int = 1, reply_max: int = 5) -> list:
     base_persona = custom_persona or PERSONA
     parts = []
     # 1. 提示词最前面 (Front)
@@ -434,6 +434,9 @@ def build_messages(custom_persona: str = "", user_persona: str = "", time_contex
     if inner_voice_prompt and inner_voice_prompt.strip():
         parts.append(f"### 【心声/内心独白生成指令】\n{inner_voice_prompt.strip()}")
 
+    # 条数规则文案
+    count_rule = f"{reply_min} 到 {reply_max} 条" if reply_min != reply_max else f"正好 {reply_min} 条"
+
     parts.append(
         "### 【核心对话规则与对话节奏铁律】\n"
         "1. **角色一致性与拟真情感**:\n"
@@ -444,7 +447,8 @@ def build_messages(custom_persona: str = "", user_persona: str = "", time_contex
         "2. **对话节奏与多条短消息气泡铁律 (至关重要！)**:\n"
         "   - 你的回复【必须】模拟真人在手机聊天软件（如微信/QQ）上的打字和思考习惯。绝对不要一次性发送一大段长篇大论或说明文！\n"
         "   - 你【必须】将你想说的话，拆分成【多条、简短的】消息气泡来发送。\n"
-        "   - 鼓励一次性生成**多条短消息**（每次根据人设至少回复 1-9 条，每条最好不要超过 30 个字，这会让对话看起来更自然、更真实。）。\n"
+        f"   - 鼓励一次性生成**多条短消息**（每次根据人设回复 {count_rule}，每条最好不要超过 30 个字，这会让对话看起来更自然、更真实。）。\n"
+        f"   - 【数量控制】：每次回复的消息数量必须控制在【{count_rule}短消息】之间！\n"
         "   - 每条短消息气泡之间【必须且只能】使用 [分段] 隔开！\n"
         "   - 【严格禁令】：绝不允许在同一条消息或气泡内使用回车换行或留空行！手机聊天不会在同一个气泡里回车分大段。所有分句与段落【必须全部替换为 [分段] 标签】！\n"
         "   - 错误示范（严禁出现）：今天好累啊\\n\\n想早点睡了\n"
@@ -765,6 +769,12 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
             except (ValueError, TypeError):
                 pass
 
+    # 提取回复条数区间
+    reply_min = int(dyn_llm.get("reply_min") or (bundle_meta or {}).get("reply_min") or 1)
+    reply_max = int(dyn_llm.get("reply_max") or (bundle_meta or {}).get("reply_max") or 5)
+    if reply_max < reply_min:
+        reply_max = reply_min
+
     # 提取心声 (Inner Voice) 提示词
     iv_prompt = (bundle_meta or {}).get("inner_voice_prompt") or latest_item.get("inner_voice_prompt") or (latest_item.get("meta") or {}).get("inner_voice_prompt") or ""
     if iv_prompt:
@@ -785,7 +795,9 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
             weather_context=weather_ctx,
             location_context=location_ctx,
             inner_voice_prompt=iv_prompt,
-            limit=limit
+            limit=limit,
+            reply_min=reply_min,
+            reply_max=reply_max
         )
         reply, usage = call_llm_dynamic(msgs, active_routes, temp)
     except Exception as e:
@@ -820,7 +832,9 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
                     weather_context=weather_ctx,
                     location_context=location_ctx,
                     inner_voice_prompt=iv_prompt,
-                    limit=limit
+                    limit=limit,
+                    reply_min=reply_min,
+                    reply_max=reply_max
                 )
                 try:
                     sec_reply, sec_usage = call_llm_dynamic(msgs_with_search, active_routes, temp)
@@ -966,6 +980,11 @@ def handle_proactive_wake(bundle_meta: dict) -> None:
                 except (ValueError, TypeError):
                     pass
 
+        reply_min = int(dyn_llm.get("reply_min") or (bundle_meta or {}).get("reply_min") or 1)
+        reply_max = int(dyn_llm.get("reply_max") or (bundle_meta or {}).get("reply_max") or 5)
+        if reply_max < reply_min:
+            reply_max = reply_min
+
         limit = max(history_n * 2, 8)
         msgs = build_messages(
             custom_persona=custom_ai,
@@ -979,12 +998,15 @@ def handle_proactive_wake(bundle_meta: dict) -> None:
             weather_context=weather_ctx,
             location_context=location_ctx,
             inner_voice_prompt=iv_prompt,
-            limit=limit
+            limit=limit,
+            reply_min=reply_min,
+            reply_max=reply_max
         )
 
+        wake_count_str = f"{reply_min} 到 {reply_max} 条" if reply_min != reply_max else f"正好 {reply_min} 条"
         wake_instruction = (
             "### 【当前场景指令 · 主动打破沉默与问候】\n"
-            "你们已经有一段时间没有说话了。请以你的角色设定与语气，像真实生活中的人类朋友/恋人突然想起来在微信上找对方一样，自然、生活化地主动发送 1 到 5 条简短的消息气泡（必须使用 [分段] 隔开）。\n"
+            f"你们已经有一段时间没有说话了。请以你的角色设定与语气，像真实生活中的人类朋友/恋人突然想起来在微信上找对方一样，自然、生活化地主动发送 {wake_count_str}简短的消息气泡（必须使用 [分段] 隔开）。\n"
             "- 【话题建议】：可以关心对方在忙什么、随手拍生活假图 [图片: 画面描述]、分享刚刚看到的趣事、吐槽日常或闲聊碎碎念。\n"
             "- 【严格禁令】：绝不要生硬地说明“检测到长时间未发言”或“系统定时唤醒”，切勿道歉，全情沉浸在角色世界中！"
         )

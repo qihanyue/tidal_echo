@@ -2,7 +2,7 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "穷奇";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v72-custom-checkbox";
+const CACHE = "companion-v73-reply-count-range";
 const STICKER_CACHE = "companion-stickers-media-v1";
 const PRECACHE = [
   "./index.html",
