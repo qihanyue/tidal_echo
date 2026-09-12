@@ -1017,10 +1017,90 @@
       gap: 6px;
     }
 
-    .bubble.att-only {
+    /* ── 真实图片/纯附件消息：无气泡包裹，直接悬浮在壁纸上 ── */
+    .row .bubble.att-only,
+    .row .bubble.img-only,
+    .row.human .bubble.att-only,
+    .row.human .bubble.img-only,
+    .row.ai .bubble.att-only,
+    .row.ai .bubble.img-only {
       background: transparent !important;
       padding: 0 !important;
+      border: 0 !important;
       box-shadow: none !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      position: relative !important;
+      overflow: visible !important;
+    }
+
+    /* 真实图片卡片质感与圆角 */
+    .row .bubble.att-only .att-img-link,
+    .row .bubble.img-only .att-img-link {
+      display: block;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      position: relative;
+    }
+
+    .row .bubble.att-only .att-img,
+    .row .bubble.img-only .att-img {
+      display: block;
+      border-radius: 14px;
+    }
+
+    /* 真实图片右下角半透明暗色胶囊角标（时间戳与对勾） */
+    .row .bubble.att-only .meta,
+    .row .bubble.img-only .meta,
+    .row.human .bubble.att-only .meta,
+    .row.human .bubble.img-only .meta,
+    .row.ai .bubble.att-only .meta,
+    .row.ai .bubble.img-only .meta {
+      position: absolute !important;
+      right: 7px !important;
+      bottom: 7px !important;
+      background: rgba(0, 0, 0, 0.45) !important;
+      color: #ffffff !important;
+      padding: 2px 7px !important;
+      border-radius: 10px !important;
+      font-size: 10px !important;
+      line-height: 1.2 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 3px !important;
+      backdrop-filter: blur(5px) !important;
+      -webkit-backdrop-filter: blur(5px) !important;
+      z-index: 3 !important;
+      pointer-events: none !important;
+    }
+
+    .row .bubble.att-only .meta span,
+    .row .bubble.img-only .meta span,
+    .row.human .bubble.att-only .meta span,
+    .row.human .bubble.img-only .meta span {
+      color: #ffffff !important;
+    }
+
+    .row .bubble.att-only .meta .tick,
+    .row .bubble.img-only .meta .tick,
+    .row.human .bubble.att-only .meta .tick,
+    .row.human .bubble.img-only .meta .tick {
+      color: #ffffff !important;
+    }
+
+    .row .bubble.att-only .meta .tick svg,
+    .row .bubble.img-only .meta .tick svg,
+    .row.human .bubble.att-only .meta .tick svg,
+    .row.human .bubble.img-only .meta .tick svg {
+      fill: #ffffff !important;
+      color: #ffffff !important;
+    }
+
+    .row .bubble.att-only .meta .fail,
+    .row .bubble.img-only .meta .fail {
+      color: #ff6b6b !important;
+      pointer-events: auto !important;
     }
 
     /* ── 表情包贴纸消息：无气泡包裹，直接悬浮在壁纸上 ── */
@@ -12208,7 +12288,11 @@ textarea::placeholder {
         _inner += `<span class="meta"></span>`;
       }
       bubble.innerHTML = _inner;
-      if (atts.length) { bubble.classList.add("has-att"); if (!m.text) bubble.classList.add("att-only"); }
+      if (atts.length) {
+        bubble.classList.add("has-att");
+        if (!m.text) bubble.classList.add("att-only");
+        if (!m.text && atts.every(a => a.kind === "image")) bubble.classList.add("img-only");
+      }
       const metaEl = bubble.querySelector(".meta");
       if (m.status === "sending") metaEl.innerHTML = `<span>${fmtTime(m.ts)}</span>` + sendingTickHtml();
       else if (m.status === "failed") {
