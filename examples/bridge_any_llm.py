@@ -107,7 +107,6 @@ def _require_config() -> None:
     missing = []
     if not RELAY_URL: missing.append("RELAY_URL")
     if not SECRET:    missing.append("RELAY_SECRET")
-    if not MODEL_ROUTES: missing.append("LLM_API_BASE + LLM_API_KEY + LLM_MODEL")
     if missing:
         log("fatal", "缺少配置: " + ", ".join(missing) + "  —— 填 .env(见 .env.example)再跑")
         sys.exit(1)
@@ -699,6 +698,8 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
 
 
 def call_llm_dynamic(messages: list, routes: list, temperature: float) -> str:
+    if not routes:
+        raise RuntimeError("未检测到有效的大模型配置，请在前端「设置 -> 大模型 API」中填入 Base URL 和模型名称")
     last_err = None
     for route in routes:
         try:
@@ -847,7 +848,8 @@ def stream_inbound(cursor: int) -> None:
 
 def main() -> None:
     _require_config()
-    log("boot", f"relay={RELAY_URL}  models={[r['model'] for r in MODEL_ROUTES]}  history={HISTORY_N}")
+    models_repr = [r['model'] for r in MODEL_ROUTES] if MODEL_ROUTES else "随前端动态传入"
+    log("boot", f"relay={RELAY_URL}  models={models_repr}  history={HISTORY_N}")
     cursor = read_cursor()
     # 暖启动:拉历史填上下文,并把全新部署的游标设到「当前最新」——不回放/重答旧消息。
     try:
