@@ -361,26 +361,75 @@ def build_messages(custom_persona: str = "", user_persona: str = "", time_contex
         "   - 这【不是电话通话】，是通过手机即时打字交流，因此【绝对禁止】使用“挂电话”、“挂了”等与语音通话相关的词语。\n"
         "   - 【禁止出戏】：绝不能透露你是AI、语言模型、程序或虚拟助手，全情沉浸在角色世界中。\n\n"
         "4. **文字假图与生活随手拍**:\n"
-        "   - 当你想向对方分享照片、随手拍、自拍、风景、美食或特定场景画面时，可以在分段短消息中发送：[图片: 画面详细文字描述]（例如：你看路边这只猫猫[分段][图片: 一只圆滚滚的三花猫正蜷缩在阳光下的长椅上打盹][分段]好想rua一把）。"
+        "   - 当你想向对方分享照片、随手拍、自拍、风景、美食或特定场景画面时，可以在分段短消息中发送：[图片: 画面详细文字描述]（例如：你看路边这只猫猫[分段][图片: 一只圆滚滚的三花猫正蜷缩在阳光下的长椅上打盹][分段]好想rua一把）。\n\n"
+        "5. **多媒体图片与外部网页记忆准则**:\n"
+        "   - 在之前的对话中，用户可能向你分享过图片、生活随手拍或外部网页链接。\n"
+        "   - 为了为你保持清爽高效的思考上下文，系统在你当时阅读并回复之后，会自动将历史记录中的旧图片与网页文本进行归档（历史中会提示 [照片已归档] 或 [网页内容已归档]）。\n"
+        "   - 这是正常的系统轻量化机制。对于这些已归档的内容，你当时已经完全看过并作出了回应，你只需结合你当时的记忆自然交流即可。\n"
+        "   - 【绝对禁止出戏与道歉】：绝不要向用户道歉说你看不到图片或打不开链接，绝不能怀疑或推翻自己刚才的回复，严禁为此纠结或产生困惑，全情沉浸在角色世界中！"
     )
     sys_prompt = "\n\n".join([p for p in parts if p.strip()])
     history = list(convo)
     if limit > 0 and len(history) > limit:
         history = history[-limit:]
-    raw_msgs = [{"role": "system", "content": sys_prompt}] + history
+    # 动态修剪历史图片：保留最近 2 轮图片，更早的旧图自动降级为文字占位符，杜绝重复扣费与内存膨胀
+    pruned_history = _prune_old_images(history, keep_recent_images=2)
+    raw_msgs = [{"role": "system", "content": sys_prompt}] + pruned_history
     return _merge_consecutive_roles(raw_msgs)
+
+
+def _prune_old_images(history: list, keep_recent_images: int = 2) -> list:
+    """保留最近 keep_recent_images 轮用户图片，更早的历史图片自动归档为文字占位符。"""
+    if not history:
+        return []
+
+    # 1. 倒序查找所有包含图片的用户消息索引
+    img_msg_indices = []
+    for idx in range(len(history) - 1, -1, -1):
+        m = history[idx]
+        if m.get("role") == "user":
+            c = m.get("content")
+            if isinstance(c, list) and any(isinstance(p, dict) and p.get("type") == "image_url" for p in c):
+                img_msg_indices.append(idx)
+
+    # 若带图消息少于等于保留阈值，无需裁剪
+    if len(img_msg_indices) <= keep_recent_images:
+        return history
+
+    keep_set = set(img_msg_indices[:keep_recent_images])
+    pruned = []
+    for idx, m in enumerate(history):
+        if idx not in img_msg_indices or idx in keep_set:
+            pruned.append(m)
+            continue
+
+        # 这是超过保留轮数的旧图，将大 Base64 对象退火转为轻量占位文本
+        c = m.get("content")
+        text_lines = []
+        if isinstance(c, list):
+            for p in c:
+                if isinstance(p, dict):
+                    if p.get("type") == "text":
+                        t = (p.get("text") or "").strip()
+                        if t:
+                            text_lines.append(t)
+                    elif p.get("type") == "image_url":
+                        text_lines.append("[照片已归档: 用户此前分享的照片，你当时已看过并作出过回应]")
+        final_text = "\n".join(text_lines).strip()
+        pruned.append({"role": "user", "content": final_text or "[照片已归档]"})
+
+    return pruned
 
 
 # ---------------------------------------------------------------------------
 # 调模型(OpenAI chat/completions;带 fallback 链)
 # ---------------------------------------------------------------------------
 
-def _one_call(route: dict, messages: list) -> str:
+def _one_call(route: dict, messages: list) -> tuple[str, dict]:
     body = json.dumps({
         "model": route["model"],
         "messages": messages,
         "temperature": TEMPERATURE,
-        # 想接 function calling:在这里加 "tools": [...],处理返回里的 tool_calls,循环喂回(上限 ~8 步)。
     }, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
         route["base"] + "/chat/completions", data=body, method="POST",
@@ -388,10 +437,12 @@ def _one_call(route: dict, messages: list) -> str:
     )
     with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as r:
         data = json.loads(r.read().decode("utf-8"))
-    return (data["choices"][0]["message"]["content"] or "").strip()
+    content = (data["choices"][0]["message"]["content"] or "").strip()
+    usage = data.get("usage") or {}
+    return content, usage
 
 
-def call_llm(messages: list) -> str:
+def call_llm(messages: list) -> tuple[str, dict]:
     last_err = None
     for route in MODEL_ROUTES:
         try:
@@ -633,7 +684,7 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
             inner_voice_prompt=iv_prompt,
             limit=limit
         )
-        reply = call_llm_dynamic(msgs, active_routes, temp)
+        reply, usage = call_llm_dynamic(msgs, active_routes, temp)
     except Exception as e:
         log("err", f"生成失败: {e}")
         if convo:
@@ -696,6 +747,14 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
                     "result": f"已成功抓取并解析 {len(valid_urls)} 个网页的正文内容"
                 }
             ]
+        if usage and isinstance(usage, dict):
+            tool_meta["usage"] = {
+                "prompt_tokens": usage.get("prompt_tokens", 0),
+                "completion_tokens": usage.get("completion_tokens", 0),
+                "total_tokens": usage.get("total_tokens", 0),
+            }
+            log("usage", f"Token消耗: 总计={tool_meta['usage']['total_tokens']} (输入={tool_meta['usage']['prompt_tokens']}, 输出={tool_meta['usage']['completion_tokens']})")
+
         if not tool_meta:
             tool_meta = None
 
@@ -708,7 +767,7 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
     return False
 
 
-def call_llm_dynamic(messages: list, routes: list, temperature: float) -> str:
+def call_llm_dynamic(messages: list, routes: list, temperature: float) -> tuple[str, dict]:
     if not routes:
         raise RuntimeError("未检测到有效的大模型配置，请在前端「设置 -> 大模型 API」中填入 Base URL 和模型名称")
     last_err = None
@@ -728,7 +787,9 @@ def call_llm_dynamic(messages: list, routes: list, temperature: float) -> str:
             )
             with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as r:
                 data = json.loads(r.read().decode("utf-8"))
-            return (data["choices"][0]["message"]["content"] or "").strip()
+            content = (data["choices"][0]["message"]["content"] or "").strip()
+            usage = data.get("usage") or {}
+            return content, usage
         except urllib.error.HTTPError as e:
             err_body = ""
             try:

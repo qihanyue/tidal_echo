@@ -5863,7 +5863,7 @@
             </svg></span>
           <span class="action-name">status</span>
           <span class="status-main">
-            <span class="status-used" id="statusUsed">used 96k / 200k</span>
+            <span class="status-used" id="statusUsed">Token: 待统计</span>
             <span class="status-sid"><span id="statusSid">sid: a9f3…</span>
               <button class="status-copy" id="statusCopy" type="button" aria-label="复制 sid">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
@@ -10528,28 +10528,65 @@ textarea::placeholder {
       if (!sid) return "(none)";
       return sid.length > 10 ? sid.slice(0, 8) + "..." : sid;
     }
-    function formatK(n) {
-      n = Number(n || 0);
-      if (!Number.isFinite(n) || n <= 0) return "0k";
-      return Math.round(n / 1000) + "k";
+    const LS_KEY_TOKEN_USAGE = "companion_latest_token_usage";
+    const LS_KEY_TOKEN_TOTAL = "companion_session_token_total";
+
+    function getSavedTokenUsage() {
+      try {
+        const str = localStorage.getItem(LS_KEY_TOKEN_USAGE);
+        return str ? JSON.parse(str) : null;
+      } catch (_) { return null; }
     }
+
+    function formatTokenNum(n) {
+      n = Number(n || 0);
+      if (!Number.isFinite(n) || n <= 0) return "0";
+      if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
+      if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
+      return String(n);
+    }
+
+    function updateTokenUsage(usage) {
+      if (!usage || typeof usage !== "object") return;
+      const prompt = Number(usage.prompt_tokens || 0);
+      const comp = Number(usage.completion_tokens || 0);
+      const total = Number(usage.total_tokens || (prompt + comp));
+      if (total <= 0) return;
+
+      const record = { prompt, completion: comp, total, ts: Date.now() };
+      localStorage.setItem(LS_KEY_TOKEN_USAGE, JSON.stringify(record));
+
+      try {
+        const curTotal = Number(localStorage.getItem(LS_KEY_TOKEN_TOTAL) || 0) + total;
+        localStorage.setItem(LS_KEY_TOKEN_TOTAL, String(curTotal));
+      } catch (_) {}
+
+      renderTokenUsageStatus();
+    }
+
+    function renderTokenUsageStatus() {
+      if (!statusUsedEl) return;
+      const u = getSavedTokenUsage();
+      if (!u) {
+        statusUsedEl.textContent = "Token: 待对话统计";
+        return;
+      }
+      statusUsedEl.textContent = `Token: ${formatTokenNum(u.total)} (入 ${formatTokenNum(u.prompt)} · 出 ${formatTokenNum(u.completion)})`;
+      statusUsedEl.style.cursor = "pointer";
+    }
+
     let pendingContextSid = "";
     function applyContextStatus(s) {
+      renderTokenUsageStatus();
       if (!s || s.ok === false) {
-        if (statusUsedEl) statusUsedEl.textContent = "context status unknown";
         if (statusSidEl) { statusSidEl.textContent = "sid: (none)"; statusSidEl.dataset.sid = ""; }
         pendingContextSid = "";
         if (resumeRow) resumeRow.classList.add("hidden");
         return;
       }
-      const usage = Number(s.usage_tokens || 0);
-      const threshold = String(s.threshold_k || "200k");
       const pending = s.pending && s.pending.new_sid;
       pendingContextSid = pending || "";
       if (resumeRow) resumeRow.classList.toggle("hidden", !pendingContextSid);
-      if (statusUsedEl) {
-        statusUsedEl.textContent = `${formatK(usage)} / ${threshold}${pending ? " · pending" : ""}`;
-      }
       const sid = pending || s.active_sid || "";
       if (statusSidEl) {
         statusSidEl.textContent = "sid: " + shortSid(sid);
@@ -10557,15 +10594,25 @@ textarea::placeholder {
       }
     }
     async function apiContextStatus() {
-      // Placeholder: the open relay has no context-control feature — return static demo numbers.
-      return { ok: true, usage_tokens: 96000, threshold_k: "200k", active_sid: "demo-session" };
+      return { ok: true, active_sid: effectiveApiSession() || "default" };
     }
     async function refreshContextStatus() {
       try { applyContextStatus(await apiContextStatus()); } catch (_) { }
     }
     async function apiContextAction(action, payload = {}) {
-      // Placeholder: no context-control backend in the open relay — these settings are demo-only.
       return { ok: true, command: { action, payload } };
+    }
+
+    if (statusUsedEl) {
+      statusUsedEl.addEventListener("click", () => {
+        const u = getSavedTokenUsage();
+        if (!u) {
+          showToast("暂无 Token 消耗数据，发送消息后会自动统计");
+          return;
+        }
+        const totalAll = Number(localStorage.getItem(LS_KEY_TOKEN_TOTAL) || u.total);
+        showToast(`单次消耗: ${u.total} (输入 ${u.prompt}, 输出 ${u.completion}) · 累计: ${formatTokenNum(totalAll)}`);
+      });
     }
 
     if (resetRow) resetRow.addEventListener("click", async () => {
@@ -11786,6 +11833,9 @@ textarea::placeholder {
     function setMessage(raw, { render = true, cache = true } = {}) {
       if (typeof processIncomingInnerVoice === "function") {
         processIncomingInnerVoice(raw);
+      }
+      if (raw && raw.meta && raw.meta.usage) {
+        updateTokenUsage(raw.meta.usage);
       }
       const key = msgKey(raw.id);
       if (deletedKeys.has(key)) return undefined;   // 用户已在本地删除 → 任何来源(history/SSE/缓存)都不再收进来
