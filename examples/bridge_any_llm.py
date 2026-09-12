@@ -231,7 +231,7 @@ def _merge_consecutive_roles(msgs: list) -> list:
 # 网页内容解析器 (Web Reader / 读链接超能力)
 # ---------------------------------------------------------------------------
 def fetch_web_content(url: str, max_chars: int = 3500) -> str:
-    """抓取并清洗网页纯文本正文，优先直连，受阻时自动走 Jina Reader 引擎。"""
+    """抓取并清洗网页纯文本正文，默认优先走 Jina Reader 引擎（云端解析零内存开销），失败时自动降级直连。"""
     url = url.strip()
     lower = url.lower().split("?")[0]
     if lower.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico", ".mp4", ".mp3", ".pdf", ".zip")):
@@ -243,50 +243,59 @@ def fetch_web_content(url: str, max_chars: int = 3500) -> str:
         "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
     }
 
-    raw_html = ""
-    # 1. 先尝试直接抓取
-    try:
-        req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            content_type = resp.headers.get("Content-Type", "")
-            if "text/html" in content_type or "text/plain" in content_type:
-                raw_bytes = resp.read(200000)
-                encoding = "utf-8"
-                if "charset=" in content_type.lower():
-                    try:
-                        encoding = content_type.lower().split("charset=")[-1].split(";")[0].strip()
-                    except Exception:
-                        pass
-                try:
-                    raw_html = raw_bytes.decode(encoding, errors="replace")
-                except Exception:
-                    raw_html = raw_bytes.decode("utf-8", errors="replace")
-    except Exception as e:
-        log("web", f"直接请求 {url[:40]} 异常 ({e})，切换 Jina Reader 引擎...")
-
-    # 简易清洗正文
     clean_text = ""
     title = ""
-    if raw_html:
-        m_title = re.search(r"<title[^>]*>(.*?)</title>", raw_html, re.IGNORECASE | re.DOTALL)
-        if m_title:
-            title = re.sub(r"\s+", " ", m_title.group(1)).strip()
-        stripped = re.sub(r"<(script|style|nav|footer|header|noscript|svg)[^>]*>.*?</\1>", " ", raw_html, flags=re.IGNORECASE | re.DOTALL)
-        stripped = re.sub(r"<[^>]+>", " ", stripped)
-        clean_text = re.sub(r"[ \t]+", " ", stripped)
-        clean_text = re.sub(r"\n\s*\n", "\n\n", clean_text).strip()
 
-    # 2. 如果直接抓取正文过少 (小于 200 字，可能是 SPA/反爬/JS 渲染)，改走通用 Jina Reader
-    if len(clean_text) < 200:
+    # 1. 默认优先走 Jina Reader 引擎（云端智能解析 Markdown，内存零开销且天然穿透反爬与SPA）
+    jina_key = os.environ.get("JINA_API_KEY", "").strip()
+    try:
+        jina_url = f"https://r.jina.ai/{url}"
+        jina_headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "text/plain",
+            "X-Timeout": "10",
+        }
+        if jina_key:
+            jina_headers["Authorization"] = f"Bearer {jina_key}"
+
+        jina_req = urllib.request.Request(jina_url, headers=jina_headers)
+        with urllib.request.urlopen(jina_req, timeout=10) as jina_resp:
+            jina_raw = jina_resp.read(200000).decode("utf-8", errors="replace").strip()
+            if jina_raw and len(jina_raw) > 40:
+                clean_text = jina_raw
+                log("web", f"Jina Reader 解析成功 ({len(clean_text)} 字符)")
+    except Exception as e:
+        log("web", f"Jina Reader 解析 {url[:40]} 遇阻 ({e})，降级到直连抓取...")
+
+    # 2. 降级兜底：若 Jina 抖动失败，回退到本地直连简单提取
+    if not clean_text:
         try:
-            jina_url = f"https://r.jina.ai/{url}"
-            jina_req = urllib.request.Request(jina_url, headers={"User-Agent": headers["User-Agent"]})
-            with urllib.request.urlopen(jina_req, timeout=8) as jina_resp:
-                jina_raw = jina_resp.read(150000).decode("utf-8", errors="replace")
-                if jina_raw.strip():
-                    clean_text = jina_raw.strip()
-        except Exception as e:
-            log("web", f"Jina Reader 解析 {url[:40]} 失败: {e}")
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=6) as resp:
+                content_type = resp.headers.get("Content-Type", "")
+                if "text/html" in content_type or "text/plain" in content_type:
+                    raw_bytes = resp.read(200000)
+                    encoding = "utf-8"
+                    if "charset=" in content_type.lower():
+                        try:
+                            encoding = content_type.lower().split("charset=")[-1].split(";")[0].strip()
+                        except Exception:
+                            pass
+                    try:
+                        raw_html = raw_bytes.decode(encoding, errors="replace")
+                    except Exception:
+                        raw_html = raw_bytes.decode("utf-8", errors="replace")
+
+                    if raw_html:
+                        m_title = re.search(r"<title[^>]*>(.*?)</title>", raw_html, re.IGNORECASE | re.DOTALL)
+                        if m_title:
+                            title = re.sub(r"\s+", " ", m_title.group(1)).strip()
+                        stripped = re.sub(r"<(script|style|nav|footer|header|noscript|svg)[^>]*>.*?</\1>", " ", raw_html, flags=re.IGNORECASE | re.DOTALL)
+                        stripped = re.sub(r"<[^>]+>", " ", stripped)
+                        clean_text = re.sub(r"[ \t]+", " ", stripped)
+                        clean_text = re.sub(r"\n\s*\n", "\n\n", clean_text).strip()
+        except Exception as ex:
+            log("web", f"直连抓取 {url[:40]} 失败: {ex}")
 
     if not clean_text:
         return f"【网页链接: {url}】\n(注: 该网页需要登录或设置了反爬限制，未能提取到完整正文)"
