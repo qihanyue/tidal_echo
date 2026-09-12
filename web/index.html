@@ -6328,6 +6328,11 @@ char的长期记忆summary格式为：
               <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">主动打破沉默</div>
               <div style="font-size:11px; color:var(--text-soft);" id="tidesProactiveWakeStatusBadge">未开启</div>
             </div>
+            <div
+              style="padding:10px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
+              <div style="font-size:13px; font-weight:600; color:var(--tint); margin-bottom:3px;">物理地图感知</div>
+              <div style="font-size:11px; color:var(--text-soft);" id="tidesLocationStatusBadge">未定位</div>
+            </div>
           </div>
         </section>
 
@@ -6427,25 +6432,41 @@ char的长期记忆summary格式为：
           </div>
         </section>
 
-        <!-- 预留扩展能力 -->
+        <!-- 物理地图与位置感知配置 -->
         <section class="settings-card">
-          <div class="settings-label">更多观测雷达 (即将接入)</div>
-          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
-            <div
-              style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.15));">
-              <div>
-                <div style="font-size:13px; font-weight:600; color:var(--text);">周边与地图探索 (Map Radar)</div>
-                <div style="font-size:11px; color:var(--text-faint);">与 AI 分享你漫步的街角、城市地标与出行距离</div>
-              </div>
-              <span class="tether-badge">准备就绪</span>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div>
+              <div class="settings-label" style="margin-bottom:2px;">物理地图与位置感知 (Map Radar)</div>
+              <div style="font-size:12px; color:var(--text-faint);">实时感知你的经纬度与地标街区，赋予 AI 真实物理时空感</div>
             </div>
-            <div
-              style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:12px; background:var(--card-sub-bg, rgba(255,255,255,.05)); border:1px solid var(--card-line, rgba(150,168,182,.15));">
-              <div>
-                <div style="font-size:13px; font-weight:600; color:var(--text);">全网热点实时搜索 (Search Engine)</div>
-                <div style="font-size:11px; color:var(--text-faint);">主动探索当下新鲜事、热点词与冷知识</div>
+            <input type="checkbox" id="locationRadarGlobalToggle" checked
+              style="width:20px; height:20px; accent-color:var(--tint); cursor:pointer;">
+          </div>
+
+          <!-- 位置配置与定位 -->
+          <div style="display:flex; gap:8px; margin-top:12px; align-items:center;">
+            <input class="llm-input" id="locationManualInput" type="text" placeholder="手动输入地标，如: 春熙路 / 陆家嘴 / 中关村"
+              style="flex:1;">
+            <button class="llm-btn secondary" id="locationGeoBtn" type="button"
+              style="padding:6px 12px; font-size:13px; white-space:nowrap;">获取当前定位</button>
+            <button class="llm-btn primary" id="locationQueryBtn" type="button"
+              style="padding:6px 14px; font-size:13px; white-space:nowrap;">锁定地标</button>
+          </div>
+
+          <!-- 位置看板展示 -->
+          <div id="locationDisplayCard"
+            style="margin-top:14px; padding:14px 16px; border-radius:14px; background:linear-gradient(135deg, rgba(150,168,182,.08), rgba(150,168,182,.03)); border:1px solid var(--card-line, rgba(150,168,182,.2));">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div style="flex:1; padding-right:10px;">
+                <div id="locationBoardTitle" style="font-size:15px; font-weight:600; color:var(--text);">尚未获取物理位置</div>
+                <div id="locationBoardSubtitle" style="font-size:13px; color:var(--tint); margin-top:3px;">等待点击定位或手动锁定</div>
               </div>
-              <span class="tether-badge">设计中</span>
+              <div id="locationBoardCoords"
+                style="font-size:12px; font-weight:500; color:var(--text-faint); font-family:monospace; text-align:right; white-space:nowrap;">--°N, --°E</div>
+            </div>
+            <div id="locationBoardDetails"
+              style="font-size:12px; color:var(--text-faint); margin-top:10px; line-height:1.5;">
+              点击“获取当前定位”，手机将自动通过 GPS 读取经纬度并免费反查地名街区。AI 在聊天时能自然感知你身处何地（如商圈散步、离家距离、周边店铺）。
             </div>
           </div>
         </section>
@@ -9364,6 +9385,16 @@ textarea::placeholder {
     const weatherBoardTemp = document.getElementById("weatherBoardTemp");
     const weatherBoardDetails = document.getElementById("weatherBoardDetails");
 
+    const locationRadarGlobalToggle = document.getElementById("locationRadarGlobalToggle");
+    const tidesLocationStatusBadge = document.getElementById("tidesLocationStatusBadge");
+    const locationManualInput = document.getElementById("locationManualInput");
+    const locationGeoBtn = document.getElementById("locationGeoBtn");
+    const locationQueryBtn = document.getElementById("locationQueryBtn");
+    const locationBoardTitle = document.getElementById("locationBoardTitle");
+    const locationBoardSubtitle = document.getElementById("locationBoardSubtitle");
+    const locationBoardCoords = document.getElementById("locationBoardCoords");
+    const locationBoardDetails = document.getElementById("locationBoardDetails");
+
     const WMO_CODE_MAP = {
       0: "晴朗", 1: "大部晴朗", 2: "多云", 3: "阴天",
       45: "轻雾", 48: "浓雾",
@@ -9685,6 +9716,7 @@ textarea::placeholder {
         tidesProactiveWakeStatusBadge.style.color = isEnWake ? "var(--tint)" : "var(--text-faint)";
       }
       renderWeatherUi();
+      renderLocationUi();
     }
 
     async function pushProactiveWakeConfigToServer() {
@@ -9709,6 +9741,7 @@ textarea::placeholder {
           web_reader_enabled: (localStorage.getItem("companion_web_reader_enabled") !== "false"),
           web_search_enabled: (localStorage.getItem("companion_web_search_enabled") !== "false"),
           weather_context: getWeatherContext ? getWeatherContext() : "",
+          location_context: typeof getLocationContext === "function" ? getLocationContext() : "",
           inner_voice_prompt: (typeof getInnerVoicePrompt === "function" ? getInnerVoicePrompt() : "")
         };
 
@@ -9837,8 +9870,240 @@ textarea::placeholder {
       });
     }
 
-    // 页面启动时自动检查更新天气
-    setTimeout(checkAndAutoRefreshWeather, 2000);
+    /* ════════════ 物理地图与位置感知雷达 (Map & Location Radar) ════════════ */
+    function getLocationContext() {
+      const isEn = localStorage.getItem("companion_location_enabled") !== "false";
+      if (!isEn) return "";
+      try {
+        const raw = localStorage.getItem("companion_location_data");
+        if (!raw) return "";
+        const d = JSON.parse(raw);
+        if (!d || (!d.address && !d.landmark)) return "";
+        const locStr = d.address || d.landmark;
+        const coordStr = (d.lat && d.lon) ? ` (坐标参考: ${Number(d.lat).toFixed(3)}°N, ${Number(d.lon).toFixed(3)}°E)` : "";
+        const timeStr = d.updateTime ? new Date(d.updateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
+        return `[当前现实环境与物理位置感知]:\n- 用户当前身处位置: ${locStr}${coordStr}\n- 更新时间: ${timeStr}\n(提示: 这是用户所处的真实物理位置/地标。可在闲聊或关怀中自然融入互动，如附近的商圈地标、散步逛街、周边氛围或下班/出行路线等，切勿生硬报坐标或像导航软件般机械复述。)`;
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function renderLocationUi() {
+      const isEn = localStorage.getItem("companion_location_enabled") !== "false";
+      if (locationRadarGlobalToggle) locationRadarGlobalToggle.checked = isEn;
+      const raw = localStorage.getItem("companion_location_data");
+
+      if (!isEn) {
+        if (tidesLocationStatusBadge) {
+          tidesLocationStatusBadge.textContent = "已暂停 · 未注入";
+          tidesLocationStatusBadge.style.color = "var(--text-faint)";
+        }
+        if (locationBoardTitle) locationBoardTitle.textContent = "未启用物理地图感知";
+        if (locationBoardSubtitle) locationBoardSubtitle.textContent = "雷达已暂停向 AI 注入位置数据";
+        if (locationBoardCoords) locationBoardCoords.textContent = "--°N, --°E";
+        if (locationBoardDetails) locationBoardDetails.textContent = "打开右上方开关后，AI 回复你时将自然感知你身处的大致地标与街区。";
+        return;
+      }
+
+      if (!raw) {
+        if (tidesLocationStatusBadge) {
+          tidesLocationStatusBadge.textContent = "未定位";
+          tidesLocationStatusBadge.style.color = "var(--text-soft)";
+        }
+        if (locationBoardTitle) locationBoardTitle.textContent = "尚未获取物理位置";
+        if (locationBoardSubtitle) locationBoardSubtitle.textContent = "等待点击定位或手动锁定";
+        if (locationBoardCoords) locationBoardCoords.textContent = "--°N, --°E";
+        if (locationBoardDetails) locationBoardDetails.textContent = "点击“获取当前定位”，手机将通过 GPS 读取坐标并自动免费解析地名街区。";
+        return;
+      }
+
+      try {
+        const d = JSON.parse(raw);
+        const locStr = d.address || d.landmark || "当前位置";
+        if (tidesLocationStatusBadge) {
+          tidesLocationStatusBadge.textContent = `已定位 · ${d.shortName || locStr.slice(0, 8)}`;
+          tidesLocationStatusBadge.style.color = "var(--tint)";
+        }
+        if (locationBoardTitle) locationBoardTitle.textContent = locStr;
+        if (locationBoardSubtitle) locationBoardSubtitle.textContent = d.district ? `${d.district}附近` : "位置已锁定";
+        if (locationBoardCoords) {
+          locationBoardCoords.textContent = (d.lat && d.lon) ? `${Number(d.lat).toFixed(3)}°N, ${Number(d.lon).toFixed(3)}°E` : "自定义地标";
+        }
+        const timeStr = d.updateTime ? new Date(d.updateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
+        if (locationBoardDetails) {
+          locationBoardDetails.textContent = `已成功捕获你所在的真实物理环境，更新于 ${timeStr}。AI 在聊天时能自然感知你身处何地（如商圈散步、离家距离、周边地标）。`;
+        }
+        if (locationManualInput && !locationManualInput.value && d.landmark) {
+          locationManualInput.value = d.landmark;
+        }
+      } catch (e) { }
+    }
+
+    async function fetchLocationByCoords(lat, lon) {
+      if (locationBoardTitle) locationBoardTitle.textContent = "定位成功，正在反查地名街区...";
+      if (locationBoardSubtitle) locationBoardSubtitle.textContent = "解析中...";
+      try {
+        let fullAddress = "";
+        let shortName = "";
+        let district = "";
+
+        // 线路 1: OpenStreetMap Nominatim 逆地理编码 (带 4 秒超时)
+        try {
+          const controller = new AbortController();
+          const tid = setTimeout(() => controller.abort(), 4000);
+          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=zh`, { signal: controller.signal });
+          clearTimeout(tid);
+          if (r.ok) {
+            const data = await r.json();
+            const addr = data.address || {};
+            const state = addr.state || "";
+            const city = addr.city || addr.town || addr.county || "";
+            const dist = addr.suburb || addr.city_district || addr.district || "";
+            const road = addr.road || addr.pedestrian || addr.neighbourhood || addr.amenity || "";
+            district = dist || city || "";
+            shortName = road || dist || city || "当前位置";
+            const parts = [state, city, dist, road].filter(Boolean);
+            fullAddress = [...new Set(parts)].join("");
+          }
+        } catch (e) {
+          console.warn("Nominatim 逆地理编码超时或受阻:", e);
+        }
+
+        // 线路 2: 备用 BigDataCloud 逆地理编码 (带 3.5 秒超时)
+        if (!fullAddress) {
+          try {
+            const controller2 = new AbortController();
+            const tid2 = setTimeout(() => controller2.abort(), 3500);
+            const r2 = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=zh`, { signal: controller2.signal });
+            clearTimeout(tid2);
+            if (r2.ok) {
+              const data2 = await r2.json();
+              const prov = data2.principalSubdivision || "";
+              const c = data2.city || data2.locality || "";
+              district = c || prov || "";
+              shortName = c || prov || "当前位置";
+              fullAddress = `${prov}${c}`.trim();
+            }
+          } catch (e2) {
+            console.warn("BigDataCloud 逆地理编码超时:", e2);
+          }
+        }
+
+        if (!fullAddress) {
+          fullAddress = `北纬 ${Number(lat).toFixed(3)}°, 东经 ${Number(lon).toFixed(3)}° 附近`;
+          shortName = "当前坐标";
+        }
+
+        const locData = {
+          lat: lat,
+          lon: lon,
+          address: fullAddress,
+          shortName: shortName,
+          district: district,
+          landmark: fullAddress,
+          updateTime: Date.now()
+        };
+        localStorage.setItem("companion_location_data", JSON.stringify(locData));
+        renderLocationUi();
+        showToast(`已定位至：${shortName}`);
+      } catch (err) {
+        showToast("位置反查失败，可手动输入地标");
+        renderLocationUi();
+      }
+    }
+
+    async function fetchLocationBySearch(keyword) {
+      if (!keyword || !keyword.trim()) {
+        showToast("请输入地标名称");
+        return;
+      }
+      const kw = keyword.trim();
+      if (locationBoardTitle) locationBoardTitle.textContent = `正在锁定地标「${kw}」...`;
+      try {
+        let lat = null, lon = null, display = kw;
+        try {
+          const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(kw)}&count=1&language=zh&format=json`);
+          if (r.ok) {
+            const data = await r.json();
+            if (data.results && data.results.length) {
+              const p = data.results[0];
+              lat = p.latitude;
+              lon = p.longitude;
+              display = `${p.admin1 ? p.admin1 + " " : ""}${p.name || kw}`;
+            }
+          }
+        } catch (_) { }
+
+        const locData = {
+          lat: lat,
+          lon: lon,
+          address: display,
+          shortName: kw,
+          district: kw,
+          landmark: kw,
+          updateTime: Date.now()
+        };
+        localStorage.setItem("companion_location_data", JSON.stringify(locData));
+        renderLocationUi();
+        showToast(`已成功锁定地标：${kw}`);
+      } catch (err) {
+        showToast("地标锁定受阻");
+      }
+    }
+
+    if (locationRadarGlobalToggle) {
+      locationRadarGlobalToggle.addEventListener("change", () => {
+        localStorage.setItem("companion_location_enabled", locationRadarGlobalToggle.checked ? "true" : "false");
+        renderLocationUi();
+        showToast(locationRadarGlobalToggle.checked ? "已开启物理地图感知" : "已关闭物理地图感知");
+      });
+    }
+
+    if (locationGeoBtn) {
+      locationGeoBtn.addEventListener("click", () => {
+        if (!navigator.geolocation) {
+          showToast("当前浏览器不支持 GPS 定位，可直接手动输入地标");
+          return;
+        }
+        showToast("正在获取定位权限...");
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            fetchLocationByCoords(pos.coords.latitude, pos.coords.longitude);
+          },
+          (err) => {
+            console.warn("GPS 获取失败:", err);
+            showToast("定位权限未允许，可手动输入地标锁定");
+          },
+          { timeout: 8000, enableHighAccuracy: false }
+        );
+      });
+    }
+
+    if (locationQueryBtn) {
+      locationQueryBtn.addEventListener("click", () => {
+        const val = locationManualInput ? locationManualInput.value.trim() : "";
+        if (!val) {
+          showToast("请先输入地标名称");
+          return;
+        }
+        fetchLocationBySearch(val);
+      });
+    }
+
+    if (locationManualInput) {
+      locationManualInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (locationQueryBtn) locationQueryBtn.click();
+        }
+      });
+    }
+
+    // 页面启动时自动检查更新天气与地图看板
+    setTimeout(() => {
+      checkAndAutoRefreshWeather();
+      renderLocationUi();
+    }, 2000);
 
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
@@ -11322,6 +11587,8 @@ textarea::placeholder {
         payload.web_search_enabled = (localStorage.getItem("companion_web_search_enabled") !== "false");
         // 城市天气雷达注入
         payload.weather_context = getWeatherContext();
+        // 物理地图与位置感知注入
+        payload.location_context = (typeof getLocationContext === "function" ? getLocationContext() : "");
         // 心声指令注入 (开启时注入)
         if (typeof getInnerVoicePrompt === "function") {
           const _ivPrompt = getInnerVoicePrompt();
@@ -14415,6 +14682,7 @@ textarea::placeholder {
               web_reader_enabled: (localStorage.getItem("companion_web_reader_enabled") !== "false"),
               web_search_enabled: (localStorage.getItem("companion_web_search_enabled") !== "false"),
               weather_context: getWeatherContext(),
+              location_context: (typeof getLocationContext === "function" ? getLocationContext() : ""),
               inner_voice_prompt: (typeof getInnerVoicePrompt === "function" ? getInnerVoicePrompt() : "")
             };
             const r = await fetch(`${API_BASE}/app/trigger_reply`, {
@@ -14835,6 +15103,7 @@ textarea::placeholder {
           payload.web_reader_enabled = (localStorage.getItem("companion_web_reader_enabled") !== "false");
           payload.web_search_enabled = (localStorage.getItem("companion_web_search_enabled") !== "false");
           payload.weather_context = getWeatherContext();
+          payload.location_context = (typeof getLocationContext === "function" ? getLocationContext() : "");
           if (typeof getInnerVoicePrompt === "function") {
             const _ivPrompt = getInnerVoicePrompt();
             if (_ivPrompt) payload.inner_voice_prompt = _ivPrompt;

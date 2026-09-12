@@ -378,7 +378,7 @@ def search_web(query: str, max_results: int = 4, max_chars: int = 2500) -> str:
     return f"暂未检索到关于「{query}」的有效实时信息。"
 
 
-def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", memory_context: str = "", tether_front: str = "", tether_middle: str = "", tether_back: str = "", web_context: str = "", web_search_enabled: bool = False, web_search_context: str = "", weather_context: str = "", inner_voice_prompt: str = "", limit: int = 0) -> list:
+def build_messages(custom_persona: str = "", user_persona: str = "", time_context: str = "", memory_context: str = "", tether_front: str = "", tether_middle: str = "", tether_back: str = "", web_context: str = "", web_search_enabled: bool = False, web_search_context: str = "", weather_context: str = "", location_context: str = "", inner_voice_prompt: str = "", limit: int = 0) -> list:
     base_persona = custom_persona or PERSONA
     parts = []
     # 1. 提示词最前面 (Front)
@@ -392,13 +392,15 @@ def build_messages(custom_persona: str = "", user_persona: str = "", time_contex
     # 3. 提示词中间 (Middle)
     if tether_middle and tether_middle.strip():
         parts.append(f"[环境世界观与场域协定 (Middle)]\n{tether_middle.strip()}")
-    # 4. 长期记忆、时间感知与天气雷达
+    # 4. 长期记忆、时间感知、天气雷达与地图感知
     if memory_context and memory_context.strip():
         parts.append(memory_context.strip())
     if time_context and time_context.strip():
         parts.append(time_context.strip())
     if weather_context and weather_context.strip():
         parts.append(weather_context.strip())
+    if location_context and location_context.strip():
+        parts.append(location_context.strip())
     # 5. 网页实时阅读插件注入
     if web_context and web_context.strip():
         parts.append(
@@ -723,6 +725,7 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
                 log("web", f"网页阅读完成，提取了 {len(web_ctx)} 字符")
 
     weather_ctx = (bundle_meta or {}).get("weather_context") or latest_item.get("weather_context") or ""
+    location_ctx = (bundle_meta or {}).get("location_context") or latest_item.get("location_context") or ""
 
     # ── 全网智能搜索 (Web Search) ──
     web_search_enabled = (bundle_meta or {}).get("web_search_enabled")
@@ -778,6 +781,7 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
             web_context=web_ctx,
             web_search_enabled=web_search_enabled,
             weather_context=weather_ctx,
+            location_context=location_ctx,
             inner_voice_prompt=iv_prompt,
             limit=limit
         )
@@ -812,6 +816,7 @@ def handle_incoming_messages(items: list, bundle_meta: dict | None = None) -> No
                     web_search_enabled=False,
                     web_search_context=f"检索关键词「{search_query}」的全网最新资料:\n{search_results}",
                     weather_context=weather_ctx,
+                    location_context=location_ctx,
                     inner_voice_prompt=iv_prompt,
                     limit=limit
                 )
@@ -927,6 +932,7 @@ def handle_proactive_wake(bundle_meta: dict) -> None:
             t_back = t_ctx.strip()
 
         weather_ctx = (bundle_meta or {}).get("weather_context") or ""
+        location_ctx = (bundle_meta or {}).get("location_context") or ""
         web_search_enabled = (bundle_meta or {}).get("web_search_enabled", True)
         iv_prompt = (bundle_meta or {}).get("inner_voice_prompt") or ""
 
@@ -969,6 +975,7 @@ def handle_proactive_wake(bundle_meta: dict) -> None:
             tether_back=t_back,
             web_search_enabled=web_search_enabled,
             weather_context=weather_ctx,
+            location_context=location_ctx,
             inner_voice_prompt=iv_prompt,
             limit=limit
         )
